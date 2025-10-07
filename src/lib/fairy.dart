@@ -69,11 +69,6 @@ export 'src/locator/viewmodel_locator.dart' show ViewModelLocator;
 // UI binding widgets
 export 'src/ui/bind_widget.dart' show Bind;
 export 'src/ui/command_widget.dart' show Command, CommandWithParam;
-export 'src/ui/helpers.dart'
-    show
-        TextControllerCache,
-        TextControllerCacheProvider,
-        TextControllerExt;
 // Utilities
 export 'src/utils/equals.dart' show listEquals, mapEquals, setEquals;
 export 'src/utils/lifecycle.dart' show Disposable, DisposeBag;
