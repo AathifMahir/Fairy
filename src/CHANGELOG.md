@@ -1,3 +1,7 @@
+## 0.5.0+2
+
+- Improved documentation and fixed minor typos.
+
 ## 0.5.0+1
 
 - Improved documentation and fixed minor typos.
