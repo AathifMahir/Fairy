@@ -20,7 +20,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^0.5.0
+  fairy: ^0.5.0+2
 ```
 
 ### Basic Example
@@ -354,6 +354,8 @@ Fairy provides two powerful DI patterns that can be used together:
 
 `FairyScope` provides widget-scoped ViewModels with automatic lifecycle management. It's flexible and can be used **anywhere** in your widget tree:
 
+**Note**: ViewModels Registered Using `FairyScope` is not tied to Build Context but Uses Widget Tree for Dependency Lifecycle Management, Therefore setting `autoDispose: false` will keep the ViewModel alive until manually disposed. but by default it is `true`.
+
 **At the app root (even above MaterialApp):**
 ```dart
 void main() {
@@ -425,11 +427,18 @@ final userVM = Fairy.of<UserViewModel>(context);
 final settingsVM = context.of<SettingsViewModel>();
 
 // In ViewModels (dependency injection)
+
+FairyLocator.instance.registerSingleton<ApiService>(ApiService());
+
 FairyScope(
   viewModels: [
+    (_) => UserViewModel(),
     (locator) => UserViewModel(
-      api: locator.get<ApiService>(),  // Access previously registered VM
+      api: locator.get<ApiService>(),  // Access previously registered service
     ),
+    (locator) => SettingsViewModel(
+      userVM: locator.get<UserViewModel>(),  // Access sibling VM
+    )
   ],
   child: MyPage(),
 )
@@ -460,8 +469,20 @@ For app-wide singletons like services:
 // Register in main()
 void main() {
   FairyLocator.instance.registerSingleton<ApiService>(ApiService());
+
+  // Register singleton
   FairyLocator.instance.registerSingleton<AuthService>(AuthService());
-  FairyLocator.instance.registerLazy<DatabaseService>(() => DatabaseService());
+
+  // Lazy singleton registration
+  FairyLocator.instance.registerLazySingleton<DatabaseService>(() => DatabaseService());
+  
+  // Async singleton registration
+  await FairyLocator.instance.registerSingletonAsync<ConfigService>(
+    () async => await ConfigService.load(),
+  );
+
+  // Register transient (new instance each time) or else we call factory registration
+  FairyLocator.instance.registerTransient<TempService>(() => TempService());
   
   runApp(MyApp());
 }
@@ -470,6 +491,7 @@ void main() {
 final api = FairyLocator.instance.get<ApiService>();
 
 // Or use in FairyScope
+// locator parameter provides access to registered services inside FairyScope
 FairyScope(
   viewModel: (locator) => ProfileViewModel(
     api: locator.get<ApiService>(),
