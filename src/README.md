@@ -1,6 +1,6 @@
 # Fairy
 
-A lightweight MVVM framework for Flutter that provides strongly-typed, reactive data binding without build_runner. Fairy combines reactive properties, command patterns, and dependency injection with minimal boilerplate.
+A lightweight MVVM framework for Flutter that provides strongly-typed, reactive data binding. Fairy combines reactive properties, command patterns, and dependency injection with minimal boilerplate.
 
 ## Features
 
@@ -739,7 +739,7 @@ testWidgets('counter increments on button tap', (tester) async {
 
 ## License
 
-MIT License - see LICENSE file for details.
+BSD 3-Clause License - see LICENSE file for details.
 
 ## Contributing
 
