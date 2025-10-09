@@ -20,7 +20,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^0.5.0
+  fairy: ^0.6.0
 ```
 
 ### Basic Example
@@ -31,18 +31,17 @@ import 'package:flutter/material.dart';
 
 // 1. Create a ViewModel extending ObservableObject
 class CounterViewModel extends ObservableObject {
-  final counter = ObservableProperty<int>(0);
+  final counter = ObservableProperty<int>(0, parent: this);
   late final RelayCommand incrementCommand;
   
   CounterViewModel() {
-    incrementCommand = RelayCommand(() => counter.value++);
+    incrementCommand = RelayCommand(
+      execute: () => counter.value++,
+      parent: this,
+    );
   }
   
-  @override
-  void dispose() {
-    counter.dispose();
-    super.dispose();
-  }
+  // Properties and commands auto-disposed by super.dispose()
 }
 
 // 2. Use FairyScope to provide the ViewModel
@@ -99,36 +98,35 @@ Your ViewModels extend `ObservableObject` which extends Flutter's `ChangeNotifie
 
 ```dart
 class UserViewModel extends ObservableObject {
-  final name = ObservableProperty<String>('');
-  final age = ObservableProperty<int>(0);
+  final name = ObservableProperty<String>('', parent: this);
+  final age = ObservableProperty<int>(0, parent: this);
   
-  @override
-  void dispose() {
-    name.dispose();
-    age.dispose();
-    super.dispose();
-  }
+  // ✅ Properties auto-disposed by super.dispose()
+  // No manual disposal needed!
 }
 ```
+
+**Auto-Disposal:** Properties and commands created with the `parent` parameter are automatically disposed when the parent ViewModel is disposed. Pass `parent: this` to enable auto-disposal. See [Best Practices](#best-practices) for details.
 
 ### 2. ObservableProperty<T> - Reactive State
 
 Type-safe properties that notify listeners when their value changes:
 
 ```dart
-final counter = ObservableProperty<int>(0);
+// With auto-disposal (recommended)
+final counter = ObservableProperty<int>(0, parent: this);
 
 // Modify value
 counter.value = 42;
 
 // Listen to changes (returns disposer function)
-final dispose = counter.listen(() => print('Counter changed: ${counter.value}'));
+final dispose = counter.propertyChanged(() => print('Counter changed: ${counter.value}'));
 
 // Later: remove listener
 dispose();  // ⚠️ Always call this to avoid memory leaks!
 ```
 
-> **⚠️ Memory Leak Warning:** Always capture and call the disposer returned by `listen()`. Failing to do so will cause memory leaks as the listener remains registered indefinitely. See [Best Practices](#best-practices) section for details.
+> **⚠️ Memory Leak Warning:** Always capture and call the disposer returned by `propertyChanged()`. Failing to do so will cause memory leaks as the listener remains registered indefinitely. See [Best Practices](#best-practices) section for details.
 
 ### 3. Commands - Action Encapsulation
 
@@ -140,22 +138,27 @@ late final RelayCommand saveCommand;
 
 // Command with canExecute validation
 late final RelayCommand deleteCommand;
+late final VoidCallback _disposer;
 
 MyViewModel() {
-  saveCommand = RelayCommand(_save);
+  saveCommand = RelayCommand(
+    execute: _save,
+    parent: this,
+  );
   
   deleteCommand = RelayCommand(
-    _delete,
-    canExecute: () => selectedItem != null,
+    execute: _delete,
+    canExecute: () => selectedItem.value != null,
+    parent: this,
   );
   
   // Refresh command when dependencies change
-  final _disposer = selectedItem.listen(() => deleteCommand.refresh());
+  _disposer = selectedItem.propertyChanged(() => deleteCommand.notifyCanExecuteChanged());
 }
 
 @override
 void dispose() {
-  _disposer?.call();
+  _disposer();
   super.dispose();
 }
 
@@ -176,7 +179,10 @@ For asynchronous operations with automatic `isRunning` state:
 late final AsyncRelayCommand fetchCommand;
 
 MyViewModel() {
-  fetchCommand = AsyncRelayCommand(_fetchData);
+  fetchCommand = AsyncRelayCommand(
+    execute: _fetchData,
+    parent: this,
+  );
 }
 
 Future<void> _fetchData() async {
@@ -195,8 +201,9 @@ late final RelayCommandWithParam<int> addValueCommand;
 
 MyViewModel() {
   addValueCommand = RelayCommandWithParam<int>(
-    (value) => counter.value += value,
+    execute: (value) => counter.value += value,
     canExecute: (value) => value > 0,
+    parent: this,
   );
 }
 
@@ -212,6 +219,40 @@ CommandWithParam<MyViewModel, int>(
   },
 )
 ```
+
+#### Listening to Command Changes
+
+Commands support listening to `canExecute` state changes, similar to how properties work:
+
+```dart
+late final RelayCommand saveCommand;
+VoidCallback? _commandDisposer;
+
+MyViewModel() {
+  saveCommand = RelayCommand(
+    execute: _save,
+    canExecute: () => userName.value.isNotEmpty,
+    parent: this,
+  );
+  
+  // Listen to canExecute changes
+  _commandDisposer = saveCommand.canExecuteChanged(() {
+    print('Save command canExecute changed: ${saveCommand.canExecute}');
+  });
+}
+
+void _save() {
+  // Save logic
+}
+
+@override
+void dispose() {
+  _commandDisposer?.call();
+  super.dispose();
+}
+```
+
+> **⚠️ Memory Leak Warning:** Always capture the disposer returned by `canExecuteChanged()`. Failing to call it will cause memory leaks. For UI binding, use the `Command` widget which handles this automatically.
 
 ### 4. Data Binding
 
@@ -298,10 +339,12 @@ FairyLocator.instance.unregister<ApiService>();
 
 #### Resolution Order
 
-`ViewModelLocator.resolve<T>()` checks:
+`Fairy.of<T>(context)` checks:
 1. Nearest `FairyScope` in widget tree
 2. `FairyLocator` global registry
 3. Throws exception if not found
+
+**Note:** The API follows Flutter's convention (e.g., `Theme.of(context)`, `MediaQuery.of(context)`) for familiar and idiomatic usage.
 
 ## Advanced Features
 
@@ -310,111 +353,199 @@ FairyLocator.instance.unregister<ApiService>();
 Derived properties that depend on other ObservableProperties:
 
 ```dart
-final firstName = ObservableProperty<String>('John');
-final lastName = ObservableProperty<String>('Doe');
+final firstName = ObservableProperty<String>('John', parent: this);
+final lastName = ObservableProperty<String>('Doe', parent: this);
 
 late final ComputedProperty<String> fullName;
 
 MyViewModel() {
   fullName = ComputedProperty<String>(
     () => '${firstName.value} ${lastName.value}',
-    dependencies: [firstName, lastName],
+    [firstName, lastName],
+    parent: this,
   );
 }
 ```
 
 ### Custom Value Equality
 
-ObservableProperty only notifies when values actually change:
+ObservableProperty uses `!=` for equality checking. For custom types, override the `==` operator:
 
 ```dart
+class User {
+  final String id;
+  final String name;
+  
+  User(this.id, this.name);
+  
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is User && runtimeType == other.runtimeType && id == other.id;
+  
+  @override
+  int get hashCode => id.hashCode;
+}
+
 final user = ObservableProperty<User>(
-  User(name: 'Alice'),
-  equals: (a, b) => a.id == b.id,  // Custom equality
+  User('1', 'Alice'),
+  parent: this,
 );
 ```
 
 ## Best Practices
 
-### 1. Always Dispose Properties
+### 1. Auto-Disposal with Parent Parameter
+
+**ObservableProperty, ComputedProperty, and Commands are automatically disposed** when you pass `parent: this`:
 
 ```dart
-@override
-void dispose() {
-  counter.dispose();
-  userName.dispose();
-  super.dispose();
+class UserViewModel extends ObservableObject {
+  final userName = ObservableProperty<String>('', parent: this);
+  final age = ObservableProperty<int>(0, parent: this);
+  late final RelayCommand saveCommand;
+  late final ComputedProperty<String> fullInfo;
+  
+  UserViewModel() {
+    saveCommand = RelayCommand(
+      execute: _save,
+      parent: this,
+    );
+    
+    fullInfo = ComputedProperty<String>(
+      () => '${userName.value}, age ${age.value}',
+      [userName, age],
+      parent: this,
+    );
+  }
+  
+  void _save() { /* ... */ }
+  
+  // ✅ All properties and commands auto-disposed by super.dispose()
+  // No manual disposal needed!
 }
 ```
 
-### 2. Refresh Commands on Dependency Changes
+**Exception: Nested ViewModels require manual disposal:**
 
 ```dart
+class ParentViewModel extends ObservableObject {
+  final data = ObservableProperty<String>('', parent: this);  // ✅ Auto-disposed
+  late final childVM = ChildViewModel();                      // ⚠️ Manual disposal required
+  
+  @override
+  void dispose() {
+    childVM.dispose();  // Must manually dispose nested ViewModels
+    super.dispose();    // Auto-disposes properties and commands
+  }
+}
+```
+
+This prevents double-disposal issues when nested ViewModels are shared or managed externally.
+
+### 2. Refresh Commands on Dependency Changes
+
+When a command's `canExecute` depends on other properties, refresh the command when those properties change:
+
+```dart
+final selectedItem = ObservableProperty<Item?>(null, parent: this);
+late final RelayCommand deleteCommand;
+late final RelayCommand editCommand;
 VoidCallback? _selectedItemDisposer;
 
 MyViewModel() {
+  deleteCommand = RelayCommand(
+    execute: _delete,
+    canExecute: () => selectedItem.value != null,
+    parent: this,
+  );
+  
+  editCommand = RelayCommand(
+    execute: _edit,
+    canExecute: () => selectedItem.value != null,
+    parent: this,
+  );
+  
   // When canExecute depends on other state
-  _selectedItemDisposer = selectedItem.listen(() {
-    deleteCommand.refresh();
-    editCommand.refresh();
+  _selectedItemDisposer = selectedItem.propertyChanged(() {
+    deleteCommand.notifyCanExecuteChanged();
+    editCommand.notifyCanExecuteChanged();
   });
 }
+
+void _delete() { /* ... */ }
+void _edit() { /* ... */ }
 
 @override
 void dispose() {
   _selectedItemDisposer?.call();
-  selectedItem.dispose();
-  super.dispose();
+  super.dispose();  // selectedItem and commands auto-disposed
 }
 ```
 
-### 3. Always Capture Disposers from `listen()` ⚠️
+### 3. Always Capture Disposers from Manual Listener Calls ⚠️
 
-**WARNING:** Not capturing the disposer returned by `listen()` will cause **memory leaks**!
+**WARNING:** While properties and commands are auto-disposed with `parent` parameter, **manual listeners are NOT**. Not capturing the disposer returned by `propertyChanged()` or `canExecuteChanged()` will cause **memory leaks**!
 
 ```dart
 // ❌ MEMORY LEAK: Disposer is ignored
-viewModel.listen(() {
+viewModel.propertyChanged(() {
   print('changed');
 });
-// Listener stays in memory forever, even after widget disposal!
+command.canExecuteChanged(() {
+  print('canExecute changed');
+});
+// Listeners stay in memory forever, even after widget disposal!
 
-// ✅ CORRECT: Capture and call disposer
+// ✅ CORRECT: Capture and call disposers
 class _MyWidgetState extends State<MyWidget> {
-  late VoidCallback _disposeListener;
+  late VoidCallback _disposePropertyListener;
+  late VoidCallback _disposeCommandListener;
   
   @override
   void initState() {
     super.initState();
-    final vm = ViewModelLocator.resolve<MyViewModel>(context);
+    final vm = Fairy.of<MyViewModel>(context);
     
-    // Store the disposer
-    _disposeListener = vm.listen(() {
+    // Store the disposers
+    _disposePropertyListener = vm.counter.propertyChanged(() {
+      setState(() {});
+    });
+    
+    _disposeCommandListener = vm.saveCommand.canExecuteChanged(() {
       setState(() {});
     });
   }
   
   @override
   void dispose() {
-    _disposeListener(); // Clean up listener
+    _disposePropertyListener(); // Clean up listeners
+    _disposeCommandListener();
     super.dispose();
   }
 }
 
-// ✅ BEST: Use Bind widget (handles lifecycle automatically)
+// ✅ BEST: Use Bind/Command widgets (handle lifecycle automatically)
 Bind<MyViewModel, int>(
   selector: (vm) => vm.counter,
   builder: (context, value, update) => Text('$value'),
 )
+
+Command<MyViewModel>(
+  command: (vm) => vm.saveCommand,
+  builder: (context, execute, canExecute) => 
+    ElevatedButton(onPressed: canExecute ? execute : null, child: Text('Save')),
+)
 ```
 
-**Why memory leaks occur:**
-- When `listen()` is called, it registers a listener with the `ChangeNotifier`
-- The listener stays registered until explicitly removed
+**Why memory leaks still occur with manual listeners:**
+- Auto-disposal only handles property/command cleanup (when `parent` is provided)
+- When `propertyChanged()` or `canExecuteChanged()` is called directly, it registers a listener with the `ChangeNotifier`
+- The listener stays registered until explicitly removed via the disposer
 - Without calling the disposer, the listener (and any objects it captures) remain in memory
 - This is especially problematic if the `ViewModel` outlives the widget (e.g., global singleton)
 
-**Best practice:** Use `Bind` or `Command` widgets for 99% of UI scenarios. Only use `listen()` directly in `StatefulWidget` when you have a specific reason, and **always** capture and call the disposer.
+**Best practice:** Use `Bind` or `Command` widgets for 99% of UI scenarios. Only use `propertyChanged()` or `canExecuteChanged()` directly in `StatefulWidget` when you have a specific reason, and **always** capture and call the disposer.
 
 ### 4. Use Scoped DI for Page-Level ViewModels
 
@@ -489,7 +620,7 @@ test('increment updates counter', () {
   
   expect(vm.counter.value, 1);
   
-  vm.dispose();
+  vm.dispose(); // Auto-disposes all properties and commands with parent parameter
 });
 ```
 
