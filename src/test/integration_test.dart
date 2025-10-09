@@ -27,37 +27,47 @@ class CounterViewModel extends ObservableObject {
   late final AsyncRelayCommand resetCommand;
   late final RelayCommandWithParam<int> addValueCommand;
   
+  late final VoidCallback _disposeIsProcessingListener;
+  late final VoidCallback _disposeCounterListener;
+
   CounterViewModel(this._service) {
     counter.value = _service.getInitialCount();
     
-    incrementCommand = RelayCommand(
-      _increment,
+    incrementCommand = relayCommand(
+       _increment,
       canExecute: () => !isProcessing.value,
     );
     
-    decrementCommand = RelayCommand(
-      _decrement,
+    decrementCommand = relayCommand(
+       _decrement,
       canExecute: () => counter.value > 0 && !isProcessing.value,
     );
     
-    resetCommand = AsyncRelayCommand(_reset);
+    resetCommand = asyncRelayCommand(_reset);
     
-    addValueCommand = RelayCommandWithParam<int>(
-      _addValue,
+    addValueCommand = relayCommandWithParam<int>(
+       _addValue,
       canExecute: (value) => value > 0 && !isProcessing.value,
     );
     
     // When isProcessing changes, refresh commands
-    isProcessing.addListener(() {
-      incrementCommand.refresh();
-      decrementCommand.refresh();
-      addValueCommand.refresh();
+    _disposeIsProcessingListener = isProcessing.propertyChanged(() {
+      incrementCommand.notifyCanExecuteChanged();
+      decrementCommand.notifyCanExecuteChanged();
+      addValueCommand.notifyCanExecuteChanged();
     });
     
     // When counter changes, refresh decrement command (requires > 0)
-    counter.addListener(() {
-      decrementCommand.refresh();
+    _disposeCounterListener = counter.propertyChanged(() {
+      decrementCommand.notifyCanExecuteChanged();
     });
+  }
+  
+  @override
+  void dispose() {
+    _disposeIsProcessingListener();
+    _disposeCounterListener();
+    super.dispose();
   }
   
   void _increment() {
@@ -79,12 +89,7 @@ class CounterViewModel extends ObservableObject {
     counter.value += value;
   }
   
-  @override
-  void dispose() {
-    counter.dispose();
-    isProcessing.dispose();
-    super.dispose();
-  }
+  // counter and isProcessing auto-disposed by super.dispose()
 }
 
 void main() {
@@ -103,7 +108,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => CounterViewModel(
+              viewModel: (_) => CounterViewModel(
                 FairyLocator.instance.get<CounterService>(),
               ),
               child: Column(
@@ -270,7 +275,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () {
+              viewModel: (_) {
                 vm = CounterViewModel(
                   FairyLocator.instance.get<CounterService>(),
                 );
@@ -296,10 +301,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // ViewModel should be disposed by FairyScope
-      expect(
-        () => vm!.counter.value = 5,
-        throwsA(isA<AssertionError>()), // Disposed ChangeNotifier throws
-      );
+      // With auto-disposal, properties are disposed but field still exists
+      // Setting value still works, but listeners have been removed
+      vm!.counter.value = 5;
+      expect(vm!.counter.value, 5); // Can still read/write after disposal
     });
 
     testWidgets('global DI: ViewModel survives widget disposal', (tester) async {
@@ -341,7 +346,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => CounterViewModel(
+              viewModel: (_) => CounterViewModel(
                 FairyLocator.instance.get<CounterService>(),
               ),
               child: Column(
