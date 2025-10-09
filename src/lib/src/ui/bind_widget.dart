@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import '../core/observable.dart';
-import '../locator/viewmodel_locator.dart';
+import '../locator/fairy_resolver.dart';
 
 /// A widget that binds ViewModel data to UI with automatic type detection.
 ///
@@ -16,7 +16,11 @@ import '../locator/viewmodel_locator.dart';
 /// ## Two-Way Binding Example:
 /// ```dart
 /// class UserViewModel extends ObservableObject {
-///   final userName = ObservableProperty<String>('');
+///   late final ObservableProperty<String> userName;
+///   
+///   UserViewModel() {
+///     userName = ObservableProperty<String>('', parent: this);
+///   }
 /// }
 ///
 /// Bind<UserViewModel, String>(
@@ -33,7 +37,12 @@ import '../locator/viewmodel_locator.dart';
 /// ## One-Way Binding Example:
 /// ```dart
 /// class CounterViewModel extends ObservableObject {
-///   final count = ObservableProperty<int>(0);
+///   late final ObservableProperty<int> count;
+///   
+///   CounterViewModel() {
+///     count = ObservableProperty<int>(0, parent: this);
+///   }
+///   
 ///   int get doubled => count.value * 2;  // Computed property
 /// }
 ///
@@ -50,7 +59,9 @@ import '../locator/viewmodel_locator.dart';
 class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
 
   const Bind({
-    required this.selector, required this.builder, super.key,
+    required this.selector, 
+    required this.builder, 
+    super.key,
     this.oneTime = false,
   });
   /// Selector function that extracts the bindable value from the ViewModel.
@@ -102,7 +113,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
     _initialized = true;
 
     // Resolve ViewModel from context
-    _viewModel = ViewModelLocator.resolve<TViewModel>(context);
+    _viewModel = Fairy.of<TViewModel>(context);
 
     // Evaluate selector
     _selected = widget.selector(_viewModel);
@@ -116,13 +127,13 @@ class _BindState<TViewModel extends ObservableObject, TValue>
     if (_selected is ObservableProperty<TValue>) {
       // Two-way binding: subscribe to the property directly
       _listener = () => setState(() {});
-      _listenerDisposer = (_selected as ObservableProperty<TValue>).listen(_listener!);
+      _listenerDisposer = (_selected as ObservableProperty<TValue>).propertyChanged(_listener!);
     } else {
       // One-way binding: subscribe to ViewModel and re-evaluate selector
       _listener = () => setState(() {
             _selected = widget.selector(_viewModel);
           });
-      _listenerDisposer = _viewModel.listen(_listener!);
+      _listenerDisposer = _viewModel.propertyChanged(_listener!);
     }
   }
 
@@ -138,12 +149,12 @@ class _BindState<TViewModel extends ObservableObject, TValue>
       if (!widget.oneTime) {
         if (_selected is ObservableProperty<TValue>) {
           _listener = () => setState(() {});
-          _listenerDisposer = (_selected as ObservableProperty<TValue>).listen(_listener!);
+          _listenerDisposer = (_selected as ObservableProperty<TValue>).propertyChanged(_listener!);
         } else {
           _listener = () => setState(() {
                 _selected = widget.selector(_viewModel);
               });
-          _listenerDisposer = _viewModel.listen(_listener!);
+          _listenerDisposer = _viewModel.propertyChanged(_listener!);
         }
       }
     }
