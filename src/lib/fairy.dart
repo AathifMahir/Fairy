@@ -16,18 +16,17 @@
 /// ```dart
 /// // 1. Create a ViewModel
 /// class CounterViewModel extends ObservableObject {
-///   final count = ObservableProperty<int>(0);
+///   final count = ObservableProperty<int>(0, parent: this);
 ///   late final RelayCommand increment;
 ///
 ///   CounterViewModel() {
-///     increment = RelayCommand(() => count.value++);
+///     increment = RelayCommand(
+///       execute: () => count.value++,
+///       parent: this,
+///     );
 ///   }
 ///
-///   @override
-///   void dispose() {
-///     count.dispose();
-///     super.dispose();
-///   }
+///   // Properties and commands auto-disposed by super.dispose()
 /// }
 ///
 /// // 2. Provide it via FairyScope
@@ -61,11 +60,12 @@ export 'src/core/command.dart'
 export 'src/core/observable.dart'
     show ObservableObject, ObservableProperty, ComputedProperty;
 // Extensions
-export 'src/extensions.dart' show FairyContextExtensions;
+export 'src/extensions.dart'
+    show FairyContextExtensions, ObservableObjectExtensions;
 // Dependency injection
 export 'src/locator/fairy_locator.dart' show FairyLocator;
 export 'src/locator/fairy_scope.dart' show FairyScope, FairyScopeData;
-export 'src/locator/viewmodel_locator.dart' show ViewModelLocator;
+export 'src/locator/fairy_resolver.dart' show Fairy;
 // UI binding widgets
 export 'src/ui/bind_widget.dart' show Bind;
 export 'src/ui/command_widget.dart' show Command, CommandWithParam;
