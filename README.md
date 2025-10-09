@@ -35,17 +35,27 @@ class CounterViewModel extends ObservableObject {
   late final increment = relayCommand(() => counter.value++);
 }
 
-// 2️⃣ Provide it with FairyScope
+// 2️⃣ Provide it with FairyScope (can be used anywhere!)
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: FairyScope(
-        create: () => CounterViewModel(),
+        viewModel: (_) => CounterViewModel(),
         child: CounterPage(),
       ),
     );
   }
+}
+
+// Or at app root, even above MaterialApp:
+void main() {
+  runApp(
+    FairyScope(
+      viewModel: (_) => AppViewModel(),
+      child: MyApp(),
+    ),
+  );
 }
 
 // 3️⃣ Bind to UI
@@ -143,14 +153,31 @@ Bind<UserViewModel, String>(
 ### Dependency Injection
 
 ```dart
-// Scoped (auto-disposed)
+// Scoped (auto-disposed) - use anywhere in your widget tree!
 FairyScope(
-  create: () => ProfileViewModel(userId: widget.userId),
+  viewModel: (_) => ProfileViewModel(userId: widget.userId),
   child: ProfilePage(),
+)
+
+// Multiple ViewModels in one scope
+FairyScope(
+  viewModels: [
+    (_) => UserViewModel(),
+    (_) => SettingsViewModel(),
+  ],
+  child: DashboardPage(),
 )
 
 // Global singleton
 FairyLocator.instance.registerSingleton<ApiService>(ApiService());
+
+// Access from FairyScope with dependency injection
+FairyScope(
+  viewModel: (locator) => ProfileViewModel(
+    api: locator.get<ApiService>(),
+  ),
+  child: ProfilePage(),
+)
 ```
 
 ## 📊 Performance

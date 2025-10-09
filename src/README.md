@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: FairyScope(
-        create: () => CounterViewModel(),
+        viewModel: (_) => CounterViewModel(),
         child: CounterPage(),
       ),
     );
@@ -348,40 +348,153 @@ Command<UserViewModel>(
 
 ### 6. Dependency Injection
 
-Fairy provides two DI patterns:
+Fairy provides two powerful DI patterns that can be used together:
 
 #### Scoped DI with FairyScope
 
-Widget-scoped ViewModels that are automatically disposed:
+`FairyScope` provides widget-scoped ViewModels with automatic lifecycle management. It's flexible and can be used **anywhere** in your widget tree:
+
+**At the app root (even above MaterialApp):**
+```dart
+void main() {
+  runApp(
+    FairyScope(
+      viewModel: (_) => AppViewModel(),
+      child: MyApp(),
+    ),
+  );
+}
+
+// Or wrap MaterialApp
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FairyScope(
+      viewModel: (_) => ThemeViewModel(),
+      child: MaterialApp(
+        home: HomePage(),
+      ),
+    );
+  }
+}
+```
+
+**At page level:**
+```dart
+FairyScope(
+  viewModel: (_) => ProfileViewModel(userId: widget.userId),
+  child: ProfilePage(),
+)
+```
+
+**Nested scopes (parent-child relationship):**
+```dart
+FairyScope(
+  viewModel: (_) => ParentViewModel(),
+  child: Column(
+    children: [
+      FairyScope(
+        viewModel: (_) => ChildViewModel(),
+        child: ChildWidget(),
+      ),
+    ],
+  ),
+)
+```
+
+**Multiple ViewModels in one scope:**
+```dart
+FairyScope(
+  viewModels: [
+    (_) => UserViewModel(),
+    (_) => SettingsViewModel(),
+    (_) => NotificationViewModel(),
+  ],
+  child: DashboardPage(),
+)
+```
+
+**Accessing ViewModels:**
+```dart
+// In widgets
+final userVM = Fairy.of<UserViewModel>(context);
+final settingsVM = context.of<SettingsViewModel>();
+
+// In ViewModels (dependency injection)
+FairyScope(
+  viewModels: [
+    (locator) => UserViewModel(
+      api: locator.get<ApiService>(),  // Access previously registered VM
+    ),
+  ],
+  child: MyPage(),
+)
+```
+
+**Auto-disposal:**
+By default, FairyScope automatically disposes ViewModels when removed from the tree. You can control this:
 
 ```dart
 FairyScope(
-  create: () => CounterViewModel(),  // Auto-disposed when removed
-  child: MyWidget(),
+  viewModel: (_) => MyViewModel(),
+  autoDispose: true,  // Default: auto-dispose when scope is removed
+  child: MyPage(),
+)
+
+FairyScope(
+  viewModel: (_) => SharedViewModel(),
+  autoDispose: false,  // Keep alive, manual disposal required
+  child: MyPage(),
 )
 ```
 
 #### Global DI with FairyLocator
 
-Singleton registration for app-wide services:
+For app-wide singletons like services:
 
 ```dart
-// Register
-FairyLocator.instance.registerSingleton<ApiService>(ApiService());
+// Register in main()
+void main() {
+  FairyLocator.instance.registerSingleton<ApiService>(ApiService());
+  FairyLocator.instance.registerSingleton<AuthService>(AuthService());
+  FairyLocator.instance.registerLazy<DatabaseService>(() => DatabaseService());
+  
+  runApp(MyApp());
+}
 
-// Access
+// Access anywhere
 final api = FairyLocator.instance.get<ApiService>();
 
-// Cleanup
+// Or use in FairyScope
+FairyScope(
+  viewModel: (locator) => ProfileViewModel(
+    api: locator.get<ApiService>(),
+    auth: locator.get<AuthService>(),
+  ),
+  child: ProfilePage(),
+)
+
+// Cleanup (usually not needed for app-wide services)
 FairyLocator.instance.unregister<ApiService>();
 ```
 
 #### Resolution Order
 
-`Fairy.of<T>(context)` checks:
-1. Nearest `FairyScope` in widget tree
-2. `FairyLocator` global registry
-3. Throws exception if not found
+`Fairy.of<T>(context)` and the `locator` parameter in FairyScope check:
+1. **Current FairyScope** - ViewModels registered in the nearest scope
+2. **Parent FairyScopes** - ViewModels from ancestor scopes (walking up the tree)
+3. **FairyLocator** - Global singleton registry
+4. **Throws exception** if not found
+
+This design allows:
+- ✅ Child ViewModels to access parent ViewModels
+- ✅ Any ViewModel to access global services
+- ✅ Proper scoping and lifecycle management
+- ✅ Compile-time type safety
 
 **Note:** The API follows Flutter's convention (e.g., `Theme.of(context)`, `MediaQuery.of(context)`) for familiar and idiomatic usage.
 
@@ -607,7 +720,7 @@ Command<MyViewModel>(
 ```dart
 // ✅ Good: Scoped ViewModel auto-disposed
 FairyScope(
-  create: () => UserProfileViewModel(userId: widget.userId),
+  viewModel: (_) => UserProfileViewModel(userId: widget.userId),
   child: UserProfilePage(),
 )
 
@@ -686,7 +799,7 @@ testWidgets('counter increments on button tap', (tester) async {
   await tester.pumpWidget(
     MaterialApp(
       home: FairyScope(
-        create: () => CounterViewModel(),
+        viewModel: (_) => CounterViewModel(),
         child: CounterPage(),
       ),
     ),

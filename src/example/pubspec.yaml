@@ -37,7 +37,7 @@ dependencies:
   
   # Fairy MVVM Framework
   fairy:
-    path: ../src
+    path: ../
 
 dev_dependencies:
   flutter_test:
