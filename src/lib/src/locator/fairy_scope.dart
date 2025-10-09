@@ -1,5 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:meta/meta.dart';
+
 import '../core/observable.dart';
 import 'fairy_locator.dart';
 
