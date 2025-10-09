@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:fairy/src/core/observable.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fairy/src/core/command.dart';
 
@@ -157,12 +157,12 @@ void main() {
         var notificationCount = 0;
         final command = RelayCommand(() {});
         
-        command.addListener(() => notificationCount++);
+        command.canExecuteChanged(() => notificationCount++);
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(2));
         
         command.dispose();
@@ -173,10 +173,10 @@ void main() {
         var listener2Count = 0;
         final command = RelayCommand(() {});
         
-        command.addListener(() => listener1Count++);
-        command.addListener(() => listener2Count++);
+        command.canExecuteChanged(() => listener1Count++);
+        command.canExecuteChanged(() => listener2Count++);
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         
         expect(listener1Count, equals(1));
         expect(listener2Count, equals(1));
@@ -193,7 +193,7 @@ void main() {
           canExecute: () => isValid,
         );
         
-        command.addListener(() {
+        command.canExecuteChanged(() {
           canExecuteChecks.add(command.canExecute);
         });
         
@@ -202,7 +202,7 @@ void main() {
         
         // Change condition and refresh
         isValid = true;
-        command.refresh(); // UI should check canExecute now
+        command.notifyCanExecuteChanged(); // UI should check canExecute now
         
         expect(canExecuteChecks.last, isTrue);
         
@@ -215,11 +215,11 @@ void main() {
         final command = RelayCommand(() {});
         final callOrder = <int>[];
         
-        command.addListener(() => callOrder.add(1));
-        command.addListener(() => callOrder.add(2));
-        command.addListener(() => callOrder.add(3));
+        command.canExecuteChanged(() => callOrder.add(1));
+        command.canExecuteChanged(() => callOrder.add(2));
+        command.canExecuteChanged(() => callOrder.add(3));
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         
         expect(callOrder, equals([1, 2, 3]));
         
@@ -234,12 +234,12 @@ void main() {
           notificationCount++;
         }
         
-        command.addListener(listener);
-        command.refresh();
+        final disposer = command.canExecuteChanged(listener);
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
-        command.removeListener(listener);
-        command.refresh();
+        disposer();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1)); // Still 1
         
         command.dispose();
@@ -251,20 +251,20 @@ void main() {
         final command = RelayCommand(() {});
         var notificationCount = 0;
         
-        command.addListener(() => notificationCount++);
-        command.refresh();
+        command.canExecuteChanged(() => notificationCount++);
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
         command.dispose();
         
-        expect(() => command.refresh(), throwsFlutterError);
+        expect(() => command.notifyCanExecuteChanged(), throwsFlutterError);
       });
 
       test('should not allow adding listeners after disposal', () {
         final command = RelayCommand(() {});
         command.dispose();
         
-        expect(() => command.addListener(() {}), throwsFlutterError);
+        expect(() => command.canExecuteChanged(() {}), throwsFlutterError);
       });
     });
 
@@ -272,7 +272,7 @@ void main() {
       test('should work in ViewModel scenario with validation', () {
         final viewModel = TestViewModel();
         
-        viewModel.saveCommand.addListener(() {});
+        viewModel.saveCommand.canExecuteChanged(() {});
         
         // Initially cannot save (empty username)
         expect(viewModel.saveCommand.canExecute, isFalse);
@@ -281,7 +281,7 @@ void main() {
         
         // Set username and refresh command
         viewModel.userName.value = 'Alice';
-        viewModel.saveCommand.refresh();
+        viewModel.saveCommand.notifyCanExecuteChanged();
         
         // Now can save
         expect(viewModel.saveCommand.canExecute, isTrue);
@@ -295,10 +295,10 @@ void main() {
         var notificationCount = 0;
         final command = RelayCommand(() {});
         
-        command.addListener(() => notificationCount++);
+        command.canExecuteChanged(() => notificationCount++);
         
         for (var i = 0; i < 100; i++) {
-          command.refresh();
+          command.notifyCanExecuteChanged();
         }
         
         expect(notificationCount, equals(100));
@@ -431,7 +431,7 @@ void main() {
           await Future<void>.delayed(const Duration(milliseconds: 10));
         });
         
-        command.addListener(() {
+        command.canExecuteChanged(() {
           notificationCount++;
           isRunningStates.add(command.isRunning);
         });
@@ -555,12 +555,12 @@ void main() {
         var notificationCount = 0;
         final command = AsyncRelayCommand(() async {});
         
-        command.addListener(() => notificationCount++);
+        command.canExecuteChanged(() => notificationCount++);
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(2));
         
         command.dispose();
@@ -576,7 +576,7 @@ void main() {
         expect(command.canExecute, isFalse);
         
         isValid = true;
-        command.refresh();
+        command.notifyCanExecuteChanged();
         
         expect(command.canExecute, isTrue);
         
@@ -589,13 +589,13 @@ void main() {
         final command = AsyncRelayCommand(() async {});
         var notificationCount = 0;
         
-        command.addListener(() => notificationCount++);
-        command.refresh();
+        command.canExecuteChanged(() => notificationCount++);
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
         command.dispose();
         
-        expect(() => command.refresh(), throwsFlutterError);
+        expect(() => command.notifyCanExecuteChanged(), throwsFlutterError);
       });
     });
 
@@ -604,7 +604,7 @@ void main() {
         final viewModel = AsyncTestViewModel();
         final capturedStates = <bool>[];
         
-        viewModel.fetchCommand.addListener(() {
+        viewModel.fetchCommand.canExecuteChanged(() {
           capturedStates.add(viewModel.fetchCommand.isRunning);
         });
         
@@ -663,34 +663,8 @@ class TestViewModel {
   }
 
   void dispose() {
-    userName.dispose();
+    // userName auto-disposed
     saveCommand.dispose();
-  }
-}
-
-class ObservableProperty<T> {
-  T _value;
-  final _listeners = <VoidCallback>[];
-
-  ObservableProperty(this._value);
-
-  T get value => _value;
-  
-  set value(T newValue) {
-    if (_value != newValue) {
-      _value = newValue;
-      for (final listener in _listeners) {
-        listener();
-      }
-    }
-  }
-
-  void addListener(VoidCallback listener) {
-    _listeners.add(listener);
-  }
-
-  void dispose() {
-    _listeners.clear();
   }
 }
 
@@ -708,7 +682,6 @@ class AsyncTestViewModel {
   }
 
   void dispose() {
-    data.dispose();
     fetchCommand.dispose();
   }
 }
