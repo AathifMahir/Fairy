@@ -63,7 +63,7 @@ void main() {
     group('onPropertyChanged()', () {
       test('should call notifyListeners when onPropertyChanged is called', () {
         var notificationCount = 0;
-        final dispose = viewModel.listen(() {
+        final dispose = viewModel.propertyChanged(() {
           notificationCount++;
         });
 
@@ -81,9 +81,9 @@ void main() {
         var listener2Count = 0;
         var listener3Count = 0;
 
-        final dispose1 = viewModel.listen(() => listener1Count++);
-        final dispose2 = viewModel.listen(() => listener2Count++);
-        final dispose3 = viewModel.listen(() => listener3Count++);
+        final dispose1 = viewModel.propertyChanged(() => listener1Count++);
+        final dispose2 = viewModel.propertyChanged(() => listener2Count++);
+        final dispose3 = viewModel.propertyChanged(() => listener3Count++);
 
         viewModel.testNotify();
 
@@ -102,7 +102,7 @@ void main() {
           notificationCount++;
         }
 
-        final dispose = viewModel.listen(listener);
+        final dispose = viewModel.propertyChanged(listener);
         viewModel.testNotify();
         expect(notificationCount, equals(1));
 
@@ -115,7 +115,7 @@ void main() {
     group('setProperty()', () {
       test('should notify listeners when value changes', () {
         var notificationCount = 0;
-        final dispose = viewModel.listen(() {
+        final dispose = viewModel.propertyChanged(() {
           notificationCount++;
         });
 
@@ -130,7 +130,7 @@ void main() {
         var notificationCount = 0;
         viewModel.setCountWithHelper(10);
         
-        final dispose = viewModel.listen(() {
+        final dispose = viewModel.propertyChanged(() {
           notificationCount++;
         });
 
@@ -181,7 +181,7 @@ void main() {
 
       test('should work with different types', () {
         var notificationCount = 0;
-        final dispose = viewModel.listen(() {
+        final dispose = viewModel.propertyChanged(() {
           notificationCount++;
         });
 
@@ -205,7 +205,7 @@ void main() {
       test('should handle null values correctly', () {
         String? nullableValue;
         var notificationCount = 0;
-        final dispose = viewModel.listen(() => notificationCount++);
+        final dispose = viewModel.propertyChanged(() => notificationCount++);
 
         // null to non-null
         var changed = viewModel.testSetProperty(
@@ -241,7 +241,7 @@ void main() {
     group('manual notification', () {
       test('should notify when using manual onPropertyChanged() call', () {
         var notificationCount = 0;
-        final dispose = viewModel.listen(() {
+        final dispose = viewModel.propertyChanged(() {
           notificationCount++;
         });
 
@@ -254,7 +254,7 @@ void main() {
 
       test('should allow notification even without property changes', () {
         var notificationCount = 0;
-        final dispose = viewModel.listen(() {
+        final dispose = viewModel.propertyChanged(() {
           notificationCount++;
         });
 
@@ -273,7 +273,7 @@ void main() {
     group('disposal', () {
       test('should not notify listeners after disposal', () {
         var notificationCount = 0;
-        final dispose = viewModel.listen(() {
+        final dispose = viewModel.propertyChanged(() {
           notificationCount++;
         });
 
@@ -296,7 +296,7 @@ void main() {
       test('should not allow adding listeners after disposal', () {
         viewModel.dispose();
         expect(
-          () => viewModel.listen(() {}),
+          () => viewModel.propertyChanged(() {}),
           throwsFlutterError,
         );
       });
@@ -306,9 +306,9 @@ void main() {
       test('should support multiple listeners', () {
         final counts = <int>[];
         
-        final dispose1 = viewModel.listen(() => counts.add(1));
-        final dispose2 = viewModel.listen(() => counts.add(2));
-        final dispose3 = viewModel.listen(() => counts.add(3));
+        final dispose1 = viewModel.propertyChanged(() => counts.add(1));
+        final dispose2 = viewModel.propertyChanged(() => counts.add(2));
+        final dispose3 = viewModel.propertyChanged(() => counts.add(3));
 
         viewModel.testNotify();
 
@@ -323,9 +323,9 @@ void main() {
         var count = 0;
         void listener() => count++;
 
-        final dispose1 = viewModel.listen(listener);
-        final dispose2 = viewModel.listen(listener);
-        final dispose3 = viewModel.listen(listener);
+        final dispose1 = viewModel.propertyChanged(listener);
+        final dispose2 = viewModel.propertyChanged(listener);
+        final dispose3 = viewModel.propertyChanged(listener);
 
         viewModel.testNotify();
 
@@ -341,8 +341,8 @@ void main() {
         var count = 0;
         void listener() => count++;
 
-        final dispose1 = viewModel.listen(listener);
-        final dispose2 = viewModel.listen(listener);
+        final dispose1 = viewModel.propertyChanged(listener);
+        final dispose2 = viewModel.propertyChanged(listener);
         
         dispose1(); // Removes one
         
@@ -354,7 +354,7 @@ void main() {
       
       test('should return disposer function that removes listener', () {
         var count = 0;
-        final dispose = viewModel.listen(() => count++);
+        final dispose = viewModel.propertyChanged(() => count++);
         
         viewModel.testNotify();
         expect(count, equals(1));
@@ -372,7 +372,7 @@ void main() {
       });
 
       test('should return true when listeners are registered', () {
-        final dispose = viewModel.listen(() {});
+        final dispose = viewModel.propertyChanged(() {});
         expect(viewModel.testHasListeners, isTrue);
         dispose();
       });
@@ -380,7 +380,7 @@ void main() {
       test('should return false after all listeners are removed', () {
         void listener() {}
         
-        final dispose = viewModel.listen(listener);
+        final dispose = viewModel.propertyChanged(listener);
         expect(viewModel.testHasListeners, isTrue);
         
         dispose();
@@ -391,7 +391,7 @@ void main() {
     group('integration scenarios', () {
       test('should handle complex state updates correctly', () {
         var notificationCount = 0;
-        final dispose = viewModel.listen(() => notificationCount++);
+        final dispose = viewModel.propertyChanged(() => notificationCount++);
 
         // Multiple changes
         viewModel.setCountWithHelper(1);
@@ -407,7 +407,7 @@ void main() {
 
       test('should handle mixed manual and automatic notifications', () {
         var notificationCount = 0;
-        final dispose = viewModel.listen(() => notificationCount++);
+        final dispose = viewModel.propertyChanged(() => notificationCount++);
 
         viewModel.setCountManually(1);
         viewModel.setCountWithHelper(2);
