@@ -1,3 +1,4 @@
+import 'package:fairy/src/core/observable.dart';
 import 'package:flutter/foundation.dart';
 
 /// Callback type for evaluating whether a command can execute.
@@ -14,35 +15,74 @@ typedef CanExecute = bool Function();
 /// Example:
 /// ```dart
 /// class MyViewModel extends ObservableObject {
-///   final userName = ObservableProperty<String>('');
+///   late final ObservableProperty<String> userName;
 ///   late final RelayCommand saveCommand;
+///   VoidCallback? _disposer;
 ///
 ///   MyViewModel() {
+///     userName = ObservableProperty<String>('', parent: this);
+///     
 ///     saveCommand = RelayCommand(
 ///       _save,
 ///       canExecute: () => userName.value.isNotEmpty,
+///       parent: this,
 ///     );
 ///
 ///     // Refresh command when validation state changes
-///     userName.addListener(() => saveCommand.refresh());
+///     _disposer = userName.propertyChanged(() => saveCommand.notifyCanExecuteChanged());
 ///   }
 ///
 ///   void _save() {
 ///     // Save logic here
 ///   }
+///   
+///   @override
+///   void dispose() {
+///     _disposer?.call();
+///     super.dispose();
+///   }
 /// }
 /// ```
 class RelayCommand extends ChangeNotifier {
 
-  /// Creates a [RelayCommand] with an action and optional canExecute predicate.
-  ///
-  /// [action] is the method to execute when the command runs.
-  /// [canExecute] is an optional predicate that determines if the action can run.
-  /// If omitted, the command can always execute.
-  RelayCommand(this._action, {CanExecute? canExecute})
-      : _canExecute = canExecute;
   final VoidCallback _action;
   final CanExecute? _canExecute;
+
+  /// Creates a [RelayCommand] with an action and optional canExecute predicate.
+  ///
+  /// [execute] is the method to execute when the command runs.
+  /// [canExecute] is an optional predicate that determines if the action can run.
+  /// If omitted, the command can always execute.
+  /// 
+  /// If [parent] is provided, this command will be automatically disposed
+  /// when the parent is disposed. If null, you must manually call dispose().
+  RelayCommand(
+    VoidCallback execute, {
+    CanExecute? canExecute,
+    ObservableObject? parent,
+  })  : _action = execute,
+        _canExecute = canExecute {
+    if (parent != null) {
+      parent.registerChild(this);
+    }
+  }
+
+    // ========================================================================
+  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
+  // ========================================================================
+  
+  @override
+  @protected
+  void addListener(VoidCallback listener) => super.addListener(listener);
+  
+  @override
+  @protected
+  void removeListener(VoidCallback listener) => super.removeListener(listener);
+  
+  @override
+  @protected
+  // ignore: unnecessary_overrides
+  void notifyListeners() => super.notifyListeners();
 
   /// Whether the command can currently execute.
   ///
@@ -63,7 +103,30 @@ class RelayCommand extends ChangeNotifier {
   ///
   /// Call this method when the conditions for [canExecute] change (e.g., when
   /// a property that affects validation is updated).
-  void refresh() => notifyListeners();
+  void notifyCanExecuteChanged() => notifyListeners();
+
+
+  /// Listens for changes to [canExecute].
+  ///
+  /// Returns a disposal function that removes the listener when called.
+  /// This provides a cleaner alternative to manually managing [addListener]
+  /// and [removeListener] calls.
+  ///
+  /// Example:
+  /// ```dart
+  /// final command = RelayCommand(() { /* ... */ });
+  /// 
+  /// final dispose = command.canExecuteChanged(() {
+  ///   print('Can Execute changed!');
+  /// });
+  /// 
+  /// // Later, clean up:
+  /// dispose();
+  /// ```
+  VoidCallback canExecuteChanged(VoidCallback listener) {
+    addListener(listener);
+    return () => removeListener(listener);
+  }
 
 }
 
@@ -79,11 +142,16 @@ class RelayCommand extends ChangeNotifier {
 /// Example:
 /// ```dart
 /// class DataViewModel extends ObservableObject {
-///   final data = ObservableProperty<List<Item>?>([]);
+///   late final ObservableProperty<List<Item>?> data;
 ///   late final AsyncRelayCommand fetchDataCommand;
 ///
 ///   DataViewModel() {
-///     fetchDataCommand = AsyncRelayCommand(_fetchData);
+///     data = ObservableProperty<List<Item>?>([], parent: this);
+///     
+///     fetchDataCommand = AsyncRelayCommand(
+///       _fetchData,
+///       parent: this,
+///     );
 ///   }
 ///
 ///   Future<void> _fetchData() async {
@@ -100,16 +168,45 @@ class RelayCommand extends ChangeNotifier {
 /// ```
 class AsyncRelayCommand extends ChangeNotifier {
 
-  /// Creates an [AsyncRelayCommand] with an async action and optional canExecute predicate.
-  ///
-  /// [action] is the asynchronous method to execute when the command runs.
-  /// [canExecute] is an optional predicate that determines if the action can run.
-  /// The command automatically disables during execution regardless of [canExecute].
-  AsyncRelayCommand(this._action, {CanExecute? canExecute})
-      : _canExecute = canExecute;
   final Future<void> Function() _action;
   final CanExecute? _canExecute;
   bool _isRunning = false;
+
+  /// Creates an [AsyncRelayCommand] with an async action and optional canExecute predicate.
+  ///
+  /// [execute] is the asynchronous method to execute when the command runs.
+  /// [canExecute] is an optional predicate that determines if the action can run.
+  /// The command automatically disables during execution regardless of [canExecute].
+  /// 
+  /// If [parent] is provided, this command will be automatically disposed
+  /// when the parent is disposed. If null, you must manually call dispose().
+  AsyncRelayCommand(
+    Future<void> Function() execute, {
+    CanExecute? canExecute,
+    ObservableObject? parent,
+  })  : _action = execute,
+        _canExecute = canExecute {
+    if (parent != null) {
+      parent.registerChild(this);
+    }
+  }
+
+    // ========================================================================
+  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
+  // ========================================================================
+  
+  @override
+  @protected
+  void addListener(VoidCallback listener) => super.addListener(listener);
+  
+  @override
+  @protected
+  void removeListener(VoidCallback listener) => super.removeListener(listener);
+  
+  @override
+  @protected
+  // ignore: unnecessary_overrides
+  void notifyListeners() => super.notifyListeners();
 
   /// Whether the command is currently executing.
   ///
@@ -146,7 +243,29 @@ class AsyncRelayCommand extends ChangeNotifier {
   /// Notifies listeners that [canExecute] may have changed.
   ///
   /// Call this method when the conditions for the [canExecute] predicate change.
-  void refresh() => notifyListeners();
+  void notifyCanExecuteChanged() => notifyListeners();
+
+    /// Listens for changes to [canExecute].
+  ///
+  /// Returns a disposal function that removes the listener when called.
+  /// This provides a cleaner alternative to manually managing [addListener]
+  /// and [removeListener] calls.
+  ///
+  /// Example:
+  /// ```dart
+  /// final command = AsyncRelayCommand(() { /* ... */ });
+  /// 
+  /// final dispose = command.canExecuteChanged(() {
+  ///   print('Can Execute changed!');
+  /// });
+  /// 
+  /// // Later, clean up:
+  /// dispose();
+  /// ```
+  VoidCallback canExecuteChanged(VoidCallback listener) {
+    addListener(listener);
+    return () => removeListener(listener);
+  }
 
 }
 
@@ -159,13 +278,16 @@ class AsyncRelayCommand extends ChangeNotifier {
 /// Example:
 /// ```dart
 /// class TodoViewModel extends ObservableObject {
-///   final todos = ObservableProperty<List<Todo>>([]);
+///   late final ObservableProperty<List<Todo>> todos;
 ///   late final RelayCommandWithParam<String> deleteTodoCommand;
 ///
 ///   TodoViewModel() {
+///     todos = ObservableProperty<List<Todo>>([], parent: this);
+///     
 ///     deleteTodoCommand = RelayCommandWithParam<String>(
 ///       _deleteTodo,
 ///       canExecute: (id) => todos.value.any((t) => t.id == id),
+///       parent: this,
 ///     );
 ///   }
 ///
@@ -176,15 +298,44 @@ class AsyncRelayCommand extends ChangeNotifier {
 /// ```
 class RelayCommandWithParam<TParam> extends ChangeNotifier {
 
-  /// Creates a parameterized command with an action and optional canExecute predicate.
-  ///
-  /// [action] receives a parameter of type [TParam] when executed.
-  /// [canExecute] optionally validates whether the action can run with the given parameter.
-  RelayCommandWithParam(this._action, {bool Function(TParam)? canExecute})
-      : _canExecute = canExecute;
-      
   final void Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
+
+  /// Creates a parameterized command with an action and optional canExecute predicate.
+  ///
+  /// [execute] receives a parameter of type [TParam] when executed.
+  /// [canExecute] optionally validates whether the action can run with the given parameter.
+  /// 
+  /// If [parent] is provided, this command will be automatically disposed
+  /// when the parent is disposed. If null, you must manually call dispose().
+  RelayCommandWithParam(
+    void Function(TParam) execute, {
+    bool Function(TParam)? canExecute,
+    ObservableObject? parent,
+  })  : _action = execute,
+        _canExecute = canExecute {
+    if (parent != null) {
+      parent.registerChild(this);
+    }
+  }
+
+
+    // ========================================================================
+  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
+  // ========================================================================
+  
+  @override
+  @protected
+  void addListener(VoidCallback listener) => super.addListener(listener);
+  
+  @override
+  @protected
+  void removeListener(VoidCallback listener) => super.removeListener(listener);
+  
+  @override
+  @protected
+  // ignore: unnecessary_overrides
+  void notifyListeners() => super.notifyListeners();
 
   /// Whether the command can execute with the given [param].
   ///
@@ -204,7 +355,29 @@ class RelayCommandWithParam<TParam> extends ChangeNotifier {
   /// Notifies listeners that [canExecute] may have changed.
   ///
   /// Call this method when the conditions affecting [canExecute] change.
-  void refresh() => notifyListeners();
+  void notifyCanExecuteChanged() => notifyListeners();
+
+    /// Listens for changes to [canExecute].
+  ///
+  /// Returns a disposal function that removes the listener when called.
+  /// This provides a cleaner alternative to manually managing [addListener]
+  /// and [removeListener] calls.
+  ///
+  /// Example:
+  /// ```dart
+  /// final command = RelayCommandWithParam<String>(() { /* ... */ });
+  /// 
+  /// final dispose = command.canExecuteChanged(() {
+  ///   print('Can Execute changed!');
+  /// });
+  /// 
+  /// // Later, clean up:
+  /// dispose();
+  /// ```
+  VoidCallback canExecuteChanged(VoidCallback listener) {
+    addListener(listener);
+    return () => removeListener(listener);
+  }
 
 }
 
@@ -219,7 +392,10 @@ class RelayCommandWithParam<TParam> extends ChangeNotifier {
 ///   late final AsyncRelayCommandWithParam<String> loadUserCommand;
 ///
 ///   UserViewModel() {
-///     loadUserCommand = AsyncRelayCommandWithParam<String>(_loadUser);
+///     loadUserCommand = AsyncRelayCommandWithParam<String>(
+///       _loadUser,
+///       parent: this,
+///     );
 ///   }
 ///
 ///   Future<void> _loadUser(String userId) async {
@@ -230,17 +406,45 @@ class RelayCommandWithParam<TParam> extends ChangeNotifier {
 /// ```
 class AsyncRelayCommandWithParam<TParam> extends ChangeNotifier {
 
-  /// Creates an async parameterized command.
-  ///
-  /// [action] is an async function that receives a parameter of type [TParam].
-  /// [canExecute] optionally validates whether the action can run with the given parameter.
-  AsyncRelayCommandWithParam(this._action,
-      {bool Function(TParam)? canExecute})
-      : _canExecute = canExecute;
-      
   final Future<void> Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
   bool _isRunning = false;
+
+  /// Creates an async parameterized command.
+  ///
+  /// [execute] is an async function that receives a parameter of type [TParam].
+  /// [canExecute] optionally validates whether the action can run with the given parameter.
+  /// 
+  /// If [parent] is provided, this command will be automatically disposed
+  /// when the parent is disposed. If null, you must manually call dispose().
+  AsyncRelayCommandWithParam(
+    Future<void> Function(TParam) execute, {
+    bool Function(TParam)? canExecute,
+    ObservableObject? parent,
+  })  : _action = execute,
+        _canExecute = canExecute {
+    if (parent != null) {
+      parent.registerChild(this);
+    }
+  }
+
+
+      // ========================================================================
+  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
+  // ========================================================================
+  
+  @override
+  @protected
+  void addListener(VoidCallback listener) => super.addListener(listener);
+  
+  @override
+  @protected
+  void removeListener(VoidCallback listener) => super.removeListener(listener);
+  
+  @override
+  @protected
+  // ignore: unnecessary_overrides
+  void notifyListeners() => super.notifyListeners();
 
   /// Whether the command is currently executing.
   bool get isRunning => _isRunning;
@@ -272,6 +476,29 @@ class AsyncRelayCommandWithParam<TParam> extends ChangeNotifier {
   }
 
   /// Notifies listeners that [canExecute] may have changed.
-  void refresh() => notifyListeners();
+  void notifyCanExecuteChanged() => notifyListeners();
+
+
+    /// Listens for changes to [canExecute].
+  ///
+  /// Returns a disposal function that removes the listener when called.
+  /// This provides a cleaner alternative to manually managing [addListener]
+  /// and [removeListener] calls.
+  ///
+  /// Example:
+  /// ```dart
+  /// final command = AsyncRelayCommandWithParam<String>(() { /* ... */ });
+  /// 
+  /// final dispose = command.canExecuteChanged(() {
+  ///   print('Can Execute changed!');
+  /// });
+  /// 
+  /// // Later, clean up:
+  /// dispose();
+  /// ```
+  VoidCallback canExecuteChanged(VoidCallback listener) {
+    addListener(listener);
+    return () => removeListener(listener);
+  }
 
 }
