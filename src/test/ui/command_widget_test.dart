@@ -19,11 +19,7 @@ class TestViewModel extends ObservableObject {
     saveCount++;
   }
   
-  @override
-  void dispose() {
-    canSave.dispose();
-    super.dispose();
-  }
+  // canSave auto-disposed by super.dispose()
 }
 
 class AsyncTestViewModel extends ObservableObject {
@@ -56,11 +52,7 @@ class ParamViewModel extends ObservableObject {
     lastProcessed = value;
   }
   
-  @override
-  void dispose() {
-    canProcess.dispose();
-    super.dispose();
-  }
+  // canProcess auto-disposed by super.dispose()
 }
 
 void main() {
@@ -73,7 +65,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => vm,
+              viewModel: (_) => vm,
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
                 builder: (context, execute, canExecute) {
@@ -103,7 +95,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => vm,
+              viewModel: (_) => vm,
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
                 builder: (context, execute, canExecute) {
@@ -130,7 +122,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => vm,
+              viewModel: (_) => vm,
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
                 builder: (context, execute, canExecute) {
@@ -149,7 +141,7 @@ void main() {
 
       // Enable command
       vm.canSave.value = true;
-      vm.saveCommand.refresh();
+      vm.saveCommand.notifyCanExecuteChanged();
       await tester.pump();
 
       expect(find.text('Enabled'), findsOneWidget);
@@ -163,7 +155,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => vm,
+              viewModel: (_) => vm,
               child: Command<AsyncTestViewModel>(
                 command: (vm) => vm.fetchCommand,
                 builder: (context, execute, canExecute) {
@@ -203,7 +195,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => vm,
+              viewModel: (_) => vm,
               child: Command<AsyncTestViewModel>(
                 command: (vm) => vm.fetchCommand,
                 builder: (context, execute, canExecute) {
@@ -243,7 +235,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => vm,
+              viewModel: (_) => vm,
               child: CommandWithParam<ParamViewModel, String>(
                 command: (vm) => vm.processCommand,
                 parameter: testData, // Required parameter
@@ -274,7 +266,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => vm,
+              viewModel: (_) => vm,
               child: Column(
                 children: [
                   Command<TestViewModel>(
@@ -304,7 +296,7 @@ void main() {
 
       // Enable command
       vm.canSave.value = true;
-      vm.saveCommand.refresh();
+      vm.saveCommand.notifyCanExecuteChanged();
       await tester.pump();
 
       // Both buttons should work
@@ -347,7 +339,7 @@ void main() {
 
       // Command should still work after widget disposal
       vm.canSave.value = true;
-      vm.saveCommand.refresh();
+      vm.saveCommand.notifyCanExecuteChanged();
       expect(() => vm.saveCommand.execute(), returnsNormally);
     });
   });
