@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import '../core/observable.dart';
 import '../core/command.dart';
-import '../locator/viewmodel_locator.dart';
+import '../locator/fairy_resolver.dart';
 
 /// A widget that binds a [RelayCommand] or [AsyncRelayCommand] to UI.
 ///
@@ -18,18 +18,29 @@ import '../locator/viewmodel_locator.dart';
 /// ## Basic Example (RelayCommand):
 /// ```dart
 /// class MyViewModel extends ObservableObject {
-///   final userName = ObservableProperty<String>('');
+///   late final ObservableProperty<String> userName;
 ///   late final RelayCommand saveCommand;
+///   VoidCallback? _disposer;
 ///
 ///   MyViewModel() {
+///     userName = ObservableProperty<String>('', parent: this);
+///     
 ///     saveCommand = RelayCommand(
-///       _save,
+///       execute: _save,
 ///       canExecute: () => userName.value.isNotEmpty,
+///       parent: this,
 ///     );
-///     userName.addListener(() => saveCommand.refresh());
+///     
+///     _disposer = userName.propertyChanged(() => saveCommand.notifyCanExecuteChanged());
 ///   }
 ///
 ///   void _save() { /* ... */ }
+///   
+///   @override
+///   void dispose() {
+///     _disposer?.call();
+///     super.dispose();
+///   }
 /// }
 ///
 /// Command<MyViewModel>(
@@ -49,7 +60,10 @@ import '../locator/viewmodel_locator.dart';
 ///   late final AsyncRelayCommand fetchCommand;
 ///
 ///   DataViewModel() {
-///     fetchCommand = AsyncRelayCommand(_fetchData);
+///     fetchCommand = AsyncRelayCommand(
+///       execute: _fetchData,
+///       parent: this,
+///     );
 ///   }
 ///
 ///   Future<void> _fetchData() async { /* ... */ }
@@ -58,7 +72,7 @@ import '../locator/viewmodel_locator.dart';
 /// Command<DataViewModel>(
 ///   command: (vm) => vm.fetchCommand,
 ///   builder: (context, execute, canExecute) {
-///     final vm = context.viewModel<DataViewModel>();
+///     final vm = Fairy.of<DataViewModel>(context);
 ///     if (vm.fetchCommand.isRunning) {
 ///       return const CircularProgressIndicator();
 ///     }
@@ -117,7 +131,7 @@ class _CommandState<TViewModel extends ObservableObject>
     
     if (!_initialized) {
       // Resolve ViewModel
-      _viewModel = ViewModelLocator.resolve<TViewModel>(context);
+      _viewModel = Fairy.of<TViewModel>(context);
 
       // Extract command
       _commandInstance = widget.command(_viewModel);
@@ -192,7 +206,10 @@ class _CommandState<TViewModel extends ObservableObject>
 ///   late final RelayCommandWithParam<String> deleteTodoCommand;
 ///
 ///   TodoViewModel() {
-///     deleteTodoCommand = RelayCommandWithParam<String>(_deleteTodo);
+///     deleteTodoCommand = RelayCommandWithParam<String>(
+///       execute: _deleteTodo,
+///       parent: this,
+///     );
 ///   }
 ///
 ///   void _deleteTodo(String id) { /* ... */ }
@@ -254,7 +271,7 @@ class _CommandWithParamState<TViewModel extends ObservableObject, TParam>
     super.didChangeDependencies();
     
     if (!_initialized) {
-      _viewModel = ViewModelLocator.resolve<TViewModel>(context);
+      _viewModel = Fairy.of<TViewModel>(context);
       _commandInstance = widget.command(_viewModel);
       _listener = () => setState(() {});
       _commandInstance.addListener(_listener);
