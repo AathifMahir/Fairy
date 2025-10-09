@@ -12,7 +12,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
               selector: (vm) => vm.name,
               builder: (context, value, update) {
@@ -34,7 +34,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
               selector: (vm) => vm.name,
               builder: (context, value, update) {
@@ -55,7 +55,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
               selector: (vm) => vm.name,
               builder: (context, value, update) {
@@ -83,7 +83,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
               selector: (vm) => vm.name,
               builder: (context, value, update) {
@@ -112,7 +112,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => vm,
+              viewModel: (_) => vm,
               child: Bind<TestViewModel, String>(
                 selector: (vm) => vm.name,
                 builder: (context, value, update) {
@@ -143,7 +143,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<CounterViewModel, int>(
               selector: (vm) => vm.count,
               builder: (context, value, update) {
@@ -177,7 +177,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<NullableViewModel, String?>(
               selector: (vm) => vm.optionalName,
               builder: (context, value, update) {
@@ -211,7 +211,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
               selector: (vm) => vm.name,
               builder: (context, value, update) {
@@ -235,7 +235,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
               selector: (vm) => vm.name,
               builder: (context, value, update) {
@@ -264,7 +264,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
               selector: (vm) => vm.name,
               builder: (context, value, update) {
@@ -296,7 +296,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Column(
               children: [
                 Bind<TestViewModel, String>(
@@ -334,7 +334,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              create: () => vm,
+              viewModel: (_) => vm,
               child: Bind<BoolViewModel, bool>(
                 selector: (vm) => vm.isEnabled,
                 builder: (context, value, update) {
@@ -363,7 +363,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<CustomObjectViewModel, User>(
               selector: (vm) => vm.user,
               builder: (context, value, update) {
@@ -398,7 +398,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: StatefulBuilder(
               builder: (context, setState) {
                 return Column(
@@ -436,7 +436,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
               selector: (vm) => vm.name,
               builder: (context, value, update) {
