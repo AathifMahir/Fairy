@@ -235,10 +235,10 @@ void main() {
         
         command.addListener(() => notificationCount++);
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(2));
         
         command.dispose();
@@ -261,7 +261,7 @@ void main() {
         
         // Update valid IDs and refresh
         validIds.add('id3');
-        command.refresh();
+        command.notifyCanExecuteChanged();
         
         expect(canExecuteResults.last, isTrue);
         
@@ -278,7 +278,7 @@ void main() {
         command.addListener(() => callOrder.add(2));
         command.addListener(() => callOrder.add(3));
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         
         expect(callOrder, equals([1, 2, 3]));
         
@@ -294,11 +294,11 @@ void main() {
         }
         
         command.addListener(listener);
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
         command.removeListener(listener);
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1)); // Still 1
         
         command.dispose();
@@ -311,12 +311,12 @@ void main() {
         var notificationCount = 0;
         
         command.addListener(() => notificationCount++);
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
         command.dispose();
         
-        expect(() => command.refresh(), throwsFlutterError);
+        expect(() => command.notifyCanExecuteChanged(), throwsFlutterError);
       });
     });
 
@@ -626,10 +626,10 @@ void main() {
         
         command.addListener(() => notificationCount++);
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(2));
         
         command.dispose();
@@ -646,7 +646,7 @@ void main() {
         expect(command.canExecute(15), isTrue);
         
         threshold = 20;
-        command.refresh();
+        command.notifyCanExecuteChanged();
         
         expect(command.canExecute(15), isFalse);
         expect(command.canExecute(25), isTrue);
@@ -661,12 +661,12 @@ void main() {
         var notificationCount = 0;
         
         command.addListener(() => notificationCount++);
-        command.refresh();
+        command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
         command.dispose();
         
-        expect(() => command.refresh(), throwsFlutterError);
+        expect(() => command.notifyCanExecuteChanged(), throwsFlutterError);
       });
     });
 
