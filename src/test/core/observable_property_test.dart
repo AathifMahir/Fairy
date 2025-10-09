@@ -38,7 +38,7 @@ void main() {
         final prop = ObservableProperty<int>(0);
         var notificationCount = 0;
         
-        prop.listen(() {
+        prop.propertyChanged(() {
           notificationCount++;
         });
 
@@ -55,7 +55,7 @@ void main() {
         final prop = ObservableProperty<int>(5);
         var notificationCount = 0;
         
-        prop.listen(() {
+        prop.propertyChanged(() {
           notificationCount++;
         });
 
@@ -74,9 +74,9 @@ void main() {
         var listener2Count = 0;
         var listener3Count = 0;
 
-        prop.listen(() => listener1Count++);
-        prop.listen(() => listener2Count++);
-        prop.listen(() => listener3Count++);
+        prop.propertyChanged(() => listener1Count++);
+        prop.propertyChanged(() => listener2Count++);
+        prop.propertyChanged(() => listener3Count++);
 
         prop.value = 'changed';
 
@@ -91,7 +91,7 @@ void main() {
         final prop = ObservableProperty<String?>('initial');
         var notificationCount = 0;
         
-        prop.listen(() => notificationCount++);
+        prop.propertyChanged(() => notificationCount++);
 
         // non-null to null
         prop.value = null;
@@ -128,7 +128,7 @@ void main() {
         final prop = ObservableProperty<int>(10);
         var notificationCount = 0;
         
-        prop.listen(() {
+        prop.propertyChanged(() {
           notificationCount++;
         });
 
@@ -143,7 +143,7 @@ void main() {
         final prop = ObservableProperty<int>(10);
         var notificationCount = 0;
         
-        prop.listen(() {
+        prop.propertyChanged(() {
           notificationCount++;
         });
 
@@ -185,7 +185,7 @@ void main() {
         final prop = ObservableProperty<int?>(null);
         var notificationCount = 0;
         
-        prop.listen(() => notificationCount++);
+        prop.propertyChanged(() => notificationCount++);
 
         // null to non-null
         prop.update((current) => (current ?? 0) + 1);
@@ -206,9 +206,9 @@ void main() {
         final prop = ObservableProperty<int>(0);
         final values = <int>[];
         
-        prop.listen(() => values.add(prop.value));
-        prop.listen(() => values.add(prop.value * 2));
-        prop.listen(() => values.add(prop.value * 3));
+        prop.propertyChanged(() => values.add(prop.value));
+        prop.propertyChanged(() => values.add(prop.value * 2));
+        prop.propertyChanged(() => values.add(prop.value * 3));
 
         prop.value = 5;
 
@@ -225,7 +225,7 @@ void main() {
           notificationCount++;
         }
 
-        final disposer = prop.listen(listener);
+        final disposer = prop.propertyChanged(listener);
         prop.value = 'changed1';
         expect(notificationCount, equals(1));
 
@@ -251,8 +251,8 @@ void main() {
           disposeListener1(); // Remove listener1 during notification
         }
 
-        disposeListener1 = prop.listen(listener1);
-        prop.listen(listener2);
+        disposeListener1 = prop.propertyChanged(listener1);
+        prop.propertyChanged(listener2);
 
         prop.value = 1;
 
@@ -319,7 +319,7 @@ void main() {
         final prop = ObservableProperty<int>(5);
         var notificationCount = 0;
         
-        prop.listen(() => notificationCount++);
+        prop.propertyChanged(() => notificationCount++);
 
         prop.value = 5;
         expect(notificationCount, equals(0)); // No change
@@ -337,7 +337,7 @@ void main() {
         final prop = ObservableProperty<UserWithoutEquals>(user1);
         var notificationCount = 0;
         
-        prop.listen(() => notificationCount++);
+        prop.propertyChanged(() => notificationCount++);
 
         // Same reference
         prop.value = user1;
@@ -357,7 +357,7 @@ void main() {
         final prop = ObservableProperty<User>(user1);
         var notificationCount = 0;
         
-        prop.listen(() => notificationCount++);
+        prop.propertyChanged(() => notificationCount++);
 
         // Different object but equal values
         prop.value = user2;
@@ -376,7 +376,7 @@ void main() {
         final prop = ObservableProperty<int>(0);
         var notificationCount = 0;
         
-        prop.listen(() => notificationCount++);
+        prop.propertyChanged(() => notificationCount++);
 
         prop.value = 5;
         expect(notificationCount, equals(1));
@@ -392,7 +392,7 @@ void main() {
         prop.dispose();
 
         expect(
-          () => prop.listen(() {}),
+          () => prop.propertyChanged(() {}),
           throwsFlutterError,
         );
       });
@@ -412,7 +412,7 @@ void main() {
         var notificationCount = 0;
         final capturedValues = <int>[];
         
-        prop.listen(() {
+        prop.propertyChanged(() {
           notificationCount++;
           capturedValues.add(prop.value);
         });
@@ -432,7 +432,7 @@ void main() {
         final prop = ObservableProperty<int>(0);
         var notificationCount = 0;
         
-        prop.listen(() => notificationCount++);
+        prop.propertyChanged(() => notificationCount++);
 
         prop.value = 1;
         prop.update((c) => c + 1);
@@ -450,8 +450,8 @@ void main() {
         var nameChangeCount = 0;
         var ageChangeCount = 0;
 
-        viewModel.name.listen(() => nameChangeCount++);
-        viewModel.age.listen(() => ageChangeCount++);
+        viewModel.name.propertyChanged(() => nameChangeCount++);
+        viewModel.age.propertyChanged(() => ageChangeCount++);
 
         viewModel.updateName('Alice');
         expect(nameChangeCount, equals(1));
