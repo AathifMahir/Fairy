@@ -3,33 +3,39 @@ import 'package:flutter/material.dart';
 
 // ViewModel for Counter example demonstrating MVVM pattern with Fairy
 class CounterViewModel extends ObservableObject {
-  // Reactive property for counter value
-  final counter = ObservableProperty<int>(0);
+  // Reactive property for counter value (auto-disposed with parent)
+  late final ObservableProperty<int> counter;
   
-  // Commands with canExecute logic
+  // Commands with canExecute logic (auto-disposed with parent)
   late final RelayCommand incrementCommand;
   late final RelayCommand decrementCommand;
   late final RelayCommand resetCommand;
   
+  // Store disposer for cleanup
+  VoidCallback? _counterDisposer;
+  
   CounterViewModel() {
-    incrementCommand = RelayCommand(_increment);
+    counter = ObservableProperty<int>(0, parent: this);
+    
+    incrementCommand = relayCommand(
+      _increment,
+    );
     
     // Decrement only enabled when counter > 0
-    decrementCommand = RelayCommand(
+    decrementCommand = relayCommand(
       _decrement,
       canExecute: () => counter.value > 0,
     );
     
-    resetCommand = RelayCommand(_reset);
+    resetCommand = relayCommand(
+       _reset,
+    );
     
     // When counter changes, refresh commands that depend on its value
-    _counterDisposer = counter.listen(() {
-      decrementCommand.refresh();
+    _counterDisposer = propertyChanged(() {
+      decrementCommand.notifyCanExecuteChanged();
     });
   }
-  
-  // Store disposer for cleanup
-  VoidCallback? _counterDisposer;
   
   void _increment() {
     counter.value++;
@@ -48,8 +54,7 @@ class CounterViewModel extends ObservableObject {
   @override
   void dispose() {
     _counterDisposer?.call();
-    counter.dispose();
-    super.dispose();
+    super.dispose(); // Auto-disposes counter and all commands
   }
 }
 
@@ -70,7 +75,7 @@ class CounterApp extends StatelessWidget {
       ),
       home: FairyScope(
         // Create scoped ViewModel - automatically disposed when widget is removed
-        create: () => CounterViewModel(),
+        viewModel: (_) => CounterViewModel(),
         child: const CounterPage(),
       ),
     );

@@ -11,19 +11,39 @@ This example demonstrates the core features of the Fairy MVVM framework through 
 
 ### 2. **Reactive Properties**
 ```dart
-final counter = ObservableProperty<int>(0);
+late final ObservableProperty<int> counter;
+
+CounterViewModel() {
+  counter = ObservableProperty<int>(0, parent: this);
+}
 ```
 - Type-safe property that notifies listeners on changes
 - Automatically triggers UI updates when value changes
+- Auto-disposed when parent ViewModel is disposed (via `parent` parameter)
 
 ### 3. **Command Pattern**
 ```dart
 late final RelayCommand incrementCommand;
 late final RelayCommand decrementCommand;
+
+CounterViewModel() {
+  incrementCommand = RelayCommand(
+    execute: _increment,
+    parent: this,
+  );
+  
+  decrementCommand = RelayCommand(
+    execute: _decrement,
+    canExecute: () => counter.value > 0,
+    parent: this,
+  );
+}
 ```
 - Encapsulates actions with automatic `canExecute` validation
 - Decrement button automatically disables when counter reaches 0
-- Commands can be refreshed when dependencies change
+- Commands use named parameters: `execute:`, `canExecute:`, `parent:`
+- Commands can be refreshed when dependencies change using `notifyCanExecuteChanged()`
+- Auto-disposed when parent ViewModel is disposed (via `parent` parameter)
 
 ### 4. **Data Binding**
 ```dart
@@ -63,7 +83,7 @@ FairyScope(
 ```
 - Scoped DI with automatic ViewModel disposal
 - ViewModel automatically disposed when `FairyScope` is removed from tree
-- Child widgets access ViewModel through `ViewModelLocator`
+- Child widgets access ViewModel through `Fairy` resolver or `Bind`/`Command` widgets
 
 ## Running the Example
 
@@ -75,19 +95,21 @@ flutter run
 
 ## Best Practices Shown
 
-1. **Property Management**: Always dispose `ObservableProperty` in `dispose()`
-2. **Command Dependencies**: Refresh commands when their `canExecute` conditions change
-3. **Scoped Lifecycle**: Use `FairyScope.create` for widget-scoped ViewModels
-4. **Type Safety**: Leverage generics (`Bind<TViewModel, TValue>`) for compile-time safety
-5. **Declarative UI**: Views contain only widget composition, no business logic
+1. **Auto-Disposal with Parent Parameter**: Properties and commands automatically disposed with parent ViewModel (pass `parent: this`)
+2. **Named Parameters**: All commands use named parameters for clarity (`execute:`, `canExecute:`, `parent:`)
+3. **Command Dependencies**: Refresh commands when their `canExecute` conditions change using `notifyCanExecuteChanged()`
+4. **Scoped Lifecycle**: Use `FairyScope.create` for widget-scoped ViewModels
+5. **Type Safety**: Leverage generics (`Bind<TViewModel, TValue>`) for compile-time safety
+6. **Declarative UI**: Views contain only widget composition, no business logic
+7. **Nested ViewModels**: Manual disposal required for nested `ObservableObject` instances
 
 ## Learning Path
 
 1. **Start Here**: Understand the ViewModel structure in `main.dart` (CounterViewModel)
 2. **Data Binding**: See how `Bind` widget connects property to UI
 3. **Commands**: Observe `Command` widget binding actions to buttons
-4. **Reactive Logic**: Notice how `counter.listen()` triggers `decrementCommand.refresh()`
-5. **Disposal**: Check `dispose()` method for proper cleanup
+4. **Reactive Logic**: Notice how `counter.propertyChanged()` triggers `decrementCommand.notifyCanExecuteChanged()`
+5. **Auto-Disposal**: Properties and commands are automatically cleaned up when `parent: this` is provided
 
 ## Extending the Example
 
