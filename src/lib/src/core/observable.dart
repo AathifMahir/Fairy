@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 ///
 /// The raw [ChangeNotifier] API is hidden to provide a cleaner MVVM-style interface:
 /// - Use [onPropertyChanged] instead of [notifyListeners]
-/// - Use [listen] instead of [addListener]
+/// - Use [propertyChanged] instead of [addListener]
 ///
 /// Example:
 /// ```dart
@@ -22,7 +22,24 @@ import 'package:flutter/foundation.dart';
 /// }
 /// ```
 abstract class ObservableObject extends ChangeNotifier {
-  
+  final List<ChangeNotifier> _children = [];
+
+  /// Internal method to register a child ChangeNotifier for auto-disposal.
+  /// 
+  /// This is called automatically by ObservableProperty, ComputedProperty, and
+  /// command types when a parent is provided during construction.
+  /// 
+  /// Note: This is intentionally public (not @protected) to allow registration
+  /// from command classes that are not subclasses of ObservableObject.
+  void registerChild<T extends ChangeNotifier>(T notifier) {
+    // Skip nested ObservableObjects (they manage their own disposal)
+    if (notifier is ObservableObject) {
+      return;
+    }
+    
+    _children.add(notifier);
+  }
+
   // ========================================================================
   // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
   // ========================================================================
@@ -68,14 +85,14 @@ abstract class ObservableObject extends ChangeNotifier {
   ///
   /// Example:
   /// ```dart
-  /// final dispose = viewModel.listen(() {
+  /// final dispose = viewModel.propertyChanged(() {
   ///   print('ViewModel changed!');
   /// });
   /// 
   /// // Later, clean up:
   /// dispose();
   /// ```
-  VoidCallback listen(VoidCallback listener) {
+  VoidCallback propertyChanged(VoidCallback listener) {
     super.addListener(listener);
     return () => super.removeListener(listener);
   }
@@ -120,6 +137,11 @@ abstract class ObservableObject extends ChangeNotifier {
   /// ```
   @override
   void dispose() {
+    // Dispose children in reverse order to avoid notifying already-disposed dependents
+    for (final n in _children.reversed) {
+      n.dispose();
+    }
+    _children.clear();
     super.dispose();
   }
 }
@@ -135,29 +157,36 @@ abstract class ObservableObject extends ChangeNotifier {
 /// Example:
 /// ```dart
 /// class UserViewModel extends ObservableObject {
-///   final userName = ObservableProperty<String>('');
-///   final age = ObservableProperty<int>(0);
+///   late final ObservableProperty<String> userName;
+///   late final ObservableProperty<int> age;
+///
+///   UserViewModel() {
+///     userName = ObservableProperty<String>('', parent: this);
+///     age = ObservableProperty<int>(0, parent: this);
+///   }
 ///
 ///   void updateUserName(String newName) {
 ///     userName.value = newName; // Automatically notifies listeners
 ///   }
 ///
-///   @override
-///   void dispose() {
-///     userName.dispose();
-///     age.dispose();
-///     super.dispose();
-///   }
+///   // Properties auto-disposed by super.dispose()
 /// }
 /// ```
 ///
 /// **Important:** Always use `final` for [ObservableProperty] fields and return
 /// stable references from selectors. Never create new instances in getters.
 class ObservableProperty<T> extends ChangeNotifier {
+  T _value;
 
   /// Creates an [ObservableProperty] with an initial value.
-  ObservableProperty(this._value);
-  T _value;
+  /// 
+  /// If [parent] is provided, this property will be automatically disposed
+  /// when the parent is disposed. If null, you must manually call dispose().
+  ObservableProperty(this._value, {ObservableObject? parent}) {
+    if (parent != null) {
+      parent.registerChild(this);
+    }
+  }
 
   // ========================================================================
   // HIDDEN ChangeNotifier API (internal use only)
@@ -173,6 +202,7 @@ class ObservableProperty<T> extends ChangeNotifier {
   
   @override
   @protected
+  // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
   
   // ========================================================================
@@ -222,7 +252,7 @@ class ObservableProperty<T> extends ChangeNotifier {
   /// // Later:
   /// dispose();
   /// ```
-  VoidCallback listen(VoidCallback listener) {
+  VoidCallback propertyChanged(VoidCallback listener) {
     super.addListener(listener);
     return () => super.removeListener(listener);
   }
@@ -237,22 +267,20 @@ class ObservableProperty<T> extends ChangeNotifier {
 /// Example:
 /// ```dart
 /// class ShoppingCartViewModel extends ObservableObject {
-///   final items = ObservableProperty<List<Item>>([]);
+///   late final ObservableProperty<List<Item>> items;
 ///   late final ComputedProperty<double> totalPrice;
 ///
 ///   ShoppingCartViewModel() {
+///     items = ObservableProperty<List<Item>>([], parent: this);
+///     
 ///     totalPrice = ComputedProperty<double>(
 ///       () => items.value.fold(0.0, (sum, item) => sum + item.price),
 ///       [items],
+///       parent: this,
 ///     );
 ///   }
 ///
-///   @override
-///   void dispose() {
-///     totalPrice.dispose();
-///     items.dispose();
-///     super.dispose();
-///   }
+///   // Properties and computed properties auto-disposed by super.dispose()
 /// }
 /// ```
 class ComputedProperty<T> extends ChangeNotifier {
@@ -263,7 +291,14 @@ class ComputedProperty<T> extends ChangeNotifier {
   /// The [dependencies] list contains all [Listenable] objects that this
   /// computed property depends on. When any dependency notifies, the cached
   /// value is invalidated and recalculated.
-  ComputedProperty(this._compute, this._dependencies) {
+  /// 
+  /// If [parent] is provided, this property will be automatically disposed
+  /// when the parent is disposed. If null, you must manually call dispose().
+  ComputedProperty(this._compute, this._dependencies, {ObservableObject? parent}) {
+    if (parent != null) {
+      parent.registerChild(this);
+    }
+    
     for (final dep in _dependencies) {
       dep.addListener(_onDependencyChanged);
     }
@@ -274,6 +309,24 @@ class ComputedProperty<T> extends ChangeNotifier {
   final List<Listenable> _dependencies;
   T? _cachedValue;
   bool _isDisposed = false;
+
+
+    // ========================================================================
+  // HIDDEN ChangeNotifier API (internal use only)
+  // ========================================================================
+  
+  @override
+  @protected
+  void addListener(VoidCallback listener) => super.addListener(listener);
+  
+  @override
+  @protected
+  void removeListener(VoidCallback listener) => super.removeListener(listener);
+  
+  @override
+  @protected
+  // ignore: unnecessary_overrides
+  void notifyListeners() => super.notifyListeners();
 
   /// Gets the current computed value.
   ///
