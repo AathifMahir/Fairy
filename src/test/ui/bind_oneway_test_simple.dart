@@ -23,7 +23,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<SimpleViewModel, String>(
               selector: (vm) => vm.message, // Raw String, not ObservableProperty
               builder: (context, value, update) {
@@ -46,7 +46,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<SimpleViewModel, String>(
               selector: (vm) => vm.message,
               builder: (context, value, update) => Text(value),
@@ -71,7 +71,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            create: () => vm,
+            viewModel: (_) => vm,
             child: Bind<SimpleViewModel, String>(
               selector: (vm) => vm.message,
               builder: (context, value, update) {
