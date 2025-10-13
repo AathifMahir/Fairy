@@ -20,7 +20,7 @@ A lightweight MVVM framework for Flutter that provides strongly-typed, reactive 
 
 ```yaml
 dependencies:
-  fairy: ^0.5.0+2
+  fairy: ^1.0.0-rc.1
 ```
 
 ## 🚀 Quick Start
@@ -33,6 +33,7 @@ import 'package:flutter/material.dart';
 class CounterViewModel extends ObservableObject {
   final counter = ObservableProperty<int>(0);
   late final increment = RelayCommand(() => counter.value++);
+  late final addCommand = RelayCommandWithParam<int>((amount) => counter.value += amount);
 }
 
 // 2️⃣ Provide it with FairyScope (can be used anywhere!)
@@ -67,16 +68,33 @@ class CounterPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Explicit binding (recommended for single properties)
             Bind<CounterViewModel, int>(
               selector: (vm) => vm.counter,
               builder: (context, value, update) => Text('$value'),
             ),
+            // Auto-tracking (convenient for multiple properties)
+            Bind.observer<CounterViewModel>(
+              builder: (context, vm) => Text('Count: ${vm.counter.value}'),
+            ),
+            // Regular command
             Command<CounterViewModel>(
               command: (vm) => vm.increment,
               builder: (context, execute, canExecute) {
                 return ElevatedButton(
                   onPressed: execute,
                   child: Text('Increment'),
+                );
+              },
+            ),
+            // Parameterized command
+            Command.param<CounterViewModel, int>(
+              command: (vm) => vm.addCommand,
+              parameter: 5,
+              builder: (context, execute, canExecute) {
+                return ElevatedButton(
+                  onPressed: execute,
+                  child: Text('Add 5'),
                 );
               },
             ),
@@ -117,10 +135,42 @@ class TodoViewModel extends ObservableObject {
     canExecute: () => selectedItem.value != null,
   );
   
+  late final deleteItemCommand = RelayCommandWithParam<String>(
+    (id) => _deleteById(id),
+    canExecute: (id) => selectedItem.value?.id == id,
+  );
+  
   void _delete() {
     // Delete logic
   }
+  
+  void _deleteById(String id) {
+    // Delete by ID
+  }
 }
+
+// In UI
+Command<TodoViewModel>(
+  command: (vm) => vm.deleteCommand,
+  builder: (context, execute, canExecute) {
+    return IconButton(
+      onPressed: canExecute ? execute : null,
+      icon: Icon(Icons.delete),
+    );
+  },
+)
+
+// Parameterized command
+Command.param<TodoViewModel, String>(
+  command: (vm) => vm.deleteItemCommand,
+  parameter: todoId,
+  builder: (context, execute, canExecute) {
+    return IconButton(
+      onPressed: canExecute ? execute : null,
+      icon: Icon(Icons.delete),
+    );
+  },
+)
 ```
 
 ### Async Commands
@@ -136,15 +186,29 @@ class DataViewModel extends ObservableObject {
 }
 ```
 
-### Two-Way Binding
+### Data Binding
 
 ```dart
+// Explicit binding - best for single properties
 Bind<UserViewModel, String>(
   selector: (vm) => vm.name,
   builder: (context, value, update) {
     return TextField(
       controller: TextEditingController(text: value),
-      onChanged: update,  // Auto two-way binding
+      onChanged: update,  // Two-way binding
+    );
+  },
+)
+
+// Auto-tracking - best for multiple properties
+Bind.observer<UserViewModel>(
+  builder: (context, vm) {
+    return Column(
+      children: [
+        Text('${vm.firstName.value} ${vm.lastName.value}'),
+        Text('Age: ${vm.age.value}'),
+        // All accessed properties automatically tracked!
+      ],
     );
   },
 )
@@ -186,14 +250,19 @@ Fairy is designed for performance. Here are benchmark results comparing with pop
 
 | Category | Fairy | Provider | Riverpod |
 |----------|-------|----------|----------|
-| Widget Performance | **105.9%** | 105.9% | 100% ⚡ |
-| Build Performance | 122.4% | **100%** ⚡ | 100.4% |
-| Memory Management | **100%** ⚡ | 112.9% | 108.6% |
-| Selective Rebuild | **100%** ⚡ | 147.6% | 141.8% |
+| Widget Performance (1000 interactions) | 102.6% | 103.6% | **100%** ⚡ |
+| Build Performance (100 builds) | 122.0% | 101.4% | **100%** ⚡ |
+| Memory Management (50 cycles) | **100%** ⚡ | 111.8% | 107.2% |
+| Selective Rebuild (explicit Bind) | **100%** ⚡ | 131.9% | 120.0% |
+| Rebuild Performance (auto-tracking) | **100%** ⚡ | 104.0% | 109.6% |
 
-✨ **Fairy wins in Memory Management and Selective Rebuilds!**
+### 🏆 Fairy Achievements
+- **🥇 Best Memory Management** - 7-12% faster cleanup than competitors
+- **🥇 Fastest Selective Rebuilds** - 20-32% faster with explicit selectors
+- **🥇 Fastest Auto-tracking** - `Bind.observer` is 4-10% faster AND maintains 100% rebuild efficiency
+- **Unique**: `Bind.observer` achieves 100% selective efficiency while Provider/Riverpod global approaches only achieve 33%
 
-*Lower is better. Percentages relative to the fastest framework.*
+*Lower is better. Percentages relative to the fastest framework in each category.*
 
 ## 📚 Documentation
 
