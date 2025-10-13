@@ -7,6 +7,8 @@ class CounterViewModel extends ObservableObject {
   late final ObservableProperty<int> counter;
   
   // Commands with canExecute logic (auto-disposed with parent)
+  // Note: For parameterized commands, use RelayCommandWithParam<T>
+  // and bind with Command.param<TViewModel, TParam> in UI
   late final RelayCommand incrementCommand;
   late final RelayCommand decrementCommand;
   late final RelayCommand resetCommand;
