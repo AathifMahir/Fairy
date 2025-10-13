@@ -1,3 +1,4 @@
+import 'package:fairy/src/core/observable_node.dart';
 import 'package:flutter/foundation.dart';
 
 /// Base class for ViewModels that provides change notification capabilities.
@@ -21,24 +22,7 @@ import 'package:flutter/foundation.dart';
 ///   }
 /// }
 /// ```
-abstract class ObservableObject extends ChangeNotifier {
-  final List<ChangeNotifier> _children = [];
-
-  /// Internal method to register a child ChangeNotifier for auto-disposal.
-  /// 
-  /// This is called automatically by ObservableProperty, ComputedProperty, and
-  /// command types when a parent is provided during construction.
-  /// 
-  /// Note: This is intentionally public (not @protected) to allow registration
-  /// from command classes that are not subclasses of ObservableObject.
-  void registerChild<T extends ChangeNotifier>(T notifier) {
-    // Skip nested ObservableObjects (they manage their own disposal)
-    if (notifier is ObservableObject) {
-      return;
-    }
-    
-    _children.add(notifier);
-  }
+abstract class ObservableObject extends ObservableNode {
 
   // ========================================================================
   // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
@@ -137,11 +121,6 @@ abstract class ObservableObject extends ChangeNotifier {
   /// ```
   @override
   void dispose() {
-    // Dispose children in reverse order to avoid notifying already-disposed dependents
-    for (final n in _children.reversed) {
-      n.dispose();
-    }
-    _children.clear();
     super.dispose();
   }
 }
@@ -175,18 +154,11 @@ abstract class ObservableObject extends ChangeNotifier {
 ///
 /// **Important:** Always use `final` for [ObservableProperty] fields and return
 /// stable references from selectors. Never create new instances in getters.
-class ObservableProperty<T> extends ChangeNotifier {
+class ObservableProperty<T> extends ObservableNode {
   T _value;
 
   /// Creates an [ObservableProperty] with an initial value.
-  /// 
-  /// If [parent] is provided, this property will be automatically disposed
-  /// when the parent is disposed. If null, you must manually call dispose().
-  ObservableProperty(this._value, {ObservableObject? parent}) {
-    if (parent != null) {
-      parent.registerChild(this);
-    }
-  }
+  ObservableProperty(this._value);
 
   // ========================================================================
   // HIDDEN ChangeNotifier API (internal use only)
@@ -283,22 +255,15 @@ class ObservableProperty<T> extends ChangeNotifier {
 ///   // Properties and computed properties auto-disposed by super.dispose()
 /// }
 /// ```
-class ComputedProperty<T> extends ChangeNotifier {
+class ComputedProperty<T> extends ObservableNode {
 
   /// Creates a computed property with a computation function and dependencies.
   ///
   /// The [compute] function is called to calculate the value.
-  /// The [dependencies] list contains all [Listenable] objects that this
+  /// The [dependencies] list contains all [ObservableNode] objects that this
   /// computed property depends on. When any dependency notifies, the cached
   /// value is invalidated and recalculated.
-  /// 
-  /// If [parent] is provided, this property will be automatically disposed
-  /// when the parent is disposed. If null, you must manually call dispose().
-  ComputedProperty(this._compute, this._dependencies, {ObservableObject? parent}) {
-    if (parent != null) {
-      parent.registerChild(this);
-    }
-    
+  ComputedProperty(this._compute, this._dependencies) {
     for (final dep in _dependencies) {
       dep.addListener(_onDependencyChanged);
     }
@@ -306,7 +271,7 @@ class ComputedProperty<T> extends ChangeNotifier {
     _cachedValue = _compute();
   }
   final T Function() _compute;
-  final List<Listenable> _dependencies;
+  final List<ObservableNode> _dependencies;
   T? _cachedValue;
   bool _isDisposed = false;
 
