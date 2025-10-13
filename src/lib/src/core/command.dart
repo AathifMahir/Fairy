@@ -21,12 +21,11 @@ typedef CanExecute = bool Function();
 ///   VoidCallback? _disposer;
 ///
 ///   MyViewModel() {
-///     userName = ObservableProperty<String>('', parent: this);
+///     userName = ObservableProperty<String>('');
 ///     
 ///     saveCommand = RelayCommand(
 ///       _save,
 ///       canExecute: () => userName.value.isNotEmpty,
-///       parent: this,
 ///     );
 ///
 ///     // Refresh command when validation state changes
@@ -54,13 +53,9 @@ class RelayCommand extends ObservableNode {
   /// [execute] is the method to execute when the command runs.
   /// [canExecute] is an optional predicate that determines if the action can run.
   /// If omitted, the command can always execute.
-  /// 
-  /// If [parent] is provided, this command will be automatically disposed
-  /// when the parent is disposed. If null, you must manually call dispose().
   RelayCommand(
     VoidCallback execute, {
     CanExecute? canExecute,
-    ObservableObject? parent,
   })  : _action = execute,
         _canExecute = canExecute;
 
@@ -127,60 +122,54 @@ class RelayCommand extends ObservableNode {
 
 }
 
-/// An asynchronous command that tracks execution state and prevents re-entry.
+/// An asynchronous command for long-running operations.
 ///
-/// [AsyncRelayCommand] is designed for long-running async operations like
-/// network calls or database queries. It automatically manages [isRunning] state
-/// and prevents concurrent execution.
+/// [AsyncRelayCommand] is designed for async operations like network calls
+/// or database queries. Unlike [RelayCommand], it returns a [Future] from
+/// [execute] that completes when the async action finishes.
 ///
-/// The command automatically disables itself ([canExecute] returns `false`)
-/// while running to prevent duplicate executions.
+/// If you need to track loading state, add an [ObservableProperty] to your
+/// ViewModel and update it manually in your action.
 ///
 /// Example:
 /// ```dart
 /// class DataViewModel extends ObservableObject {
 ///   late final ObservableProperty<List<Item>?> data;
+///   late final ObservableProperty<bool> isLoading;
 ///   late final AsyncRelayCommand fetchDataCommand;
 ///
 ///   DataViewModel() {
-///     data = ObservableProperty<List<Item>?>([], parent: this);
+///     data = ObservableProperty<List<Item>?>([]);
+///     isLoading = ObservableProperty<bool>(false);
 ///     
 ///     fetchDataCommand = AsyncRelayCommand(
 ///       _fetchData,
-///       parent: this,
 ///     );
 ///   }
 ///
 ///   Future<void> _fetchData() async {
-///     final response = await api.fetchItems();
-///     data.value = response;
+///     isLoading.value = true;
+///     try {
+///       final response = await api.fetchItems();
+///       data.value = response;
+///     } finally {
+///       isLoading.value = false;
+///     }
 ///   }
-/// }
-///
-/// // In UI:
-/// // Command automatically shows isRunning state
-/// if (viewModel.fetchDataCommand.isRunning) {
-///   return CircularProgressIndicator();
 /// }
 /// ```
 class AsyncRelayCommand extends ObservableNode {
 
   final Future<void> Function() _action;
   final CanExecute? _canExecute;
-  bool _isRunning = false;
 
   /// Creates an [AsyncRelayCommand] with an async action and optional canExecute predicate.
   ///
   /// [execute] is the asynchronous method to execute when the command runs.
   /// [canExecute] is an optional predicate that determines if the action can run.
-  /// The command automatically disables during execution regardless of [canExecute].
-  /// 
-  /// If [parent] is provided, this command will be automatically disposed
-  /// when the parent is disposed. If null, you must manually call dispose().
   AsyncRelayCommand(
     Future<void> Function() execute, {
     CanExecute? canExecute,
-    ObservableObject? parent,
   })  : _action = execute,
         _canExecute = canExecute;
 
@@ -201,36 +190,18 @@ class AsyncRelayCommand extends ObservableNode {
   // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
 
-  /// Whether the command is currently executing.
-  ///
-  /// This is automatically set to `true` when [execute] is called and reset
-  /// to `false` when the action completes or throws an error.
-  bool get isRunning => _isRunning;
-
   /// Whether the command can currently execute.
   ///
-  /// Returns `false` if the command [isRunning] or if the [canExecute]
-  /// predicate returns `false`.
-  bool get canExecute => !_isRunning && (_canExecute?.call() ?? true);
+  /// Returns `true` if no [canExecute] predicate was provided, or if the
+  /// predicate returns `true`.
+  bool get canExecute => _canExecute?.call() ?? true;
 
   /// Executes the command's async action if [canExecute] is `true`.
-  ///
-  /// Automatically sets [isRunning] to `true` before execution and `false`
-  /// after completion (including errors). Prevents re-entry if already running.
   ///
   /// Returns a [Future] that completes when the action completes.
   Future<void> execute() async {
     if (!canExecute) return;
-
-    _isRunning = true;
-    notifyListeners();
-
-    try {
-      await _action();
-    } finally {
-      _isRunning = false;
-      notifyListeners();
-    }
+    await _action();
   }
 
   /// Notifies listeners that [canExecute] may have changed.
@@ -275,12 +246,11 @@ class AsyncRelayCommand extends ObservableNode {
 ///   late final RelayCommandWithParam<String> deleteTodoCommand;
 ///
 ///   TodoViewModel() {
-///     todos = ObservableProperty<List<Todo>>([], parent: this);
+///     todos = ObservableProperty<List<Todo>>([]);
 ///     
 ///     deleteTodoCommand = RelayCommandWithParam<String>(
 ///       _deleteTodo,
 ///       canExecute: (id) => todos.value.any((t) => t.id == id),
-///       parent: this,
 ///     );
 ///   }
 ///
@@ -294,17 +264,13 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
   final void Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
 
-  /// Creates a parameterized command with an action and optional canExecute predicate.
+  /// Creates a parameterized relay command.
   ///
   /// [execute] receives a parameter of type [TParam] when executed.
   /// [canExecute] optionally validates whether the action can run with the given parameter.
-  /// 
-  /// If [parent] is provided, this command will be automatically disposed
-  /// when the parent is disposed. If null, you must manually call dispose().
   RelayCommandWithParam(
     void Function(TParam) execute, {
     bool Function(TParam)? canExecute,
-    ObservableObject? parent,
   })  : _action = execute,
         _canExecute = canExecute;
 
@@ -330,6 +296,9 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
   ///
   /// Returns `true` if no [canExecute] predicate was provided, or if the
   /// predicate returns `true` for the given parameter.
+  /// 
+  /// Note: This is a method (not a getter), so automatic tracking is not applied.
+  /// Subscribe to canExecuteChanged() for manual tracking if needed.
   bool canExecute(TParam param) => _canExecute?.call(param) ?? true;
 
   /// Executes the command's action with the given [param] if [canExecute] is `true`.
@@ -373,23 +342,32 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
 /// An asynchronous command that accepts a typed parameter when executing.
 ///
 /// Combines the features of [AsyncRelayCommand] and [RelayCommandWithParam],
-/// providing async execution with parameter support and [isRunning] state tracking.
+/// providing async execution with parameter support and optional [canExecute] validation.
+///
+/// For loading state tracking, use an [ObservableProperty<bool>] in your ViewModel:
 ///
 /// Example:
 /// ```dart
 /// class UserViewModel extends ObservableObject {
+///   late final ObservableProperty<bool> isLoading;
 ///   late final AsyncRelayCommandWithParam<String> loadUserCommand;
 ///
 ///   UserViewModel() {
+///     isLoading = ObservableProperty<bool>(false);
 ///     loadUserCommand = AsyncRelayCommandWithParam<String>(
 ///       _loadUser,
-///       parent: this,
+///       canExecute: (userId) => userId.isNotEmpty,
 ///     );
 ///   }
 ///
 ///   Future<void> _loadUser(String userId) async {
-///     final user = await api.fetchUser(userId);
-///     // Update state
+///     isLoading.value = true;
+///     try {
+///       final user = await api.fetchUser(userId);
+///       // Update state
+///     } finally {
+///       isLoading.value = false;
+///     }
 ///   }
 /// }
 /// ```
@@ -397,24 +375,19 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
 
   final Future<void> Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
-  bool _isRunning = false;
 
   /// Creates an async parameterized command.
   ///
   /// [execute] is an async function that receives a parameter of type [TParam].
   /// [canExecute] optionally validates whether the action can run with the given parameter.
-  /// 
-  /// If [parent] is provided, this command will be automatically disposed
-  /// when the parent is disposed. If null, you must manually call dispose().
   AsyncRelayCommandWithParam(
     Future<void> Function(TParam) execute, {
     bool Function(TParam)? canExecute,
-    ObservableObject? parent,
   })  : _action = execute,
         _canExecute = canExecute;
 
 
-      // ========================================================================
+  // ========================================================================
   // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
   // ========================================================================
   
@@ -431,33 +404,18 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
 
-  /// Whether the command is currently executing.
-  bool get isRunning => _isRunning;
-
   /// Whether the command can execute with the given [param].
   ///
-  /// Returns `false` if the command [isRunning] or if the [canExecute]
-  /// predicate returns `false` for the parameter.
-  bool canExecute(TParam param) =>
-      !_isRunning && (_canExecute?.call(param) ?? true);
+  /// Returns `false` if the [canExecute] predicate returns `false` for the parameter.
+  /// 
+  /// Note: This method takes a parameter, so automatic tracking is not applied.
+  /// For automatic dependency tracking, observe properties that affect canExecute.
+  bool canExecute(TParam param) => _canExecute?.call(param) ?? true;
 
   /// Executes the command's async action with the given [param] if [canExecute] is `true`.
-  ///
-  /// Automatically manages [isRunning] state and prevents re-entry.
   Future<void> execute(TParam param) async {
-    if (!canExecute(param)) {
-      return;
-    }
-
-    _isRunning = true;
-    notifyListeners();
-
-    try {
-      await _action(param);
-    } finally {
-      _isRunning = false;
-      notifyListeners();
-    }
+    if (!canExecute(param)) return;
+    await _action(param);
   }
 
   /// Notifies listeners that [canExecute] may have changed.
