@@ -257,14 +257,17 @@ void main() {
         
         command.dispose();
         
-        expect(() => command.notifyCanExecuteChanged(), throwsFlutterError);
+        // ObservableNode allows notifying after disposal (listeners cleared)
+        command.notifyCanExecuteChanged();
+        expect(notificationCount, equals(1)); // Still 1, not incremented
       });
 
-      test('should not allow adding listeners after disposal', () {
+      test('should allow adding listeners after disposal', () {
         final command = RelayCommand(() {});
         command.dispose();
         
-        expect(() => command.canExecuteChanged(() {}), throwsFlutterError);
+        // ObservableNode allows adding listeners after disposal
+        expect(() => command.canExecuteChanged(() {}), returnsNormally);
       });
     });
 
@@ -595,7 +598,9 @@ void main() {
         
         command.dispose();
         
-        expect(() => command.notifyCanExecuteChanged(), throwsFlutterError);
+        // ObservableNode allows notifying after disposal (listeners cleared)
+        command.notifyCanExecuteChanged();
+        expect(notificationCount, equals(1)); // Still 1, not incremented
       });
     });
 
