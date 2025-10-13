@@ -31,8 +31,8 @@ import 'package:flutter/material.dart';
 
 // 1️⃣ Create a ViewModel
 class CounterViewModel extends ObservableObject {
-  final counter = observableProperty<int>(0);
-  late final increment = relayCommand(() => counter.value++);
+  final counter = ObservableProperty<int>(0);
+  late final increment = RelayCommand(() => counter.value++);
 }
 
 // 2️⃣ Provide it with FairyScope (can be used anywhere!)
@@ -96,10 +96,10 @@ That's it! No code generation, no complex setup. Just clean, reactive MVVM.
 
 ```dart
 class UserViewModel extends ObservableObject {
-  final name = observableProperty<String>('');
-  final age = observableProperty<int>(0);
+  final name = ObservableProperty<String>('');
+  final age = ObservableProperty<int>(0);
   
-  late final fullInfo = computedProperty<String>(
+  late final fullInfo = ComputedProperty<String>(
     () => '${name.value}, age ${age.value}',
     [name, age],
   );
@@ -110,9 +110,9 @@ class UserViewModel extends ObservableObject {
 
 ```dart
 class TodoViewModel extends ObservableObject {
-  final selectedItem = observableProperty<Todo?>(null);
+  final selectedItem = ObservableProperty<Todo?>(null);
   
-  late final deleteCommand = relayCommand(
+  late final deleteCommand = RelayCommand(
     _delete,
     canExecute: () => selectedItem.value != null,
   );
@@ -127,7 +127,7 @@ class TodoViewModel extends ObservableObject {
 
 ```dart
 class DataViewModel extends ObservableObject {
-  late final fetchCommand = asyncRelayCommand(_fetchData);
+  late final fetchCommand = AsyncRelayCommand(_fetchData);
   
   Future<void> _fetchData() async {
     // fetchCommand.isRunning automatically managed
