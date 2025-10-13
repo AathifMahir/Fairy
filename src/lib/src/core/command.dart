@@ -1,4 +1,5 @@
 import 'package:fairy/src/core/observable.dart';
+import 'package:fairy/src/core/observable_node.dart';
 import 'package:flutter/foundation.dart';
 
 /// Callback type for evaluating whether a command can execute.
@@ -43,7 +44,7 @@ typedef CanExecute = bool Function();
 ///   }
 /// }
 /// ```
-class RelayCommand extends ChangeNotifier {
+class RelayCommand extends ObservableNode {
 
   final VoidCallback _action;
   final CanExecute? _canExecute;
@@ -61,11 +62,7 @@ class RelayCommand extends ChangeNotifier {
     CanExecute? canExecute,
     ObservableObject? parent,
   })  : _action = execute,
-        _canExecute = canExecute {
-    if (parent != null) {
-      parent.registerChild(this);
-    }
-  }
+        _canExecute = canExecute;
 
     // ========================================================================
   // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
@@ -166,7 +163,7 @@ class RelayCommand extends ChangeNotifier {
 ///   return CircularProgressIndicator();
 /// }
 /// ```
-class AsyncRelayCommand extends ChangeNotifier {
+class AsyncRelayCommand extends ObservableNode {
 
   final Future<void> Function() _action;
   final CanExecute? _canExecute;
@@ -185,11 +182,7 @@ class AsyncRelayCommand extends ChangeNotifier {
     CanExecute? canExecute,
     ObservableObject? parent,
   })  : _action = execute,
-        _canExecute = canExecute {
-    if (parent != null) {
-      parent.registerChild(this);
-    }
-  }
+        _canExecute = canExecute;
 
     // ========================================================================
   // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
@@ -296,7 +289,7 @@ class AsyncRelayCommand extends ChangeNotifier {
 ///   }
 /// }
 /// ```
-class RelayCommandWithParam<TParam> extends ChangeNotifier {
+class RelayCommandWithParam<TParam> extends ObservableNode {
 
   final void Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
@@ -313,15 +306,11 @@ class RelayCommandWithParam<TParam> extends ChangeNotifier {
     bool Function(TParam)? canExecute,
     ObservableObject? parent,
   })  : _action = execute,
-        _canExecute = canExecute {
-    if (parent != null) {
-      parent.registerChild(this);
-    }
-  }
+        _canExecute = canExecute;
 
 
     // ========================================================================
-  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
+  // HIDDEN ObservableNode API (marked @protected for internal framework use)
   // ========================================================================
   
   @override
@@ -404,7 +393,7 @@ class RelayCommandWithParam<TParam> extends ChangeNotifier {
 ///   }
 /// }
 /// ```
-class AsyncRelayCommandWithParam<TParam> extends ChangeNotifier {
+class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
 
   final Future<void> Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
@@ -422,11 +411,7 @@ class AsyncRelayCommandWithParam<TParam> extends ChangeNotifier {
     bool Function(TParam)? canExecute,
     ObservableObject? parent,
   })  : _action = execute,
-        _canExecute = canExecute {
-    if (parent != null) {
-      parent.registerChild(this);
-    }
-  }
+        _canExecute = canExecute;
 
 
       // ========================================================================
