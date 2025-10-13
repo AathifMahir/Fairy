@@ -104,22 +104,45 @@ class FairyScopeData {
 /// This class is sealed to prevent external instantiation and ensure
 /// locator instances are only created during FairyScope initialization.
 ///
-/// **Performance Optimization:** Parent scopes are pre-collected during
-/// construction to avoid repeated tree traversal on every get<T>() call.
+/// **Performance Optimization:** Uses hybrid flattening approach:
+/// 1. Current scope checked directly (O(1), supports future lazy loading)
+/// 2. Parent scopes flattened into single map (O(1) lookup instead of O(n) iteration)
+/// 3. Pre-collected during construction to avoid repeated tree traversal
 ///
-/// **Memory Safety:** Uses weak references for parent scopes to prevent
-/// retention of disposed scopes in edge cases.
+/// **Memory Safety:** Uses weak references in flattened map to prevent
+/// retention of disposed parent scopes in edge cases.
 class _FairyScopeLocatorImpl implements FairyScopeLocator {
   final FairyScopeData _currentScopeData;
-  final List<WeakReference<FairyScopeData>> _parentScopeRefs;
+  final Map<Type, WeakReference<ObservableObject>> _flattenedParents;
   bool _isValid = true;
 
   _FairyScopeLocatorImpl(
     this._currentScopeData,
     List<FairyScopeData> parentScopes,
-  ) : _parentScopeRefs = parentScopes
-            .map((data) => WeakReference<FairyScopeData>(data))
-            .toList();
+  ) : _flattenedParents = _flattenParentScopes(parentScopes);
+
+  /// Flattens parent scope registries into a single map for O(1) lookup.
+  ///
+  /// Parent scopes are processed from farthest to nearest, so nearest parents
+  /// override farthest in case of type conflicts (which shouldn't happen in
+  /// well-designed hierarchies, but this ensures correct behavior).
+  ///
+  /// Uses weak references to prevent memory leaks if parent scopes are disposed.
+  static Map<Type, WeakReference<ObservableObject>> _flattenParentScopes(
+    List<FairyScopeData> parentScopes,
+  ) {
+    final flattened = <Type, WeakReference<ObservableObject>>{};
+    
+    // Iterate from farthest to nearest (reversed order)
+    // This ensures nearest parent wins in case of duplicate types
+    for (final parentData in parentScopes.reversed) {
+      for (final entry in parentData._registry.entries) {
+        flattened[entry.key] = WeakReference<ObservableObject>(entry.value);
+      }
+    }
+    
+    return flattened;
+  }
 
   /// Invalidates this locator after initialization is complete.
   void _invalidate() {
@@ -155,25 +178,27 @@ class _FairyScopeLocatorImpl implements FairyScopeLocator {
       );
     }
 
-    // First, try to find in current scope's registry (for sequential dependencies)
+    // HYBRID APPROACH for optimal performance:
+    
+    // 1. Always check current scope directly (O(1))
+    //    This supports future lazy creation and sequential dependencies
     final currentResult = _currentScopeData._registry[T];
     if (currentResult != null) {
       return currentResult as T;
     }
 
-    // Next, check pre-collected parent scopes (closest to farthest)
-    // Uses weak references to prevent memory leaks
-    for (final weakRef in _parentScopeRefs) {
-      final parentData = weakRef.target;
-      if (parentData != null) {
-        final parentResult = parentData._registry[T];
-        if (parentResult != null) {
-          return parentResult as T;
-        }
+    // 2. Check flattened parent scopes (O(1) instead of O(n) iteration)
+    //    Uses weak references to prevent memory leaks
+    final parentWeakRef = _flattenedParents[T];
+    if (parentWeakRef != null) {
+      final parentResult = parentWeakRef.target;
+      if (parentResult != null) {
+        return parentResult as T;
       }
+      // Weak reference was garbage collected - fall through to next step
     }
 
-    // Fall back to global FairyLocator
+    // 3. Fall back to global FairyLocator
     try {
       return FairyLocator.instance.get<T>();
     } catch (e) {
