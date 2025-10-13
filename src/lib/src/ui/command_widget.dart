@@ -88,6 +88,41 @@ class Command<TViewModel extends ObservableObject> extends StatefulWidget {
   const Command({
     required this.command, required this.builder, super.key,
   });
+
+  /// Creates a command binding for parameterized commands.
+  ///
+  /// This is a convenience factory that creates a [CommandWithParam] widget.
+  /// Use when your command requires a parameter at execution time.
+  ///
+  /// Supports both [RelayCommandWithParam] and [AsyncRelayCommandWithParam].
+  ///
+  /// Example:
+  /// ```dart
+  /// Command.param<TodoViewModel, String>(
+  ///   command: (vm) => vm.deleteTodoCommand,
+  ///   parameter: todoId,
+  ///   builder: (context, execute, canExecute) {
+  ///     return IconButton(
+  ///       onPressed: canExecute ? execute : null,
+  ///       icon: const Icon(Icons.delete),
+  ///     );
+  ///   },
+  /// )
+  /// ```
+  static CommandWithParam<TViewModel, TParam> param<TViewModel extends ObservableObject, TParam>({
+    Key? key,
+    required dynamic Function(TViewModel vm) command,
+    required TParam parameter,
+    required Widget Function(BuildContext context, VoidCallback execute, bool canExecute) builder,
+  }) {
+    return CommandWithParam<TViewModel, TParam>(
+      key: key,
+      command: command,
+      parameter: parameter,
+      builder: builder,
+    );
+  }
+
   /// Selector function that extracts the command from the ViewModel.
   ///
   /// Must return a [RelayCommand] or [AsyncRelayCommand] instance.
