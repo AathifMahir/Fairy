@@ -15,19 +15,19 @@ class CounterViewModel extends ObservableObject {
   VoidCallback? _counterDisposer;
   
   CounterViewModel() {
-    counter = ObservableProperty<int>(0, parent: this);
+    counter = ObservableProperty<int>(0);
     
-    incrementCommand = relayCommand(
+    incrementCommand = RelayCommand(
       _increment,
     );
     
     // Decrement only enabled when counter > 0
-    decrementCommand = relayCommand(
+    decrementCommand = RelayCommand(
       _decrement,
       canExecute: () => counter.value > 0,
     );
     
-    resetCommand = relayCommand(
+    resetCommand = RelayCommand(
        _reset,
     );
     
