@@ -1,65 +1,89 @@
 import 'package:fairy/fairy.dart';
+import 'package:fairy/src/core/observable_node.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('Auto-Disposal', () {
-    test('properties created in field initializers are auto-disposed', () {
-      var propertyDisposed = false;
+  group('ObservableNode Garbage Collection', () {
+    test('properties are garbage collected when ViewModel is dereferenced', () {
+      WeakReference<ObservableProperty<String>>? weakProp;
       
-      final vm = _TestViewModel(
-        onPropertyDisposed: () => propertyDisposed = true,
-      );
+      // Create scope to allow GC
+      void createAndDispose() {
+        final vm = _TestViewModel(onPropertyDisposed: () {});
+        weakProp = WeakReference(vm.data);
+        expect(weakProp!.target, isNotNull);
+        // vm goes out of scope here
+      }
       
-      expect(propertyDisposed, false);
-      vm.dispose();
-      expect(propertyDisposed, true);
+      createAndDispose();
+      
+      // Force GC (not guaranteed but helps in tests)
+      final List<List<int>> garbage = [];
+      for (int i = 0; i < 100; i++) {
+        garbage.add(List.filled(10000, i));
+      }
+      garbage.clear();
+      
+      // After GC, weak reference should be null (property was collected)
+      // Note: GC timing is not guaranteed, so this might still pass if GC hasn't run
+      // This is more of a demonstration that GC CAN collect it
+      expect(weakProp?.target, isNull, 
+        reason: 'ObservableProperty should be garbage collected when ViewModel is dereferenced');
     });
 
-    test('properties created in constructor body are auto-disposed', () {
-      var propertyDisposed = false;
+    test('dispose() clears listeners but object still usable', () {
+      var listenerCalled = false;
       
-      final vm = _TestViewModelWithConstructorBody(
-        onPropertyDisposed: () => propertyDisposed = true,
-      );
+      final vm = _TestViewModel(onPropertyDisposed: () {});
       
-      expect(propertyDisposed, false);
-      vm.dispose();
-      expect(propertyDisposed, true);
+      // Add listener
+      vm.data.propertyChanged(() => listenerCalled = true);
+      
+      // Change value - listener should be called
+      vm.data.value = 'test';
+      expect(listenerCalled, true);
+      
+      // Reset flag
+      listenerCalled = false;
+      
+      // Dispose clears listeners
+      vm.data.dispose();
+      
+      // Property still usable after dispose
+      vm.data.value = 'after dispose';
+      expect(vm.data.value, 'after dispose');
+      
+      // But listener was cleared, so not called
+      expect(listenerCalled, false);
     });
 
-    test('multiple properties are all auto-disposed', () {
-      var prop1Disposed = false;
-      var prop2Disposed = false;
-      var prop3Disposed = false;
+    test('multiple dispose calls are safe (no-op)', () {
+      final vm = _TestViewModel(onPropertyDisposed: () {});
       
-      final vm = _TestViewModelMultipleProperties(
-        onProp1Disposed: () => prop1Disposed = true,
-        onProp2Disposed: () => prop2Disposed = true,
-        onProp3Disposed: () => prop3Disposed = true,
-      );
+      // Multiple dispose calls don't throw
+      expect(() {
+        vm.data.dispose();
+        vm.data.dispose();
+        vm.data.dispose();
+      }, returnsNormally);
       
-      expect(prop1Disposed, false);
-      expect(prop2Disposed, false);
-      expect(prop3Disposed, false);
-      
-      vm.dispose();
-      
-      expect(prop1Disposed, true);
-      expect(prop2Disposed, true);
-      expect(prop3Disposed, true);
+      // Property still usable
+      vm.data.value = 'still works';
+      expect(vm.data.value, 'still works');
     });
 
-    test('ComputedProperty is auto-disposed', () {
-      var computedDisposed = false;
+    test('computed property releases dependency listeners on dispose', () {
+      final vm = _TestViewModelWithComputed(onComputedDisposed: () {});
       
-      final vm = _TestViewModelWithComputed(
-        onComputedDisposed: () => computedDisposed = true,
-      );
+      // Computed property has listeners on source
+      expect(vm.source.hasListeners, true);
       
-      expect(computedDisposed, false);
-      vm.dispose();
-      expect(computedDisposed, true);
+      // Dispose computed property
+      vm.computed.dispose();
+      
+      // Dependency listeners should be removed
+      expect(vm.source.hasListeners, false);
     });
 
     test('nested ObservableObject is NOT auto-disposed', () {
@@ -79,35 +103,35 @@ void main() {
       expect(childDisposed, true);
     });
 
-    test('properties created in async method without parent print warning', () async {
+    test('properties created in async method can be manually disposed', () async {
       final vm = _TestViewModelWithAsyncMethod();
       
       // Wait for stack cleanup to complete (simulating real async scenario)
       await Future<void>.delayed(const Duration(milliseconds: 10));
       
-      // Creating property in async method without parent just prints a warning in debug mode
-      // It doesn't throw - user must manually dispose if no parent
+      // Creating property in async method works fine
+      // With ObservableNode, no parent tracking needed - just manual disposal
       await vm.createPropertyAsync();
       
       vm.dispose();
     });
 
-    test('properties created in getter without parent print warning', () async {
+    test('properties created in getter can be manually disposed', () async {
       final vm = _TestViewModelWithGetter();
       
       // Wait for stack cleanup to complete
       await Future<void>.delayed(const Duration(milliseconds: 10));
       
-      // Creating property in getter without parent just prints a warning in debug mode
-      // It doesn't throw - user must manually dispose if no parent
+      // Creating property in getter works fine
+      // With ObservableNode, disposal is optional (just convenience)
       final prop = vm.dynamicProperty;
       expect(prop, isNotNull);
-      prop.dispose(); // Manual cleanup needed
+      prop.dispose(); // Optional cleanup
       
       vm.dispose();
     });
 
-    test('parent-child relationship maintains across multiple VMs', () {
+    test('multiple ViewModels can have independent properties', () {
       var vm1Prop1Disposed = false;
       var vm1Prop2Disposed = false;
       var vm2Prop1Disposed = false;
@@ -125,20 +149,26 @@ void main() {
         onProp3Disposed: () {},
       );
       
-      // Dispose vm1
-      vm1.dispose();
+      // Dispose vm1 properties manually
+      vm1.prop1.dispose();
+      vm1.prop2.dispose();
       expect(vm1Prop1Disposed, true);
       expect(vm1Prop2Disposed, true);
       expect(vm2Prop1Disposed, false);
       expect(vm2Prop2Disposed, false);
       
-      // Dispose vm2
-      vm2.dispose();
+      // Dispose vm2 properties manually
+      vm2.prop1.dispose();
+      vm2.prop2.dispose();
       expect(vm2Prop1Disposed, true);
       expect(vm2Prop2Disposed, true);
+      
+      // ViewModels can still dispose independently
+      vm1.dispose();
+      vm2.dispose();
     });
 
-    test('properties created in helper method during construction are auto-disposed', () {
+    test('properties created in helper method can be manually disposed', () {
       var propertyDisposed = false;
       
       final vm = _TestViewModelWithHelperMethod(
@@ -146,7 +176,13 @@ void main() {
       );
       
       expect(propertyDisposed, false);
+      
+      // ViewModel dispose doesn't dispose properties
       vm.dispose();
+      expect(propertyDisposed, false);
+      
+      // Manual disposal required
+      vm.data.dispose();
       expect(propertyDisposed, true);
     });
 
@@ -165,10 +201,10 @@ void main() {
     test('ObservableObject can be disposed multiple times safely', () {
       final vm = _TestViewModel(onPropertyDisposed: () {});
       
+      // ObservableNode allows multiple disposals (just clears listeners)
+      // Unlike ChangeNotifier, this doesn't throw - disposal is just a convenience
       vm.dispose();
-      // ChangeNotifier throws FlutterError on double disposal by design
-      // This is expected behavior - we're just testing that dispose can be called
-      expect(() => vm.dispose(), throwsFlutterError);
+      expect(() => vm.dispose(), returnsNormally);
     });
   });
 }
@@ -179,15 +215,7 @@ class _TestViewModel extends ObservableObject {
   late final ObservableProperty<String> data;
 
   _TestViewModel({required VoidCallback onPropertyDisposed}) {
-    data = _TrackableProperty('', onPropertyDisposed, parent: this);
-  }
-}
-
-class _TestViewModelWithConstructorBody extends ObservableObject {
-  late final ObservableProperty<String> data;
-
-  _TestViewModelWithConstructorBody({required VoidCallback onPropertyDisposed}) {
-    data = _TrackableProperty('', onPropertyDisposed, parent: this);
+    data = _TrackableProperty('', onPropertyDisposed);
   }
 }
 
@@ -201,9 +229,9 @@ class _TestViewModelMultipleProperties extends ObservableObject {
     required VoidCallback onProp2Disposed,
     required VoidCallback onProp3Disposed,
   }) {
-    prop1 = _TrackableProperty('', onProp1Disposed, parent: this);
-    prop2 = _TrackablePropertyInt(0, onProp2Disposed, parent: this);
-    prop3 = _TrackablePropertyBool(false, onProp3Disposed, parent: this);
+    prop1 = _TrackableProperty('', onProp1Disposed);
+    prop2 = _TrackablePropertyInt(0, onProp2Disposed);
+    prop3 = _TrackablePropertyBool(false, onProp3Disposed);
   }
 }
 
@@ -212,12 +240,11 @@ class _TestViewModelWithComputed extends ObservableObject {
   late final ComputedProperty<String> computed;
 
   _TestViewModelWithComputed({required VoidCallback onComputedDisposed}) {
-    source = ObservableProperty<String>('test', parent: this);
+    source = ObservableProperty<String>('test');
     computed = _TrackableComputedProperty(
       () => source.value.toUpperCase(),
-      dependencies: [source],
+      dependencies: <ObservableNode>[source],
       onDisposed: onComputedDisposed,
-      parent: this,
     );
   }
 }
@@ -267,7 +294,7 @@ class _TestViewModelWithHelperMethod extends ObservableObject {
   }
 
   void _initializeProperties(VoidCallback onPropertyDisposed) {
-    data = _TrackableProperty('', onPropertyDisposed, parent: this);
+    data = _TrackableProperty('', onPropertyDisposed);
   }
 }
 
@@ -276,7 +303,7 @@ class _TestViewModelWithHelperMethod extends ObservableObject {
 class _TrackableProperty extends ObservableProperty<String> {
   final VoidCallback onDisposed;
 
-  _TrackableProperty(super.initialValue, this.onDisposed, {super.parent});
+  _TrackableProperty(super.initialValue, this.onDisposed);
 
   @override
   void dispose() {
@@ -288,7 +315,7 @@ class _TrackableProperty extends ObservableProperty<String> {
 class _TrackablePropertyInt extends ObservableProperty<int> {
   final VoidCallback onDisposed;
 
-  _TrackablePropertyInt(super.initialValue, this.onDisposed, {super.parent});
+  _TrackablePropertyInt(super.initialValue, this.onDisposed);
 
   @override
   void dispose() {
@@ -300,7 +327,7 @@ class _TrackablePropertyInt extends ObservableProperty<int> {
 class _TrackablePropertyBool extends ObservableProperty<bool> {
   final VoidCallback onDisposed;
 
-  _TrackablePropertyBool(super.initialValue, this.onDisposed, {super.parent});
+  _TrackablePropertyBool(super.initialValue, this.onDisposed);
 
   @override
   void dispose() {
@@ -314,10 +341,9 @@ class _TrackableComputedProperty extends ComputedProperty<String> {
 
   _TrackableComputedProperty(
     String Function() compute, {
-    required List<Listenable> dependencies,
+    required List<ObservableNode> dependencies,
     required this.onDisposed,
-    ObservableObject? parent,
-  }) : super(compute, dependencies, parent: parent);
+  }) : super(compute, dependencies);
 
   @override
   void dispose() {
