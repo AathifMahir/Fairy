@@ -4,11 +4,16 @@
 /// Combines reactive properties, command patterns, and dependency injection
 /// with minimal boilerplate.
 ///
+/// ## Learn Just 2 Widgets:
+/// - **Bind** - Reactive data binding (`Bind` / `Bind.observer`)
+/// - **Command** - User action binding (`Command` / `Command.param`)
+///
 /// ## Core Features:
+// ignore: unintended_html_in_doc_comment
 /// - **ObservableProperty<T>**: Typed, reactive properties for two-way binding
 /// - **RelayCommand / AsyncRelayCommand**: Command pattern with canExecute logic
-/// - **Bind**: Auto-detecting one-way vs two-way binding widget
-/// - **Command**: Bind commands to UI with automatic canExecute reactivity
+/// - **Auto-tracking**: `Bind.observer` automatically tracks accessed properties
+/// - **Parameterized commands**: `Command.param` for actions with parameters
 /// - **FairyLocator**: Global dependency injection
 /// - **FairyScope**: Widget-scoped dependency injection with automatic disposal
 ///
@@ -16,31 +21,32 @@
 /// ```dart
 /// // 1. Create a ViewModel
 /// class CounterViewModel extends ObservableObject {
-///   final count = ObservableProperty<int>(0, parent: this);
-///   late final RelayCommand increment;
-///
-///   CounterViewModel() {
-///     increment = RelayCommand(
-///       execute: () => count.value++,
-///       parent: this,
-///     );
-///   }
+///   final count = ObservableProperty<int>(0);
+///   late final increment = RelayCommand(() => count.value++);
 ///
 ///   // Properties and commands auto-disposed by super.dispose()
 /// }
 ///
 /// // 2. Provide it via FairyScope
 /// FairyScope(
-///   create: () => CounterViewModel(),
+///   viewModel: (_) => CounterViewModel(),
 ///   child: MyApp(),
 /// )
 ///
-/// // 3. Bind in UI
+/// // 3. Bind in UI with just 2 widgets
+/// 
+/// // Data binding
 /// Bind<CounterViewModel, int>(
-///   selector: (vm) => vm.count,
+///   selector: (vm) => vm.count.value,
 ///   builder: (ctx, value, update) => Text('$value'),
 /// )
 ///
+/// // Or use auto-tracking
+/// Bind.observer<CounterViewModel>(
+///   builder: (ctx, vm) => Text('${vm.count.value}'),
+/// )
+///
+/// // Command binding
 /// Command<CounterViewModel>(
 ///   command: (vm) => vm.increment,
 ///   builder: (ctx, execute, canExecute) =>
@@ -60,14 +66,15 @@ export 'src/core/command.dart'
 export 'src/core/observable.dart'
     show ObservableObject, ObservableProperty, ComputedProperty;
 // Extensions
-export 'src/extensions.dart'
-    show FairyContextExtensions, ObservableObjectExtensions;
+export 'src/extensions.dart' show FairyContextExtensions;
 // Dependency injection
 export 'src/locator/fairy_locator.dart' show FairyLocator;
 export 'src/locator/fairy_scope.dart' show FairyScope;
 export 'src/locator/fairy_resolver.dart' show Fairy;
 // UI binding widgets
 export 'src/ui/bind_widget.dart' show Bind;
+export 'src/ui/bind_observer.dart'
+    show BindObserver, BindObserver2, BindObserver3;
 export 'src/ui/command_widget.dart' show Command, CommandWithParam;
 // Utilities
 export 'src/utils/equals.dart' show listEquals, mapEquals, setEquals;
