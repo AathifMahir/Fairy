@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import '../core/observable.dart';
 import '../locator/fairy_resolver.dart';
+import 'bind_observer.dart';
 
 /// A widget that binds ViewModel data to UI with automatic type detection.
 ///
@@ -89,6 +90,112 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   ///
   /// Useful for initial-value-only scenarios where reactivity isn't needed.
   final bool oneTime;
+
+  /// Creates a binding that automatically observes all [ObservableNode] instances
+  /// accessed during the builder function.
+  /// 
+  /// This is Fairy's equivalent to Provider's Consumer or Riverpod's ConsumerWidget.
+  /// Unlike the standard [Bind] constructor which requires explicit selectors,
+  /// [observer] automatically tracks which properties and commands are accessed
+  /// and only rebuilds when those specific nodes change.
+  /// 
+  /// **When to use:**
+  /// - Multiple properties from same ViewModel
+  /// - Dynamic access patterns (conditional branches)
+  /// - Command state tracking ([AsyncRelayCommand.isRunning])
+  /// - Rapid prototyping
+  /// 
+  /// **When NOT to use:**
+  /// - Single property binding (use standard `Bind<TViewModel, TValue>`)
+  /// - Performance-critical widgets (explicit selectors are 5-10% faster)
+  /// 
+  /// Example:
+  /// ```dart
+  /// Bind.observer<CounterViewModel>(
+  ///   builder: (context, vm) {
+  ///     return Column(
+  ///       children: [
+  ///         Text('Count: ${vm.count.value}'),
+  ///         Text('Max: ${vm.maxCount.value}'),
+  ///         if (vm.saveCommand.isRunning)
+  ///           CircularProgressIndicator(),
+  ///       ],
+  ///     );
+  ///   },
+  /// )
+  /// ```
+  static BindObserver<TViewModel> observer<TViewModel extends ObservableObject>({
+    Key? key,
+    required Widget Function(BuildContext context, TViewModel vm) builder,
+  }) {
+    return BindObserver<TViewModel>(
+      key: key,
+      builder: builder,
+    );
+  }
+
+  /// Creates a binding that automatically observes all [ObservableNode] instances
+  /// from two ViewModels accessed during the builder function.
+  /// 
+  /// Example:
+  /// ```dart
+  /// Bind.observer2<UserViewModel, SettingsViewModel>(
+  ///   builder: (context, user, settings) {
+  ///     return Column(
+  ///       children: [
+  ///         Text('User: ${user.name.value}'),
+  ///         Text('Theme: ${settings.theme.value}'),
+  ///       ],
+  ///     );
+  ///   },
+  /// )
+  /// ```
+  static BindObserver2<TViewModel1, TViewModel2> observer2<
+      TViewModel1 extends ObservableObject,
+      TViewModel2 extends ObservableObject>({
+    Key? key,
+    required Widget Function(BuildContext context, TViewModel1 vm1, TViewModel2 vm2) builder,
+  }) {
+    return BindObserver2<TViewModel1, TViewModel2>(
+      key: key,
+      builder: builder,
+    );
+  }
+
+  /// Creates a binding that automatically observes all [ObservableNode] instances
+  /// from three ViewModels accessed during the builder function.
+  /// 
+  /// Example:
+  /// ```dart
+  /// Bind.observer3<UserViewModel, SettingsViewModel, DataViewModel>(
+  ///   builder: (context, user, settings, data) {
+  ///     return Column(
+  ///       children: [
+  ///         Text('User: ${user.name.value}'),
+  ///         Text('Theme: ${settings.theme.value}'),
+  ///         Text('Count: ${data.count.value}'),
+  ///       ],
+  ///     );
+  ///   },
+  /// )
+  /// ```
+  static BindObserver3<TViewModel1, TViewModel2, TViewModel3> observer3<
+      TViewModel1 extends ObservableObject,
+      TViewModel2 extends ObservableObject,
+      TViewModel3 extends ObservableObject>({
+    Key? key,
+    required Widget Function(
+      BuildContext context,
+      TViewModel1 vm1,
+      TViewModel2 vm2,
+      TViewModel3 vm3,
+    ) builder,
+  }) {
+    return BindObserver3<TViewModel1, TViewModel2, TViewModel3>(
+      key: key,
+      builder: builder,
+    );
+  }
 
   @override
   State<Bind<TViewModel, TValue>> createState() =>
