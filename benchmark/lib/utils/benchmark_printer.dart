@@ -17,8 +17,11 @@ void printBenchmarkResults(BenchmarkResults results) {
   // Memory Performance Table
   printSection('Memory Management (50 create/dispose cycles)', results.memoryPerformance);
 
-  // Selective Rebuild Performance Table
-  printSection('Selective Rebuild Performance (1000 property updates)', results.selectiveRebuildPerformance);
+  // Selective Rebuild Performance Table (using explicit Bind with selectors)
+  printSection('Selective Rebuild Performance (100 property updates, explicit Bind)', results.selectiveRebuildPerformance);
+
+  // Rebuild Performance Table (using Bind.observer auto-tracking)
+  printSection('Rebuild Performance (100 property updates, auto-tracking)', results.rebuildPerformance);
 
   // Summary
   printSummary(results);
@@ -43,13 +46,25 @@ void printSection(String title, Map<String, int> data) {
 
   for (var i = 0; i < sorted.length; i++) {
     final entry = sorted[i];
-    final name = entry.key;
+    final rawName = entry.key;
     final time = entry.value;
     final ms = (time / 1000).toStringAsFixed(2);
     final relative = ((time / fastest) * 100).toStringAsFixed(1);
     
+    // Clean up display name - remove suffixes like "(selective)", "Bind.observer", "Consumer"
+    String displayName = rawName
+        .replaceAll(' (selective)', '')
+        .replaceAll(' Bind.observer', '')
+        .replaceAll(' Consumer', '');
+    
+    // Extract base framework name for emoji
+    String baseName = displayName;
+    if (displayName.startsWith('Fairy')) baseName = 'Fairy';
+    else if (displayName.startsWith('Provider')) baseName = 'Provider';
+    else if (displayName.startsWith('Riverpod')) baseName = 'Riverpod';
+    
     String emoji;
-    switch (name) {
+    switch (baseName) {
       case 'Fairy':
         emoji = '🧚';
         break;
@@ -68,7 +83,7 @@ void printSection(String title, Map<String, int> data) {
     else if (i == 1) medal = ' 🥈';
     else if (i == 2) medal = ' 🥉';
 
-    final nameField = '$emoji $name$medal'.padRight(15);
+    final nameField = '$emoji $displayName$medal'.padRight(15);
     final timeField = time.toString().padLeft(14);
     final msField = ms.padLeft(12);
     final relativeField = relative.padLeft(14);
@@ -106,6 +121,7 @@ void printSummary(BenchmarkResults results) {
     results.buildPerformance,
     results.memoryPerformance,
     results.selectiveRebuildPerformance,
+    results.rebuildPerformance,
   ]) {
     if (category.isEmpty) continue;
     final sorted = category.entries.toList()
