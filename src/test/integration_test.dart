@@ -33,19 +33,19 @@ class CounterViewModel extends ObservableObject {
   CounterViewModel(this._service) {
     counter.value = _service.getInitialCount();
     
-    incrementCommand = relayCommand(
+    incrementCommand = RelayCommand(
        _increment,
       canExecute: () => !isProcessing.value,
     );
     
-    decrementCommand = relayCommand(
+    decrementCommand = RelayCommand(
        _decrement,
       canExecute: () => counter.value > 0 && !isProcessing.value,
     );
     
-    resetCommand = asyncRelayCommand(_reset);
+    resetCommand = AsyncRelayCommand(_reset);
     
-    addValueCommand = relayCommandWithParam<int>(
+    addValueCommand = RelayCommandWithParam<int>(
        _addValue,
       canExecute: (value) => value > 0 && !isProcessing.value,
     );
