@@ -20,7 +20,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^0.5.0+2
+  fairy: ^1.0.0-rc.1
 ```
 
 ### Basic Example
@@ -33,6 +33,7 @@ import 'package:flutter/material.dart';
 class CounterViewModel extends ObservableObject {
   final counter = ObservableProperty<int>(0);
   late final incrementCommand = RelayCommand(() => counter.value++);
+  late final addCommand = RelayCommandWithParam<int>((amount) => counter.value += amount);
   
   // Properties and commands auto-disposed by super.dispose()
 }
@@ -59,19 +60,36 @@ class CounterPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Data binding - automatically updates when counter changes
+            // Option 1: Explicit binding (recommended for single properties)
             Bind<CounterViewModel, int>(
               selector: (vm) => vm.counter,
               builder: (context, value, update) => Text('$value'),
             ),
             
-            // Command binding - automatically disabled when canExecute is false
+            // Option 2: Auto-tracking (convenient for multiple properties)
+            Bind.observer<CounterViewModel>(
+              builder: (context, vm) => Text('${vm.counter.value}'),
+            ),
+            
+            // Command binding (non-parameterized)
             Command<CounterViewModel>(
               command: (vm) => vm.incrementCommand,
               builder: (context, execute, canExecute) {
                 return ElevatedButton(
                   onPressed: canExecute ? execute : null,
                   child: Text('Increment'),
+                );
+              },
+            ),
+            
+            // Command binding (parameterized)
+            Command.param<CounterViewModel, int>(
+              command: (vm) => vm.addCommand,
+              parameter: 5,
+              builder: (context, execute, canExecute) {
+                return ElevatedButton(
+                  onPressed: canExecute ? execute : null,
+                  child: Text('Add 5'),
                 );
               },
             ),
@@ -183,26 +201,26 @@ class MyViewModel extends ObservableObject {
 
 #### Parameterized Commands
 
-Commands that accept parameters:
+Commands that accept parameters (useful for item actions, delete operations, etc.):
 
 ```dart
-class MyViewModel extends ObservableObject {
-  final counter = ObservableProperty<int>(0);
+class TodoViewModel extends ObservableObject {
+  final todos = ObservableProperty<List<Todo>>([]);
   
-  late final addValueCommand = RelayCommandWithParam<int>(
-    (value) => counter.value += value,
-    canExecute: (value) => value > 0,
+  late final deleteTodoCommand = RelayCommandWithParam<String>(
+    (id) => todos.value = todos.value.where((t) => t.id != id).toList(),
+    canExecute: (id) => todos.value.any((t) => t.id == id),
   );
 }
 
-// In UI:
-CommandWithParam<MyViewModel, int>(
-  command: (vm) => vm.addValueCommand,
-  parameter: 5,
+// In UI - use Command.param:
+Command.param<TodoViewModel, String>(
+  command: (vm) => vm.deleteTodoCommand,
+  parameter: todoId,
   builder: (context, execute, canExecute) {
-    return ElevatedButton(
+    return IconButton(
       onPressed: canExecute ? execute : null,
-      child: Text('Add 5'),
+      icon: Icon(Icons.delete),
     );
   },
 )
@@ -244,44 +262,74 @@ class MyViewModel extends ObservableObject {
 
 > **⚠️ Memory Leak Warning:** Always capture the disposer returned by `canExecuteChanged()`. Failing to call it will cause memory leaks. For UI binding, use the `Command` widget which handles this automatically.
 
-### 4. Data Binding
+### 4. Data Binding with `Bind`
 
-The `Bind` widget automatically detects one-way vs two-way binding:
+The `Bind` widget handles reactive data binding. With just 2 widgets (`Bind` and `Command`), you're covering almost all your UI binding needs.
 
-#### Two-Way Binding
+#### Explicit Binding (Recommended)
 
-When selector returns `ObservableProperty<T>`, you get two-way binding with an `update` callback:
+Use `Bind<TViewModel, TValue>` with an explicit selector for optimal performance:
 
 ```dart
+// One-way binding (read-only)
+Bind<UserViewModel, String>(
+  selector: (vm) => vm.name.value,  // Returns String
+  builder: (context, value, update) {
+    return Text(value);  // update is null
+  },
+)
+
+// Two-way binding (read-write)
 Bind<UserViewModel, String>(
   selector: (vm) => vm.name,  // Returns ObservableProperty<String>
   builder: (context, value, update) {
     return TextField(
       controller: TextEditingController(text: value),
-      onChanged: update,  // update is non-null for two-way binding
+      onChanged: update,  // update callback provided
     );
   },
 )
 ```
 
-#### One-Way Binding
+#### Auto-Tracking with `Bind.observer`
 
-When selector returns raw `T`, you get one-way binding (read-only):
+For multiple properties or rapid prototyping, use `Bind.observer` which automatically tracks accessed properties:
 
 ```dart
-Bind<UserViewModel, String>(
-  selector: (vm) => vm.name.value,  // Returns String
-  builder: (context, value, update) {
-    return Text(value);  // update is null for one-way binding
+class UserViewModel extends ObservableObject {
+  final firstName = ObservableProperty<String>('John');
+  final lastName = ObservableProperty<String>('Doe');
+  final age = ObservableProperty<int>(30);
+}
+
+// Auto-tracks all accessed properties - no manual selectors needed!
+Bind.observer<UserViewModel>(
+  builder: (context, vm) {
+    return Column(
+      children: [
+        Text('Name: ${vm.firstName.value} ${vm.lastName.value}'),
+        Text('Age: ${vm.age.value}'),
+        // All three properties automatically tracked!
+        // Widget rebuilds only when accessed properties change
+      ],
+    );
   },
 )
 ```
 
-**Note**: For one-way binding with raw values, the ViewModel must explicitly call `onPropertyChanged()` when values change. It's often simpler to use two-way binding even for read-only scenarios.
+**When to use `Bind.observer`:**
+- Multiple related properties displayed together
+- Complex UI with many data points
+- Rapid prototyping and development
+- When convenience outweighs micro-optimization
 
-### 5. Command Binding
+**Performance Note:** Explicit selectors are ~5-10% faster
+
+### 5. Command Binding with `Command`
 
 The `Command` widget binds commands to UI elements:
+
+#### Non-Parameterized Commands
 
 ```dart
 Command<UserViewModel>(
@@ -289,9 +337,24 @@ Command<UserViewModel>(
   builder: (context, execute, canExecute) {
     return ElevatedButton(
       onPressed: canExecute ? execute : null,  // Auto-disabled
-      child: saveCommand.isRunning 
-        ? CircularProgressIndicator() 
-        : Text('Save'),
+      child: Text('Save'),
+    );
+  },
+)
+```
+
+#### Parameterized Commands with `Command.param`
+
+When your command needs parameters (e.g., item IDs, user input):
+
+```dart
+Command.param<TodoViewModel, String>(
+  command: (vm) => vm.deleteTodoCommand,
+  parameter: todoId,
+  builder: (context, execute, canExecute) {
+    return IconButton(
+      onPressed: canExecute ? execute : null,
+      icon: Icon(Icons.delete),
     );
   },
 )
@@ -687,17 +750,33 @@ void main() {
 }
 ```
 
-### 6. Prefer Two-Way Binding for Simplicity
+### 6. Choose the Right Binding Approach
 
-Even for read-only scenarios, using two-way binding (returning `ObservableProperty`) is simpler than one-way binding (returning raw values):
+**For single properties:** Use explicit `Bind<TViewModel, TValue>` for optimal performance:
 
 ```dart
-// ✅ Simpler: Two-way binding
+// ✅ Best for single properties
 Bind<MyVM, int>(
   selector: (vm) => vm.counter,  // Returns ObservableProperty<int>
   builder: (context, value, update) => Text('$value'),
 )
+```
 
+**For multiple properties:** Use `Bind.observer` for convenience with excellent selective efficiency:
+
+```dart
+// ✅ Best for multiple properties
+Bind.observer<UserViewModel>(
+  builder: (context, vm) {
+    return Text('${vm.firstName.value} ${vm.lastName.value}');
+    // Both properties automatically tracked!
+  },
+)
+```
+
+**Avoid one-way binding:** Returning raw values requires manual change notification:
+
+```dart
 // ❌ More complex: One-way binding requires ViewModel.onPropertyChanged()
 Bind<MyVM, int>(
   selector: (vm) => vm.counter.value,  // Returns int
@@ -732,7 +811,7 @@ test('increment updates counter', () {
 });
 ```
 
-Widget tests work seamlessly with `FairyScope`:
+Widget tests work seamlessly with `FairyScope` and both `Bind` variants:
 
 ```dart
 testWidgets('counter increments on button tap', (tester) async {
@@ -749,6 +828,28 @@ testWidgets('counter increments on button tap', (tester) async {
   await tester.pumpAndSettle();
   
   expect(find.text('1'), findsOneWidget);
+});
+
+testWidgets('Bind.observer rebuilds on property change', (tester) async {
+  final vm = UserViewModel();
+  
+  await tester.pumpWidget(
+    MaterialApp(
+      home: FairyScope(
+        viewModel: (_) => vm,
+        child: Bind.observer<UserViewModel>(
+          builder: (context, vm) => Text('${vm.firstName.value}'),
+        ),
+      ),
+    ),
+  );
+  
+  expect(find.text('John'), findsOneWidget);
+  
+  vm.firstName.value = 'Jane';
+  await tester.pump();
+  
+  expect(find.text('Jane'), findsOneWidget);
 });
 ```
 
