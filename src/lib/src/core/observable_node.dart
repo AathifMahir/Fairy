@@ -8,11 +8,19 @@ abstract class ObservableNode {
   bool get hasListeners => _listeners.isNotEmpty;
 
   /// Register a listener
+  /// 
+  /// Unlike some implementations, this allows the same listener to be
+  /// registered multiple times, matching Flutter's ChangeNotifier behavior.
+  /// Each registration will result in a separate call to the listener when
+  /// notifyListeners() is invoked.
   void addListener(VoidListener listener) {
     _listeners.add(listener);
   }
 
   /// Unregister a listener
+  /// 
+  /// If the same listener was registered multiple times, this removes only
+  /// the first occurrence, matching Flutter's ChangeNotifier behavior.
   void removeListener(VoidListener listener) {
     _listeners.remove(listener);
   }
@@ -20,12 +28,25 @@ abstract class ObservableNode {
   /// Notify all listeners
   @protected
   void notifyListeners() {
-    for (final l in List<VoidListener>.from(_listeners)) {
-      l();
+    final snapshot = List<VoidListener>.from(_listeners);
+
+    for (final listener in snapshot) {
+      try {
+        listener();
+      } catch (error, stackTrace) {
+        // Report errors without stopping other listeners
+        FlutterError.reportError(FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'fairy',
+          context: ErrorDescription(
+            'while notifying listeners for $runtimeType',
+          ),
+        ));
+      }
     }
   }
 
   /// Optional: clear all listeners (manual cleanup if needed), if not Dart GC will handle it
   void dispose() => _listeners.clear();
-
 }
