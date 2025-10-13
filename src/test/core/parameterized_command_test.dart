@@ -233,7 +233,7 @@ void main() {
         var notificationCount = 0;
         final command = RelayCommandWithParam<String>((param) {});
         
-        command.addListener(() => notificationCount++);
+        command.canExecuteChanged(() => notificationCount++);
         
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
@@ -253,7 +253,7 @@ void main() {
           canExecute: (param) => validIds.contains(param),
         );
         
-        command.addListener(() {
+        command.canExecuteChanged(() {
           canExecuteResults.add(command.canExecute('id3'));
         });
         
@@ -274,9 +274,9 @@ void main() {
         final command = RelayCommandWithParam<int>((param) {});
         final callOrder = <int>[];
         
-        command.addListener(() => callOrder.add(1));
-        command.addListener(() => callOrder.add(2));
-        command.addListener(() => callOrder.add(3));
+        command.canExecuteChanged(() => callOrder.add(1));
+        command.canExecuteChanged(() => callOrder.add(2));
+        command.canExecuteChanged(() => callOrder.add(3));
         
         command.notifyCanExecuteChanged();
         
@@ -293,11 +293,11 @@ void main() {
           notificationCount++;
         }
         
-        command.addListener(listener);
+        final dispose = command.canExecuteChanged(listener);
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
-        command.removeListener(listener);
+        dispose(); // Remove listener
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1)); // Still 1
         
@@ -310,13 +310,15 @@ void main() {
         final command = RelayCommandWithParam<int>((param) {});
         var notificationCount = 0;
         
-        command.addListener(() => notificationCount++);
+        command.canExecuteChanged(() => notificationCount++);
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
         command.dispose();
         
-        expect(() => command.notifyCanExecuteChanged(), throwsFlutterError);
+        // ObservableNode allows notifying after disposal (listeners cleared)
+        command.notifyCanExecuteChanged();
+        expect(notificationCount, equals(1)); // Still 1, not incremented
       });
     });
 
@@ -469,7 +471,7 @@ void main() {
           await Future<void>.delayed(const Duration(milliseconds: 10));
         });
         
-        command.addListener(() {
+        command.canExecuteChanged(() {
           notificationCount++;
           isRunningStates.add(command.isRunning);
         });
@@ -624,7 +626,7 @@ void main() {
         var notificationCount = 0;
         final command = AsyncRelayCommandWithParam<String>((param) async {});
         
-        command.addListener(() => notificationCount++);
+        command.canExecuteChanged(() => notificationCount++);
         
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
@@ -660,13 +662,15 @@ void main() {
         final command = AsyncRelayCommandWithParam<int>((param) async {});
         var notificationCount = 0;
         
-        command.addListener(() => notificationCount++);
+        command.canExecuteChanged(() => notificationCount++);
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
         
         command.dispose();
         
-        expect(() => command.notifyCanExecuteChanged(), throwsFlutterError);
+        // ObservableNode allows notifying after disposal (listeners cleared)
+        command.notifyCanExecuteChanged();
+        expect(notificationCount, equals(1)); // Still 1, not incremented
       });
     });
 
@@ -675,7 +679,7 @@ void main() {
         final viewModel = AsyncUserViewModel();
         final capturedStates = <bool>[];
         
-        viewModel.loadUserCommand.addListener(() {
+        viewModel.loadUserCommand.canExecuteChanged(() {
           capturedStates.add(viewModel.loadUserCommand.isRunning);
         });
         
