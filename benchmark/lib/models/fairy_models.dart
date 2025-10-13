@@ -9,7 +9,7 @@ class FairyCounterViewModel extends ObservableObject {
     counter = ObservableProperty(0);
     incrementCommand = RelayCommand(() {
       counter.value++;
-    }, parent: this);
+    });
   }
 }
 
