@@ -31,16 +31,8 @@ import 'package:flutter/material.dart';
 
 // 1. Create a ViewModel extending ObservableObject
 class CounterViewModel extends ObservableObject {
-  // Recommended: Use extension methods (cleaner syntax, auto-passes parent)
-  final counter = observableProperty<int>(0);
-  late final incrementCommand = relayCommand(() => counter.value++);
-  
-  // Alternative: Explicit syntax (shows what extension methods do internally)
-  // final counter = ObservableProperty<int>(0, parent: this);
-  // late final RelayCommand incrementCommand;
-  // CounterViewModel() {
-  //   incrementCommand = RelayCommand(execute: () => counter.value++, parent: this);
-  // }
+  final counter = ObservableProperty<int>(0);
+  late final incrementCommand = RelayCommand(() => counter.value++);
   
   // Properties and commands auto-disposed by super.dispose()
 }
@@ -99,20 +91,15 @@ Your ViewModels extend `ObservableObject`:
 
 ```dart
 class UserViewModel extends ObservableObject {
-  // Recommended: Use extension methods (clean and simple)
-  final name = observableProperty<String>('');
-  final age = observableProperty<int>(0);
-  
-  // Alternative: Explicit syntax
-  // final name = ObservableProperty<String>('', parent: this);
-  // final age = ObservableProperty<int>(0, parent: this);
+  final name = ObservableProperty<String>('');
+  final age = ObservableProperty<int>(0);
   
   // ✅ Properties auto-disposed by super.dispose()
   // No manual disposal needed!
 }
 ```
 
-**Auto-Disposal:** Properties and commands are automatically disposed when the parent ViewModel is disposed. Use extension methods like `observableProperty()`, `relayCommand()`, etc., for cleaner syntax. See [Best Practices](#best-practices) for details.
+**Auto-Disposal:** Properties and commands are automatically disposed when the parent ViewModel is disposed. See [Best Practices](#best-practices) for details.
 
 ### 2. ObservableProperty<T> - Reactive State
 
@@ -120,11 +107,7 @@ Type-safe properties that notify listeners when their value changes:
 
 ```dart
 class MyViewModel extends ObservableObject {
-  // Recommended: Extension method (clean and simple)
-  final counter = observableProperty<int>(0);
-  
-  // Alternative: Explicit syntax
-  // final counter = ObservableProperty<int>(0, parent: this);
+  final counter = ObservableProperty<int>(0);
   
   void someMethod() {
     // Modify value
@@ -149,26 +132,13 @@ Commands encapsulate actions with optional validation:
 
 ```dart
 class MyViewModel extends ObservableObject {
-  final selectedItem = observableProperty<Item?>(null);
+  final selectedItem = ObservableProperty<Item?>(null);
   
-  // Recommended: Extension methods (cleaner)
-  late final saveCommand = relayCommand(_save);
-  late final deleteCommand = relayCommand(
+  late final saveCommand = RelayCommand(_save);
+  late final deleteCommand = RelayCommand(
     _delete,
     canExecute: () => selectedItem.value != null,
   );
-  
-  // Alternative: Explicit syntax (same result)
-  // late final RelayCommand saveCommand;
-  // late final RelayCommand deleteCommand;
-  // MyViewModel() {
-  //   saveCommand = RelayCommand(execute: _save, parent: this);
-  //   deleteCommand = RelayCommand(
-  //     execute: _delete,
-  //     canExecute: () => selectedItem.value != null,
-  //     parent: this,
-  //   );
-  // }
   
   late final VoidCallback _disposer;
   
@@ -201,14 +171,7 @@ For asynchronous operations with automatic `isRunning` state:
 
 ```dart
 class MyViewModel extends ObservableObject {
-  // Recommended: Extension method
-  late final fetchCommand = asyncRelayCommand(_fetchData);
-  
-  // Alternative: Explicit syntax
-  // late final AsyncRelayCommand fetchCommand;
-  // MyViewModel() {
-  //   fetchCommand = AsyncRelayCommand(execute: _fetchData, parent: this);
-  // }
+  late final fetchCommand = AsyncRelayCommand(_fetchData);
   
   Future<void> _fetchData() async {
     // fetchCommand.isRunning is automatically true
@@ -224,23 +187,12 @@ Commands that accept parameters:
 
 ```dart
 class MyViewModel extends ObservableObject {
-  final counter = observableProperty<int>(0);
+  final counter = ObservableProperty<int>(0);
   
-  // Recommended: Extension method
-  late final addValueCommand = relayCommandWithParam<int>(
+  late final addValueCommand = RelayCommandWithParam<int>(
     (value) => counter.value += value,
     canExecute: (value) => value > 0,
   );
-  
-  // Alternative: Explicit syntax
-  // late final RelayCommandWithParam<int> addValueCommand;
-  // MyViewModel() {
-  //   addValueCommand = RelayCommandWithParam<int>(
-  //     execute: (value) => counter.value += value,
-  //     canExecute: (value) => value > 0,
-  //     parent: this,
-  //   );
-  // }
 }
 
 // In UI:
@@ -262,10 +214,9 @@ Commands support listening to `canExecute` state changes, similar to how propert
 
 ```dart
 class MyViewModel extends ObservableObject {
-  final userName = observableProperty<String>('');
+  final userName = ObservableProperty<String>('');
   
-  // Using extension method
-  late final saveCommand = relayCommand(
+  late final saveCommand = RelayCommand(
     _save,
     canExecute: () => userName.value.isNotEmpty,
   );
@@ -528,26 +479,13 @@ Derived properties that depend on other ObservableProperties:
 
 ```dart
 class MyViewModel extends ObservableObject {
-  // Recommended: Extension methods
-  final firstName = observableProperty<String>('John');
-  final lastName = observableProperty<String>('Doe');
+  final firstName = ObservableProperty<String>('John');
+  final lastName = ObservableProperty<String>('Doe');
   
-  late final fullName = computedProperty<String>(
+  late final fullName = ComputedProperty<String>(
     () => '${firstName.value} ${lastName.value}',
     [firstName, lastName],
   );
-  
-  // Alternative: Explicit syntax
-  // final firstName = ObservableProperty<String>('John', parent: this);
-  // final lastName = ObservableProperty<String>('Doe', parent: this);
-  // late final ComputedProperty<String> fullName;
-  // MyViewModel() {
-  //   fullName = ComputedProperty<String>(
-  //     () => '${firstName.value} ${lastName.value}',
-  //     [firstName, lastName],
-  //     parent: this,
-  //   );
-  // }
 }
 ```
 
@@ -571,42 +509,24 @@ class User {
   int get hashCode => id.hashCode;
 }
 
-final user = ObservableProperty<User>(
-  User('1', 'Alice'),
-  parent: this,
-);
+final user = ObservableProperty<User>(User('1', 'Alice'));
 ```
 
 ## Best Practices
 
-### 1. Auto-Disposal with Parent Parameter
+### 1. Auto-Disposal
 
-**ObservableProperty, ComputedProperty, and Commands are automatically disposed** when created using extension methods or the `parent` parameter:
+**ObservableProperty, ComputedProperty, and Commands are automatically disposed** when the parent ViewModel is disposed:
 
 ```dart
 class UserViewModel extends ObservableObject {
-  // Recommended: Extension methods (clean and simple)
-  final userName = observableProperty<String>('');
-  final age = observableProperty<int>(0);
-  late final saveCommand = relayCommand(_save);
-  late final fullInfo = computedProperty<String>(
+  final userName = ObservableProperty<String>('');
+  final age = ObservableProperty<int>(0);
+  late final saveCommand = RelayCommand(_save);
+  late final fullInfo = ComputedProperty<String>(
     () => '${userName.value}, age ${age.value}',
     [userName, age],
   );
-  
-  // Alternative: Explicit syntax
-  // final userName = ObservableProperty<String>('', parent: this);
-  // final age = ObservableProperty<int>(0, parent: this);
-  // late final RelayCommand saveCommand;
-  // late final ComputedProperty<String> fullInfo;
-  // UserViewModel() {
-  //   saveCommand = RelayCommand(execute: _save, parent: this);
-  //   fullInfo = ComputedProperty<String>(
-  //     () => '${userName.value}, age ${age.value}',
-  //     [userName, age],
-  //     parent: this,
-  //   );
-  // }
   
   void _save() { /* ... */ }
   
@@ -619,8 +539,7 @@ class UserViewModel extends ObservableObject {
 
 ```dart
 class ParentViewModel extends ObservableObject {
-  // Properties auto-disposed (using extension method)
-  final data = observableProperty<String>('');
+  final data = ObservableProperty<String>('');
   
   // Nested ViewModels require manual disposal
   late final childVM = ChildViewModel();  // ⚠️ Manual disposal required
@@ -641,13 +560,12 @@ When a command's `canExecute` depends on other properties, refresh the command w
 
 ```dart
 class MyViewModel extends ObservableObject {
-  // Using extension methods
-  final selectedItem = observableProperty<Item?>(null);
-  late final deleteCommand = relayCommand(
+  final selectedItem = ObservableProperty<Item?>(null);
+  late final deleteCommand = RelayCommand(
     _delete,
     canExecute: () => selectedItem.value != null,
   );
-  late final editCommand = relayCommand(
+  late final editCommand = RelayCommand(
     _edit,
     canExecute: () => selectedItem.value != null,
   );
@@ -729,8 +647,8 @@ Command<MyViewModel>(
 ```
 
 **Why memory leaks still occur with manual listeners:**
-- Auto-disposal only handles property/command cleanup (when `parent` is provided)
-- When `propertyChanged()` or `canExecuteChanged()` is called directly, it registers a listener with the `ChangeNotifier`
+- Auto-disposal only handles property/command cleanup
+- When `propertyChanged()` or `canExecuteChanged()` is called directly, it registers a listener
 - The listener stays registered until explicitly removed via the disposer
 - Without calling the disposer, the listener (and any objects it captures) remain in memory
 - This is especially problematic if the `ViewModel` outlives the widget (e.g., global singleton)
@@ -810,7 +728,7 @@ test('increment updates counter', () {
   
   expect(vm.counter.value, 1);
   
-  vm.dispose(); // Auto-disposes all properties and commands with parent parameter
+  vm.dispose(); // Auto-disposes all properties and commands
 });
 ```
 
