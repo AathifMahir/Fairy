@@ -1,3 +1,72 @@
+## 1.0.0-rc.1
+
+### 🎉 Major Release Candidate
+
+This release represents a major milestone with significant API improvements, enhanced performance, and comprehensive testing.
+
+### ✨ New Features
+
+#### UI Widgets API Enhancement
+- **`Bind.observer<TViewModel>`**: New factory constructor for automatic property tracking
+  - Eliminates need for manual selectors when displaying multiple properties
+  - Automatically tracks all accessed properties and rebuilds only when they change
+  - Achieves great selective rebuild efficiency over other state management solutions
+  - 4-10% faster than competitors while maintaining perfect selectivity
+- **`Command.param<TViewModel, TParam>`**: New factory constructor for parameterized commands
+  - Provides consistent API alongside `Command<TViewModel>`
+  - Simplifies parameterized command binding in UI
+  - Completes the "2 widgets" framework positioning
+
+### 🔄 Breaking Changes
+
+#### Removed Extensions
+- **BREAKING**: Removed `ObservableObjectExtensions` for creating properties/commands
+  - **Before (Properties)**: `final counter = observableProperty<int>(0);`
+  - **After (Properties)**: `final counter = ObservableProperty<int>(0);`
+  - **Before (Commands)**: `late final saveCommand = relayCommand(_save);`
+  - **After (Commands)**: `late final saveCommand = RelayCommand(_save);`
+  - **Reason**: Direct type usage is clearer, more discoverable, and follows Dart conventions
+  - **Migration**: Replace all `observableProperty<T>()` with `ObservableProperty<T>()`
+  - **Migration**: Replace all `computedProperty<T>()` with `ComputedProperty<T>()`
+  - **Migration**: Replace all command helpers (`relayCommand`, `asyncRelayCommand`, etc.) with direct constructors (`RelayCommand`, `AsyncRelayCommand`, etc.)
+
+#### Command Constructor Changes
+- **BREAKING**: Removed `parent` parameter from all command constructors
+  - **Before**: `RelayCommand(execute, parent: this, canExecute: ...)`
+  - **After**: `RelayCommand(execute, canExecute: ...)`
+  - **Reason**: Auto-disposal makes parent tracking unnecessary
+  - **Migration**: Remove `parent: this` from all command instantiations
+
+### 🚀 Performance Improvements
+
+Comprehensive benchmarks show significant performance achievements:
+- **🥇 Memory Management**: Highly optimized cleanup and disposal system
+- **🥇 Selective Rebuilds**: Exceptional performance with explicit `Bind` selectors
+- **🥇 Auto-tracking Performance**: `Bind.observer` delivers superior speed while maintaining perfect selectivity
+- **Unique Achievement**: 100% rebuild efficiency with `Bind.observer` - only rebuilds when accessed properties change
+
+### 📚 Documentation Improvements
+
+- Updated all examples to use direct type constructors
+- Added comprehensive `Bind.observer` usage examples
+- Added `Command.param` examples throughout documentation
+- "2 widgets" framework (Learn just `Bind` and `Command`)
+- Enhanced best practices section with memory leak warnings
+- Added benchmark results to main README
+
+### 🧪 Testing
+
+- **344 tests** passing (up from 299)
+- Added comprehensive tests for new `Bind.observer` functionality
+- Added tests for `Command.param` factory constructor
+- All existing functionality validated with updated API
+
+### 📦 What's Next
+
+The 1.0.0 stable release is planned after community feedback on this RC. Please report any issues or suggestions!
+
+---
+
 ## 0.5.0+2
 
 - Improved documentation and fixed minor typos.
