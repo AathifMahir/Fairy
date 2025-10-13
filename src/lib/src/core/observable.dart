@@ -1,4 +1,5 @@
 import 'package:fairy/src/core/observable_node.dart';
+import 'package:fairy/src/internal/dependency_tracker.dart';
 import 'package:flutter/foundation.dart';
 
 /// Base class for ViewModels that provides change notification capabilities.
@@ -181,8 +182,15 @@ class ObservableProperty<T> extends ObservableNode {
   // PUBLIC FAIRY API
   // ========================================================================
 
-  /// Gets the current value.
-  T get value => _value;
+  /// Gets the current value and reports access for automatic tracking.
+  /// 
+  /// When accessed within a Bind.observer builder, this property will be
+  /// automatically subscribed to for rebuilds.
+  T get value {
+    // Report access for dependency tracking (no-op if not tracking)
+    DependencyTracker.reportAccess(this);
+    return _value;
+  }
 
   /// Sets a new value and notifies listeners only if the value differs.
   ///
@@ -293,10 +301,15 @@ class ComputedProperty<T> extends ObservableNode {
   // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
 
-  /// Gets the current computed value.
+  /// Gets the current computed value and reports access for automatic tracking.
   ///
   /// Returns the cached value if available, otherwise recomputes.
+  /// When accessed within a Bind.observer builder, this property will be
+  /// automatically subscribed to for rebuilds.
   T get value {
+    // Report access for dependency tracking (no-op if not tracking)
+    DependencyTracker.reportAccess(this);
+    
     if (_cachedValue == null && !_isDisposed) {
       _cachedValue = _compute();
     }
