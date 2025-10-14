@@ -77,5 +77,5 @@ export 'src/ui/bind_observer.dart'
     show BindObserver, BindObserver2, BindObserver3;
 export 'src/ui/command_widget.dart' show Command, CommandWithParam;
 // Utilities
-export 'src/utils/equals.dart' show listEquals, mapEquals, setEquals;
+export 'src/utils/equals.dart' show Equals;
 export 'src/utils/lifecycle.dart' show Disposable, DisposeBag;
