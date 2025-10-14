@@ -20,7 +20,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^1.0.0-rc.1
+  fairy: ^1.0.0-rc.3
 ```
 
 ### Basic Example
@@ -74,7 +74,7 @@ class CounterPage extends StatelessWidget {
             // Command binding (non-parameterized)
             Command<CounterViewModel>(
               command: (vm) => vm.incrementCommand,
-              builder: (context, execute, canExecute) {
+              builder: (context, execute, canExecute, isRunning) {
                 return ElevatedButton(
                   onPressed: canExecute ? execute : null,
                   child: Text('Increment'),
@@ -85,8 +85,8 @@ class CounterPage extends StatelessWidget {
             // Command binding (parameterized)
             Command.param<CounterViewModel, int>(
               command: (vm) => vm.addCommand,
-              parameter: 5,
-              builder: (context, execute, canExecute) {
+              parameter: () => 5,
+              builder: (context, execute, canExecute, isRunning) {
                 return ElevatedButton(
                   onPressed: canExecute ? execute : null,
                   child: Text('Add 5'),
@@ -185,7 +185,7 @@ class MyViewModel extends ObservableObject {
 
 #### Async Commands
 
-For asynchronous operations with automatic `isRunning` state:
+Async commands automatically track execution state with `isRunning`, preventing concurrent execution and enabling easy loading indicators:
 
 ```dart
 class MyViewModel extends ObservableObject {
@@ -197,6 +197,18 @@ class MyViewModel extends ObservableObject {
     // fetchCommand.isRunning automatically false
   }
 }
+
+// In UI - isRunning automatically prevents double-clicks
+Command<MyViewModel>(
+  command: (vm) => vm.fetchCommand,
+  builder: (context, execute, canExecute, isRunning) {
+    if (isRunning) return CircularProgressIndicator();
+    return ElevatedButton(
+      onPressed: execute,
+      child: Text('Fetch Data'),
+    );
+  },
+)
 ```
 
 #### Parameterized Commands
@@ -216,8 +228,8 @@ class TodoViewModel extends ObservableObject {
 // In UI - use Command.param:
 Command.param<TodoViewModel, String>(
   command: (vm) => vm.deleteTodoCommand,
-  parameter: todoId,
-  builder: (context, execute, canExecute) {
+  parameter: () => todoId,
+  builder: (context, execute, canExecute, isRunning) {
     return IconButton(
       onPressed: canExecute ? execute : null,
       icon: Icon(Icons.delete),
@@ -334,10 +346,10 @@ The `Command` widget binds commands to UI elements:
 ```dart
 Command<UserViewModel>(
   command: (vm) => vm.saveCommand,
-  builder: (context, execute, canExecute) {
+  builder: (context, execute, canExecute, isRunning) {
     return ElevatedButton(
       onPressed: canExecute ? execute : null,  // Auto-disabled
-      child: Text('Save'),
+      child: isRunning ? Text('Saving...') : Text('Save'),
     );
   },
 )
@@ -345,16 +357,41 @@ Command<UserViewModel>(
 
 #### Parameterized Commands with `Command.param`
 
-When your command needs parameters (e.g., item IDs, user input):
+When your command needs parameters, use a function that returns the parameter value for reactive evaluation:
 
 ```dart
 Command.param<TodoViewModel, String>(
   command: (vm) => vm.deleteTodoCommand,
-  parameter: todoId,
-  builder: (context, execute, canExecute) {
+  parameter: () => todoId,  // Function for reactive evaluation
+  builder: (context, execute, canExecute, isRunning) {
     return IconButton(
       onPressed: canExecute ? execute : null,
       icon: Icon(Icons.delete),
+    );
+  },
+)
+```
+
+For reactive parameters from controllers, wrap with `ValueListenableBuilder`:
+
+```dart
+Bind<TodoViewModel, TextEditingController>(
+  selector: (vm) => vm.titleController,
+  builder: (context, controller, _) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        return Command.param<TodoViewModel, String>(
+          command: (vm) => vm.addTodoCommand,
+          parameter: () => value.text,  // Reactive to text changes
+          builder: (context, execute, canExecute, isRunning) {
+            return ElevatedButton(
+              onPressed: canExecute ? execute : null,
+              child: Text('Add Todo'),
+            );
+          },
+        );
+      },
     );
   },
 )
@@ -533,6 +570,99 @@ This design allows:
 - ✅ Compile-time type safety
 
 **Note:** The API follows Flutter's convention (e.g., `Theme.of(context)`, `MediaQuery.of(context)`) for familiar and idiomatic usage.
+
+#### Bridging ViewModels to Overlays with `Fairy.bridge()`
+
+**Problem:** Overlays (dialogs, bottom sheets, menus) create separate widget trees that can't access parent FairyScopes through normal context lookup.
+
+**Solution:** `Fairy.bridge()` captures the parent context's FairyScope and makes it available to the overlay's context.
+
+```dart
+class TodoListPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Todo List')),
+      body: TodoListView(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddTodoDialog(context),
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _showAddTodoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => Fairy.bridge(
+        context: context, // Parent context with FairyScope
+        child: AlertDialog(
+          title: Text('Add Todo'),
+          content: Bind<TodoListViewModel, TextEditingController>(
+            selector: (vm) => vm.titleController,
+            builder: (context, controller, _) {
+              return ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (context, value, _) {
+                  return TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      labelText: 'Title',
+                      hintText: 'Enter todo title',
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            Bind<TodoListViewModel, TextEditingController>(
+              selector: (vm) => vm.titleController,
+              builder: (context, controller, _) {
+                return ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: controller,
+                  builder: (context, value, _) {
+                    return Command.param<TodoListViewModel, String>(
+                      command: (vm) => vm.addTodoCommand,
+                      parameter: () => value.text,
+                      builder: (context, execute, canExecute, isRunning) {
+                        return TextButton(
+                          onPressed: canExecute ? execute : null,
+                          child: Text('Add'),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+**What it does:**
+- Looks up parent context's FairyScope
+- Creates an InheritedWidget that provides the same scope to overlay
+- `Bind` and `Command` widgets inside overlay now work seamlessly
+- If no FairyScope found in parent, gracefully returns child (falls back to FairyLocator)
+
+**When to use:**
+- Dialogs (`showDialog`)
+- Bottom sheets (`showModalBottomSheet`, `showBottomSheet`)
+- Menus (`showMenu`)
+- Any overlay that creates a new route or separate widget tree
+
+**When NOT needed:**
+- Regular navigation (`Navigator.push`) - new routes have access to parent context
+- Widgets within the same widget tree - normal context lookup works
 
 ## Advanced Features
 
@@ -825,7 +955,7 @@ Bind<MyViewModel, int>(
 
 Command<MyViewModel>(
   command: (vm) => vm.saveCommand,
-  builder: (context, execute, canExecute) => 
+  builder: (context, execute, canExecute, isRunning) => 
     ElevatedButton(onPressed: canExecute ? execute : null, child: Text('Save')),
 )
 ```
