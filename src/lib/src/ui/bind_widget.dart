@@ -235,6 +235,10 @@ class _BindState<TViewModel extends ObservableObject, TValue>
       // Two-way binding: subscribe to the property directly
       _listener = () => setState(() {});
       _listenerDisposer = (_selected as ObservableProperty<TValue>).propertyChanged(_listener!);
+    } else if (_selected is ComputedProperty<TValue>) {
+      // One-way binding with ComputedProperty: subscribe to the computed property
+      _listener = () => setState(() {});
+      _listenerDisposer = (_selected as ComputedProperty<TValue>).propertyChanged(_listener!);
     } else {
       // One-way binding: subscribe to ViewModel and re-evaluate selector
       _listener = () => setState(() {
@@ -257,6 +261,9 @@ class _BindState<TViewModel extends ObservableObject, TValue>
         if (_selected is ObservableProperty<TValue>) {
           _listener = () => setState(() {});
           _listenerDisposer = (_selected as ObservableProperty<TValue>).propertyChanged(_listener!);
+        } else if (_selected is ComputedProperty<TValue>) {
+          _listener = () => setState(() {});
+          _listenerDisposer = (_selected as ComputedProperty<TValue>).propertyChanged(_listener!);
         } else {
           _listener = () => setState(() {
                 _selected = widget.selector(_viewModel);
@@ -290,7 +297,16 @@ class _BindState<TViewModel extends ObservableObject, TValue>
         property.value,
         (newValue) => property.value = newValue,
       );
-    } else {
+    } 
+    else if (_selected is ComputedProperty<TValue>) {
+      // One-way binding with ComputedProperty
+      final computed = _selected as ComputedProperty<TValue>;
+      return widget.builder(
+        context, 
+        computed.value, 
+        null);
+    }    
+    else {
       // One-way binding
       final value = _selected as TValue;
       return widget.builder(context, value, null);
