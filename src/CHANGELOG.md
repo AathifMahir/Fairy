@@ -1,3 +1,78 @@
+## 1.0.0-rc.2
+
+### ✨ New Features
+
+#### Recursive Deep Equality for Collections
+- **Built-in recursive deep equality** for all collection types without external dependencies
+  - Automatically handles arbitrary nesting depth: `List<Map<String, List<int>>>`
+  - Works with `List`, `Map`, `Set`, and `Iterable` at any level
+  - Custom types use their `==` operator when nested in collections
+  - **Zero configuration needed** - deep equality enabled by default
+
+#### Equals Utility Class
+- **`Equals.deepCollectionEquals(Object? e1, Object? e2)`**: Recursive equality for any collection type
+- **`Equals.deepCollectionHash(Object? o)`**: Recursive hash code generation
+- **Collection-specific methods**: `listEquals`, `mapEquals`, `setEquals` with deep comparison
+- **Hash methods**: `listHash`, `mapHash`, `setHash` for consistent hash codes
+- **`Equals.deepEquals<T>()`**: Factory method for `ObservableProperty` equality parameter
+
+### 🔧 API Enhancements
+
+#### ObservableProperty Deep Equality
+- **`deepEquality: bool`** parameter (default: `true`) for automatic collection comparison
+  - Primitive types: `ObservableProperty<int>(0)` - uses `==`
+  - Collections: `ObservableProperty<List<int>>([1, 2, 3])` - uses deep equality
+  - Custom types: Override `==` operator is **optional** (only needed for value-based equality)
+
+### 📚 Developer Experience
+
+#### Optional Equality Override
+- **Simplified workflow**: No need to override `==` for custom types with collections
+  - Collections are compared deeply automatically
+  - Override `==` only if you want value-based equality instead of reference equality
+  - Use `Equals` utilities in custom `==` implementations when overriding
+
+```dart
+// Works automatically without custom ==
+final todos = ObservableProperty<List<String>>(['Task 1', 'Task 2']);
+todos.value = ['Task 1', 'Task 2'];  // ✅ No rebuild - deep equality
+
+// Custom type - override == is optional
+class Project {
+  final String name;
+  final List<String> tasks;
+  
+  // OPTIONAL: Override for value-based equality
+  @override
+  bool operator ==(Object other) =>
+    identical(this, other) ||
+    other is Project &&
+      name == other.name &&
+      Equals.listEquals(tasks, other.tasks);
+}
+```
+
+### 🧪 Testing
+
+- **387 tests** passing (up from 344)
+- Added **43 comprehensive deep equality tests**:
+  - Simple collections (List, Map, Set)
+  - Nested structures with 2-3 levels of nesting
+  - Mixed nested structures: `List<Map<String, List<int>>>`
+  - Sets with nested lists
+  - Custom types with and without equality overrides
+  - Nested custom types containing collections
+  - Performance and memory tests
+
+### 🚀 Performance
+
+- Deep equality optimized with fast-path `identical()` checks
+- Recursive comparison with efficient callback pattern
+- No performance impact on primitive types
+- Benchmarks show excellent overall performance maintained
+
+---
+
 ## 1.0.0-rc.1
 
 ### 🎉 Major Release Candidate
