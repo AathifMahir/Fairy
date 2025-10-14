@@ -1,4 +1,5 @@
 import 'package:fairy/src/core/observable_node.dart';
+import 'package:flutter/foundation.dart';
 
 /// Internal-only dependency tracker using stack-based sessions.
 /// 
@@ -7,6 +8,7 @@ import 'package:fairy/src/core/observable_node.dart';
 /// 
 /// Uses a stack-based approach (not Zone-based) for better performance,
 /// exception safety, and hot reload stability.
+@internal
 class DependencyTracker {
   // Thread-local stack (Flutter is single-threaded, so static is safe)
   static final List<_TrackingSession> _stack = [];
