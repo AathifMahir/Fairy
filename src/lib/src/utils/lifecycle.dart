@@ -39,7 +39,7 @@ mixin Disposable {
   void throwIfDisposed() {
     if (_isDisposed) {
       throw StateError(
-        'Cannot perform operation on disposed ${runtimeType}',
+        'Cannot perform operation on disposed $runtimeType',
       );
     }
   }
