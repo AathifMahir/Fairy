@@ -1,5 +1,4 @@
 /// Utility functions for equality comparisons.
-
 /// Deep equality check for collections.
 ///
 /// Returns `true` if two lists have the same elements in the same order.
