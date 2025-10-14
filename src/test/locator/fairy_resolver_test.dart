@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fairy/src/core/observable.dart';
 import 'package:fairy/src/locator/fairy_locator.dart';
@@ -416,6 +416,496 @@ void main() {
       );
 
       expect(identical(resolvedAfter, globalVm), isTrue);
+    });
+  });
+
+  group('Fairy.bridge()', () {
+    testWidgets('should bridge parent FairyScope to overlay', (tester) async {
+      final parentVm = TestViewModel();
+      TestViewModel? resolvedInOverlay;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              return Fairy.bridge(
+                context: parentContext,
+                child: Builder(
+                  builder: (overlayContext) {
+                    resolvedInOverlay = Fairy.of<TestViewModel>(overlayContext);
+                    return const SizedBox();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(resolvedInOverlay, isNotNull);
+      expect(identical(resolvedInOverlay, parentVm), isTrue);
+    });
+
+    testWidgets('should allow Bind widgets to work in bridged overlay', (tester) async {
+      final parentVm = TestViewModel();
+      TestViewModel? resolvedInBind;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              return Fairy.bridge(
+                context: parentContext,
+                child: Builder(
+                  builder: (overlayContext) {
+                    // Simulate what Bind widget does internally
+                    resolvedInBind = Fairy.of<TestViewModel>(overlayContext);
+                    return const SizedBox();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(resolvedInBind, isNotNull);
+      expect(identical(resolvedInBind, parentVm), isTrue);
+    });
+
+    testWidgets('should work when no parent FairyScope exists', (tester) async {
+      final globalVm = TestViewModel();
+      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+
+      TestViewModel? resolvedInOverlay;
+
+      await tester.pumpWidget(
+        Builder(
+          builder: (parentContext) {
+            return Fairy.bridge(
+              context: parentContext,
+              child: Builder(
+                builder: (overlayContext) {
+                  resolvedInOverlay = Fairy.of<TestViewModel>(overlayContext);
+                  return const SizedBox();
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+      expect(resolvedInOverlay, isNotNull);
+      expect(identical(resolvedInOverlay, globalVm), isTrue);
+    });
+
+    testWidgets('should fallback to FairyLocator when no parent scope', (tester) async {
+      final globalVm = GlobalViewModel();
+      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+
+      GlobalViewModel? resolvedInOverlay;
+
+      await tester.pumpWidget(
+        Builder(
+          builder: (parentContext) {
+            return Fairy.bridge(
+              context: parentContext,
+              child: Builder(
+                builder: (overlayContext) {
+                  resolvedInOverlay = Fairy.maybeOf<GlobalViewModel>(overlayContext);
+                  return const SizedBox();
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+      expect(resolvedInOverlay, isNotNull);
+      expect(identical(resolvedInOverlay, globalVm), isTrue);
+    });
+
+    testWidgets('should preserve parent scope after bridge is destroyed', (tester) async {
+      final parentVm = TestViewModel();
+      TestViewModel? resolvedBeforeBridge;
+      TestViewModel? resolvedAfterBridge;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              resolvedBeforeBridge = Fairy.of<TestViewModel>(parentContext);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(resolvedBeforeBridge, isNotNull);
+      expect(identical(resolvedBeforeBridge, parentVm), isTrue);
+
+      // Create and destroy bridge
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              return Column(
+                children: [
+                  Fairy.bridge(
+                    context: parentContext,
+                    child: Builder(
+                      builder: (overlayContext) {
+                        Fairy.of<TestViewModel>(overlayContext);
+                        return const SizedBox();
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+
+      // Remove bridge
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              resolvedAfterBridge = Fairy.of<TestViewModel>(parentContext);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(resolvedAfterBridge, isNotNull);
+      expect(identical(resolvedAfterBridge, parentVm), isTrue);
+      expect(!parentVm.isDisposed, isTrue, reason: 'Parent VM should not be disposed');
+    });
+
+    testWidgets('should not affect parent context ViewModel resolution', (tester) async {
+      final parentVm = TestViewModel();
+      TestViewModel? resolvedInParent;
+      TestViewModel? resolvedInOverlay;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              resolvedInParent = Fairy.of<TestViewModel>(parentContext);
+              return Fairy.bridge(
+                context: parentContext,
+                child: Builder(
+                  builder: (overlayContext) {
+                    resolvedInOverlay = Fairy.of<TestViewModel>(overlayContext);
+                    return const SizedBox();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(resolvedInParent, isNotNull);
+      expect(resolvedInOverlay, isNotNull);
+      expect(identical(resolvedInParent, resolvedInOverlay), isTrue);
+      expect(identical(resolvedInParent, parentVm), isTrue);
+    });
+
+    testWidgets('should bridge multiple ViewModels from same scope', (tester) async {
+      final vm1 = TestViewModel();
+      final vm2 = ScopedViewModel();
+
+      TestViewModel? resolved1;
+      ScopedViewModel? resolved2;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModels: [
+            (_) => vm1,
+            (_) => vm2,
+          ],
+          child: Builder(
+            builder: (parentContext) {
+              return Fairy.bridge(
+                context: parentContext,
+                child: Builder(
+                  builder: (overlayContext) {
+                    resolved1 = Fairy.of<TestViewModel>(overlayContext);
+                    resolved2 = Fairy.of<ScopedViewModel>(overlayContext);
+                    return const SizedBox();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(resolved1, isNotNull);
+      expect(resolved2, isNotNull);
+      expect(identical(resolved1, vm1), isTrue);
+      expect(identical(resolved2, vm2), isTrue);
+    });
+
+    testWidgets('should work with nested bridges', (tester) async {
+      final parentVm = TestViewModel();
+      TestViewModel? resolvedInFirstOverlay;
+      TestViewModel? resolvedInSecondOverlay;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              return Fairy.bridge(
+                context: parentContext,
+                child: Builder(
+                  builder: (firstOverlayContext) {
+                    resolvedInFirstOverlay = Fairy.of<TestViewModel>(firstOverlayContext);
+                    return Fairy.bridge(
+                      context: firstOverlayContext,
+                      child: Builder(
+                        builder: (secondOverlayContext) {
+                          resolvedInSecondOverlay = Fairy.of<TestViewModel>(secondOverlayContext);
+                          return const SizedBox();
+                        },
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(resolvedInFirstOverlay, isNotNull);
+      expect(resolvedInSecondOverlay, isNotNull);
+      expect(identical(resolvedInFirstOverlay, parentVm), isTrue);
+      expect(identical(resolvedInSecondOverlay, parentVm), isTrue);
+    });
+
+    testWidgets('should bridge nearest FairyScope in nested scopes', (tester) async {
+      final outerVm = TestViewModel();
+      final innerVm = ScopedViewModel();
+
+      ScopedViewModel? resolvedInOverlay;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => outerVm,
+          child: FairyScope(
+            viewModel: (_) => innerVm,
+            child: Builder(
+              builder: (innerContext) {
+                return Fairy.bridge(
+                  context: innerContext,
+                  child: Builder(
+                    builder: (overlayContext) {
+                      resolvedInOverlay = Fairy.of<ScopedViewModel>(overlayContext);
+                      return const SizedBox();
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(resolvedInOverlay, isNotNull);
+      expect(identical(resolvedInOverlay, innerVm), isTrue);
+    });
+
+    testWidgets('should throw if ViewModel not in bridged scope or locator', (tester) async {
+      final parentVm = TestViewModel();
+      var didThrow = false;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              return Fairy.bridge(
+                context: parentContext,
+                child: Builder(
+                  builder: (overlayContext) {
+                    try {
+                      Fairy.of<GlobalViewModel>(overlayContext);
+                      fail('Should have thrown StateError');
+                    } catch (e) {
+                      expect(e, isA<StateError>());
+                      expect(e.toString(), contains('No ViewModel of type GlobalViewModel found'));
+                      didThrow = true;
+                    }
+                    return const SizedBox();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(didThrow, isTrue);
+    });
+
+    testWidgets('should return null with maybeOf if not in bridged scope', (tester) async {
+      final parentVm = TestViewModel();
+      GlobalViewModel? resolvedInOverlay;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              return Fairy.bridge(
+                context: parentContext,
+                child: Builder(
+                  builder: (overlayContext) {
+                    resolvedInOverlay = Fairy.maybeOf<GlobalViewModel>(overlayContext);
+                    return const SizedBox();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(resolvedInOverlay, isNull);
+    });
+
+    testWidgets('bridge should not dispose parent ViewModel when removed', (tester) async {
+      final parentVm = TestViewModel();
+      var bridgeBuilt = false;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              if (!bridgeBuilt) {
+                bridgeBuilt = true;
+                return Fairy.bridge(
+                  context: parentContext,
+                  child: const SizedBox(),
+                );
+              }
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(parentVm.isDisposed, isFalse);
+
+      // Rebuild without bridge
+      bridgeBuilt = true;
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => parentVm,
+          child: Builder(
+            builder: (parentContext) {
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(parentVm.isDisposed, isFalse, reason: 'Parent VM should remain alive after bridge removal');
+    });
+
+    testWidgets('should prioritize bridged scope over FairyLocator', (tester) async {
+      final scopeVm = TestViewModel();
+      final globalVm = TestViewModel();
+
+      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+
+      TestViewModel? resolvedInOverlay;
+
+      await tester.pumpWidget(
+        FairyScope(
+          viewModel: (_) => scopeVm,
+          child: Builder(
+            builder: (parentContext) {
+              return Fairy.bridge(
+                context: parentContext,
+                child: Builder(
+                  builder: (overlayContext) {
+                    resolvedInOverlay = Fairy.of<TestViewModel>(overlayContext);
+                    return const SizedBox();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      expect(resolvedInOverlay, isNotNull);
+      expect(identical(resolvedInOverlay, scopeVm), isTrue);
+      expect(identical(resolvedInOverlay, globalVm), isFalse);
+    });
+
+    testWidgets('should simulate dialog scenario correctly', (tester) async {
+      final pageVm = TestViewModel();
+      TestViewModel? resolvedInDialog;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FairyScope(
+            viewModel: (_) => pageVm,
+            child: Builder(
+              builder: (pageContext) {
+                return Scaffold(
+                  body: Builder(
+                    builder: (scaffoldContext) {
+                      // Simulate showDialog creating a new overlay entry
+                      return Stack(
+                        children: [
+                          const Text('Page Content'),
+                          // Dialog overlay
+                          Positioned.fill(
+                            child: Fairy.bridge(
+                              context: pageContext, // Bridge from page context
+                              child: Builder(
+                                builder: (dialogContext) {
+                                  // Inside dialog - should access page VM
+                                  resolvedInDialog = Fairy.of<TestViewModel>(dialogContext);
+                                  return Container(
+                                    color: const Color(0x80000000),
+                                    child: const Center(
+                                      child: Text('Dialog'),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(resolvedInDialog, isNotNull);
+      expect(identical(resolvedInDialog, pageVm), isTrue);
+      expect(pageVm.isDisposed, isFalse);
     });
   });
 
