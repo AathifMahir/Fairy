@@ -552,9 +552,90 @@ class MyViewModel extends ObservableObject {
 }
 ```
 
-### Custom Value Equality
+### Deep Equality for Collections
 
-ObservableProperty uses `!=` for equality checking. For custom types, override the `==` operator:
+By default, `ObservableProperty` performs **recursive deep equality** for `List`, `Map`, and `Set`, comparing contents instead of references - even for nested collections! This works automatically without any configuration.
+
+```dart
+class TodoViewModel extends ObservableObject {
+  // Deep equality for collections (enabled by default)
+  final tags = ObservableProperty<List<String>>(['flutter', 'dart']);
+  
+  // Works with nested collections too!
+  final matrix = ObservableProperty<List<List<int>>>([[1, 2], [3, 4]]);
+  
+  void updateTags() {
+    // No rebuild - same contents
+    tags.value = ['flutter', 'dart'];
+    
+    // Rebuilds - different contents
+    tags.value = ['flutter', 'dart', 'web'];
+    
+    // Nested collections work automatically!
+    matrix.value = [[1, 2], [3, 4]];  // No rebuild (same nested contents)
+    matrix.value = [[1, 2], [3, 5]];  // Rebuilds (different nested contents)
+  }
+}
+```
+
+**Handles arbitrary nesting depth:**
+
+```dart
+// 3 levels deep: List<Map<String, List<int>>>
+final deepData = ObservableProperty([
+  {'a': [1, 2], 'b': [3, 4]},
+  {'c': [5, 6], 'd': [7, 8]},
+]);
+
+// Same data, different objects - no rebuild! 🎉
+deepData.value = [
+  {'a': [1, 2], 'b': [3, 4]},
+  {'c': [5, 6], 'd': [7, 8]},
+];
+
+// Changed deep nested value - rebuilds correctly
+deepData.value = [
+  {'a': [1, 2], 'b': [3, 4]},
+  {'c': [5, 6], 'd': [7, 9]},  // Changed 8 to 9
+];
+```
+
+**Disable deep equality if you need reference equality:**
+
+```dart
+final items = ObservableProperty<List<Item>>(
+  [],
+  deepEquality: false,  // Use reference equality
+);
+
+// Now rebuilds on every assignment (different reference)
+items.value = [...items.value];
+```
+
+**Using the `Equals` utility class directly:**
+
+```dart
+import 'package:fairy/fairy.dart';
+
+// Direct comparison utilities (with deep equality)
+bool same = Equals.listEquals([1, 2], [1, 2]);  // true
+bool nested = Equals.listEquals([[1, 2]], [[1, 2]]);  // true (nested!)
+bool maps = Equals.mapEquals({'a': 1}, {'a': 1});  // true
+bool sets = Equals.setEquals({1, 2}, {2, 1});  // true (order doesn't matter)
+
+// Deep collection equality for any type
+bool complex = Equals.deepCollectionEquals(
+  {'users': [{'name': 'Alice'}]},
+  {'users': [{'name': 'Alice'}]},
+); // true!
+
+// Hash codes for using collections as map keys
+int hash = Equals.listHash([[1, 2], [3, 4]]);
+```
+
+### Custom Type Equality
+
+**Custom types automatically use their `==` operator** - no special configuration needed:
 
 ```dart
 class User {
@@ -563,17 +644,57 @@ class User {
   
   User(this.id, this.name);
   
+  // Override == to define custom equality (optional)
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is User && runtimeType == other.runtimeType && id == other.id;
+      other is User && id == other.id;
   
   @override
   int get hashCode => id.hashCode;
 }
 
+// Works automatically - uses User's == operator
 final user = ObservableProperty<User>(User('1', 'Alice'));
+user.value = User('1', 'Bob');  // No rebuild (same id)
+user.value = User('2', 'Alice');  // Rebuilds (different id)
 ```
+
+**For custom types containing collections (optional optimization):**
+
+Deep equality works automatically for collections at any level. However, if you want to optimize equality checks for frequently-compared custom types, you can optionally override `==`:
+
+```dart
+class Project {
+  final String name;
+  final List<String> tasks;
+  
+  Project(this.name, this.tasks);
+  
+  // OPTIONAL: Override == for optimized comparisons
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Project &&
+          name == other.name &&
+          Equals.listEquals(tasks, other.tasks);
+  
+  @override
+  int get hashCode => name.hashCode ^ Equals.listHash(tasks);
+}
+
+// Without overriding ==, ObservableProperty will use reference equality
+// for custom types, which works fine but may trigger more rebuilds
+final project = ObservableProperty<Project>(
+  Project('Work', ['Task 1'])
+);
+project.value = Project('Work', ['Task 1']);  // Rebuilds (different reference)
+
+// With overridden ==, it compares by value
+// project.value = Project('Work', ['Task 1']);  // No rebuild (same value)
+```
+
+**Key Point:** You only need to override `==` for custom types if you want value-based equality instead of reference equality. The collections inside will be compared deeply either way when you do override `==`.
 
 ## Best Practices
 
