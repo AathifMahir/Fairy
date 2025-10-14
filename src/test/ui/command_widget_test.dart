@@ -68,7 +68,7 @@ void main() {
               viewModel: (_) => vm,
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
                     child: const Text('Save'),
@@ -98,7 +98,7 @@ void main() {
               viewModel: (_) => vm,
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
                     child: Text(canExecute ? 'Enabled' : 'Disabled'),
@@ -125,7 +125,7 @@ void main() {
               viewModel: (_) => vm,
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
                     child: Text(canExecute ? 'Enabled' : 'Disabled'),
@@ -158,7 +158,7 @@ void main() {
               viewModel: (_) => vm,
               child: Command<AsyncTestViewModel>(
                 command: (vm) => vm.fetchCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
                     child: const Text('Fetch'),
@@ -182,7 +182,7 @@ void main() {
       expect(vm.fetchCount, equals(1));
     });
 
-    testWidgets('should allow button click during async execution', (tester) async {
+    testWidgets('should disable button during async execution', (tester) async {
       final vm = AsyncTestViewModel();
       
       await tester.pumpWidget(
@@ -192,10 +192,10 @@ void main() {
               viewModel: (_) => vm,
               child: Command<AsyncTestViewModel>(
                 command: (vm) => vm.fetchCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
-                    child: const Text('Fetch'),
+                    child: isRunning ? const Text('Loading...') : const Text('Fetch'),
                   );
                 },
               ),
@@ -212,13 +212,16 @@ void main() {
       await tester.tap(find.byType(ElevatedButton));
       await tester.pump();
 
-      // Button stays enabled (no automatic disabling during execution)
-      expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNotNull);
+      // Button is now disabled during execution (automatic via isRunning)
+      expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNull);
+      expect(find.text('Loading...'), findsOneWidget);
 
       await tester.pumpAndSettle();
 
-      // Command executed
+      // Command executed and button re-enabled
       expect(vm.fetchCount, equals(1));
+      expect(find.text('Fetch'), findsOneWidget);
+      expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNotNull);
     });
 
     testWidgets('should work with parameterized commands', (tester) async {
@@ -232,8 +235,8 @@ void main() {
               viewModel: (_) => vm,
               child: CommandWithParam<ParamViewModel, String>(
                 command: (vm) => vm.processCommand,
-                parameter: testData, // Required parameter
-                builder: (context, execute, canExecute) {
+                parameter: () => testData, // Required parameter
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
                     child: const Text('Process'),
@@ -265,7 +268,7 @@ void main() {
                 children: [
                   Command<TestViewModel>(
                     command: (vm) => vm.saveCommand,
-                    builder: (context, execute, canExecute) {
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         onPressed: canExecute ? execute : null,
                         child: const Text('Button 1'),
@@ -274,7 +277,7 @@ void main() {
                   ),
                   Command<TestViewModel>(
                     command: (vm) => vm.saveCommand,
-                    builder: (context, execute, canExecute) {
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         onPressed: canExecute ? execute : null,
                         child: const Text('Button 2'),
@@ -318,7 +321,7 @@ void main() {
           home: Scaffold(
             body: Command<TestViewModel>(
               command: (vm) => vm.saveCommand,
-              builder: (context, execute, canExecute) {
+              builder: (context, execute, canExecute, isRunning) {
                 return Text(canExecute ? 'Enabled' : 'Disabled');
               },
             ),
