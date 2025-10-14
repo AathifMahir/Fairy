@@ -59,9 +59,14 @@ void printSection(String title, Map<String, int> data) {
     
     // Extract base framework name for emoji
     String baseName = displayName;
-    if (displayName.startsWith('Fairy')) baseName = 'Fairy';
-    else if (displayName.startsWith('Provider')) baseName = 'Provider';
-    else if (displayName.startsWith('Riverpod')) baseName = 'Riverpod';
+    if (displayName.startsWith('Fairy')) {
+      baseName = 'Fairy';
+    } else if (displayName.startsWith('Provider')){
+      baseName = 'Provider';
+    }
+    else if (displayName.startsWith('Riverpod')){
+      baseName = 'Riverpod';
+    }
     
     String emoji;
     switch (baseName) {
@@ -79,9 +84,15 @@ void printSection(String title, Map<String, int> data) {
     }
 
     String medal = '';
-    if (i == 0) medal = ' 🥇';
-    else if (i == 1) medal = ' 🥈';
-    else if (i == 2) medal = ' 🥉';
+    if (i == 0){
+      medal = ' 🥇';
+    }
+    else if (i == 1){
+      medal = ' 🥈';
+    }
+    else if (i == 2){
+      medal = ' 🥉';
+    }
 
     final nameField = '$emoji $displayName$medal'.padRight(15);
     final timeField = time.toString().padLeft(14);
