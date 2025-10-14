@@ -20,7 +20,7 @@ A lightweight MVVM framework for Flutter that provides strongly-typed, reactive 
 
 ```yaml
 dependencies:
-  fairy: ^1.0.0-rc.1
+  fairy: ^1.0.0-rc.3
 ```
 
 ## 🚀 Quick Start
@@ -80,7 +80,7 @@ class CounterPage extends StatelessWidget {
             // Regular command
             Command<CounterViewModel>(
               command: (vm) => vm.increment,
-              builder: (context, execute, canExecute) {
+              builder: (context, execute, canExecute, isRunning) {
                 return ElevatedButton(
                   onPressed: execute,
                   child: Text('Increment'),
@@ -90,8 +90,8 @@ class CounterPage extends StatelessWidget {
             // Parameterized command
             Command.param<CounterViewModel, int>(
               command: (vm) => vm.addCommand,
-              parameter: 5,
-              builder: (context, execute, canExecute) {
+              parameter: () => 5,
+              builder: (context, execute, canExecute, isRunning) {
                 return ElevatedButton(
                   onPressed: execute,
                   child: Text('Add 5'),
@@ -152,7 +152,7 @@ class TodoViewModel extends ObservableObject {
 // In UI
 Command<TodoViewModel>(
   command: (vm) => vm.deleteCommand,
-  builder: (context, execute, canExecute) {
+  builder: (context, execute, canExecute, isRunning) {
     return IconButton(
       onPressed: canExecute ? execute : null,
       icon: Icon(Icons.delete),
@@ -163,8 +163,8 @@ Command<TodoViewModel>(
 // Parameterized command
 Command.param<TodoViewModel, String>(
   command: (vm) => vm.deleteItemCommand,
-  parameter: todoId,
-  builder: (context, execute, canExecute) {
+  parameter: () => todoId,
+  builder: (context, execute, canExecute, isRunning) {
     return IconButton(
       onPressed: canExecute ? execute : null,
       icon: Icon(Icons.delete),
@@ -175,6 +175,8 @@ Command.param<TodoViewModel, String>(
 
 ### Async Commands
 
+Async commands automatically track execution state with `isRunning`, preventing concurrent execution and enabling easy loading indicators:
+
 ```dart
 class DataViewModel extends ObservableObject {
   late final fetchCommand = AsyncRelayCommand(_fetchData);
@@ -184,6 +186,18 @@ class DataViewModel extends ObservableObject {
     await api.getData();
   }
 }
+
+// In UI
+Command<DataViewModel>(
+  command: (vm) => vm.fetchCommand,
+  builder: (context, execute, canExecute, isRunning) {
+    if (isRunning) return CircularProgressIndicator();
+    return ElevatedButton(
+      onPressed: execute,
+      child: Text('Fetch Data'),
+    );
+  },
+)
 ```
 
 ### Data Binding
@@ -242,6 +256,26 @@ FairyScope(
   ),
   child: ProfilePage(),
 )
+
+// Bridge ViewModels to overlays (dialogs, bottom sheets)
+void _showDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (_) => Fairy.bridge(
+      context: context, // Makes parent FairyScope available
+      child: AlertDialog(
+        // Command and Bind widgets now work!
+        actions: [
+          Command<MyViewModel>(
+            command: (vm) => vm.saveCommand,
+            builder: (ctx, execute, canExecute, isRunning) =>
+              TextButton(onPressed: execute, child: Text('Save')),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 ```
 
 ## 📊 Performance
