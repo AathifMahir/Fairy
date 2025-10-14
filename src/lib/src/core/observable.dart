@@ -1,5 +1,6 @@
 import 'package:fairy/src/core/observable_node.dart';
 import 'package:fairy/src/internal/dependency_tracker.dart';
+import 'package:fairy/src/utils/equals.dart';
 import 'package:flutter/foundation.dart';
 
 /// Base class for ViewModels that provides change notification capabilities.
@@ -153,13 +154,69 @@ abstract class ObservableObject extends ObservableNode {
 /// }
 /// ```
 ///
+/// **Deep Equality for Collections:**
+/// 
+/// By default, [ObservableProperty] uses deep equality for collections ([List], [Map], [Set]).
+/// This prevents unnecessary rebuilds when setting "equivalent" collections:
+///
+/// ```dart
+/// final tags = ObservableProperty<List<String>>(['admin', 'user']);
+/// 
+/// // Without deep equality: new object → rebuild (even though contents are identical)
+/// // With deep equality: same contents → no rebuild (optimized!)
+/// tags.value = ['admin', 'user'];
+/// ```
+///
+/// You can disable deep equality if needed (e.g., for performance with large collections):
+///
+/// ```dart
+/// // Disable deep equality (use reference equality only)
+/// final items = ObservableProperty<List<Item>>([], deepEquality: false);
+/// ```
+///
+/// **For custom types with collections:** Override the `==` operator on your model class:
+///
+/// ```dart
+/// class User {
+///   final String id;
+///   final List<String> tags;
+///   
+///   @override
+///   bool operator ==(Object other) =>
+///     identical(this, other) ||
+///     other is User && id == other.id && listEquals(tags, other.tags);
+///   
+///   @override
+///   int get hashCode => id.hashCode ^ tags.hashCode;
+/// }
+/// ```
+///
 /// **Important:** Always use `final` for [ObservableProperty] fields and return
 /// stable references from selectors. Never create new instances in getters.
 class ObservableProperty<T> extends ObservableNode {
   T _value;
+  final bool Function(T? a, T? b)? _deepEquals;
 
   /// Creates an [ObservableProperty] with an initial value.
-  ObservableProperty(this._value);
+  ///
+  /// **Parameters:**
+  /// - [initialValue]: The initial value for this property
+  /// - [deepEquality]: Whether to use deep equality for collections ([List], [Map], [Set]).
+  ///   Defaults to `true`. When enabled, collections are compared by contents rather than reference.
+  ///
+  /// **Examples:**
+  ///
+  /// ```dart
+  /// // Basic usage with automatic deep equality for lists
+  /// final tags = ObservableProperty<List<String>>(['admin']);
+  ///
+  /// // Disable deep equality for performance with large collections
+  /// final largeList = ObservableProperty<List<Item>>([], deepEquality: false);
+  /// ```
+  ObservableProperty(
+    this._value, {
+    bool deepEquality = true,
+  }) : _deepEquals = deepEquality ? Equals.deepEquals<T>() : null;
 
   // ========================================================================
   // HIDDEN ChangeNotifier API (internal use only)
@@ -194,9 +251,11 @@ class ObservableProperty<T> extends ObservableNode {
 
   /// Sets a new value and notifies listeners only if the value differs.
   ///
-  /// Uses `!=` for comparison, so ensure your types have proper equality.
+  /// Uses deep equality for collections if [deepEquality] is enabled (default),
+  /// otherwise uses `==` comparison.
   set value(T newValue) {
-    if (_value != newValue) {
+    final isEqual = _deepEquals?.call(_value, newValue) ?? (_value == newValue);
+    if (!isEqual) {
       _value = newValue;
       super.notifyListeners();
     }
@@ -214,7 +273,8 @@ class ObservableProperty<T> extends ObservableNode {
   /// ```
   void update(T Function(T current) updater) {
     final newValue = updater(_value);
-    if (newValue != _value) {
+    final isEqual = _deepEquals?.call(_value, newValue) ?? (_value == newValue);
+    if (!isEqual) {
       _value = newValue;
       super.notifyListeners();
     }
