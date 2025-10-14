@@ -403,22 +403,23 @@ void main() {
     });
 
     group('concurrent execution', () {
-      test('should allow concurrent executions (no re-entry prevention)', () async {
+      test('should prevent concurrent executions (automatic re-entry prevention)', () async {
         var executionCount = 0;
         final command = AsyncRelayCommand(() async {
           executionCount++;
           await Future<void>.delayed(const Duration(milliseconds: 50));
         });
         
-        // Start multiple concurrent executions
+        // Try to start multiple concurrent executions
         final future1 = command.execute();
-        final future2 = command.execute();
-        final future3 = command.execute();
+        final future2 = command.execute(); // Should be ignored (isRunning = true)
+        final future3 = command.execute(); // Should be ignored (isRunning = true)
         
         await Future.wait([future1, future2, future3]);
         
-        // All three should execute since there's no re-entry prevention
-        expect(executionCount, equals(3));
+        // Only the first execution should run due to automatic re-entry prevention
+        expect(executionCount, equals(1));
+        expect(command.isRunning, isFalse); // Should be false after completion
         
         command.dispose();
       });
@@ -522,8 +523,10 @@ void main() {
         
         await Future.wait(futures);
         
-        // All should execute since there's no re-entry prevention
-        expect(executionCount, equals(10));
+        // Only the first execution should run due to automatic re-entry prevention
+        // All subsequent calls are ignored while isRunning is true
+        expect(executionCount, equals(1));
+        expect(command.isRunning, isFalse);
         
         command.dispose();
       });
