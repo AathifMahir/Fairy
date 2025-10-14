@@ -1,0 +1,614 @@
+# Fairy - MVVM Framework for Flutter
+
+> Lightweight MVVM framework for Flutter with strongly-typed, reactive data binding without code generation.
+
+## Package Identity
+
+- **Name**: fairy
+- **Version**: 1.0.0-rc.1
+- **Type**: Flutter state management library
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **License**: BSD-3-Clause
+- **Repository**: https://github.com/AathifMahir/Fairy
+
+## Core Philosophy
+
+Fairy is designed around "Learn just 2 widgets" - `Bind` and `Command` cover almost all UI binding scenarios.
+
+### Key Principles
+- No code generation (no build_runner)
+- Type-safe reactive programming
+- Automatic disposal and memory management
+- Minimal boilerplate
+- Zero external dependencies (except Flutter)
+
+## API Surface
+
+### Core Primitives
+
+#### ObservableObject
+Base class for ViewModels. Provides automatic disposal of properties and commands.
+
+```dart
+class MyViewModel extends ObservableObject {
+  final counter = ObservableProperty<int>(0);
+  late final incrementCommand = RelayCommand(() => counter.value++);
+  
+  // Properties and commands auto-disposed by super.dispose()
+}
+```
+
+**Key Methods:**
+- `onPropertyChanged()` - Manual change notification
+- `propertyChanged(VoidCallback listener)` - Subscribe to any property change (returns disposer)
+- `dispose()` - Clean up resources (auto-disposes properties/commands)
+
+#### ObservableProperty<T>
+Reactive property that notifies listeners on value changes.
+
+```dart
+final name = ObservableProperty<String>('');
+
+// Get/Set
+name.value = 'John';
+print(name.value);
+
+// Listen to changes
+final dispose = name.propertyChanged(() {
+  print('Changed: ${name.value}');
+});
+dispose(); // Clean up listener
+```
+
+**Important:** Always capture and call the disposer to prevent memory leaks.
+
+#### ComputedProperty<T>
+Derived property that automatically updates when dependencies change.
+
+```dart
+final firstName = ObservableProperty<String>('John');
+final lastName = ObservableProperty<String>('Doe');
+
+late final fullName = ComputedProperty<String>(
+  () => '${firstName.value} ${lastName.value}',
+  [firstName, lastName],
+);
+```
+
+### Commands
+
+All commands support optional `canExecute` validation and provide `canExecuteChanged` notifications.
+
+#### RelayCommand
+Synchronous command with optional validation.
+
+```dart
+late final saveCommand = RelayCommand(
+  _save,
+  canExecute: () => userName.value.isNotEmpty,
+);
+
+void _save() {
+  // Save logic
+}
+
+// Refresh canExecute when dependencies change
+userName.propertyChanged(() {
+  saveCommand.notifyCanExecuteChanged();
+});
+```
+
+#### AsyncRelayCommand
+Asynchronous command with automatic `isRunning` state.
+
+```dart
+late final fetchCommand = AsyncRelayCommand(_fetchData);
+
+Future<void> _fetchData() async {
+  // fetchCommand.isRunning automatically true
+  await api.getData();
+  // fetchCommand.isRunning automatically false
+}
+```
+
+#### RelayCommandWithParam<T>
+Parameterized synchronous command.
+
+```dart
+late final deleteCommand = RelayCommandWithParam<String>(
+  (id) => _deleteItem(id),
+  canExecute: (id) => items.any((item) => item.id == id),
+);
+```
+
+#### AsyncRelayCommandWithParam<T>
+Parameterized asynchronous command.
+
+```dart
+late final fetchItemCommand = AsyncRelayCommandWithParam<String>(
+  (id) async => await api.getItem(id),
+);
+```
+
+### UI Binding Widgets
+
+#### Bind<TViewModel, TValue>
+Primary data binding widget with explicit selector.
+
+**Two-way binding** (returns ObservableProperty):
+```dart
+Bind<UserViewModel, String>(
+  selector: (vm) => vm.name,  // Returns ObservableProperty<String>
+  builder: (context, value, update) {
+    return TextField(
+      controller: TextEditingController(text: value),
+      onChanged: update,  // update callback provided
+    );
+  },
+)
+```
+
+**One-way binding** (returns raw value):
+```dart
+Bind<UserViewModel, String>(
+  selector: (vm) => vm.name.value,  // Returns String
+  builder: (context, value, update) {
+    return Text(value);  // update is null
+  },
+)
+```
+
+#### Bind.observer<TViewModel>
+Auto-tracking data binding - automatically tracks accessed properties.
+
+```dart
+Bind.observer<UserViewModel>(
+  builder: (context, vm) {
+    return Column(
+      children: [
+        Text('${vm.firstName.value} ${vm.lastName.value}'),
+        Text('Age: ${vm.age.value}'),
+        // All three properties automatically tracked!
+      ],
+    );
+  },
+)
+```
+
+**When to use:**
+- Multiple related properties displayed together
+- Complex UI with many data points
+- Rapid prototyping
+- 100% selective efficiency (only rebuilds when accessed properties change)
+
+#### Command<TViewModel>
+Command binding for non-parameterized commands.
+
+```dart
+Command<UserViewModel>(
+  command: (vm) => vm.saveCommand,
+  builder: (context, execute, canExecute) {
+    return ElevatedButton(
+      onPressed: canExecute ? execute : null,
+      child: Text('Save'),
+    );
+  },
+)
+```
+
+#### Command.param<TViewModel, TParam>
+Command binding for parameterized commands.
+
+```dart
+Command.param<TodoViewModel, String>(
+  command: (vm) => vm.deleteCommand,
+  parameter: todoId,
+  builder: (context, execute, canExecute) {
+    return IconButton(
+      onPressed: canExecute ? execute : null,
+      icon: Icon(Icons.delete),
+    );
+  },
+)
+```
+
+### Dependency Injection
+
+#### FairyScope
+Widget-scoped DI with automatic disposal. Can be used anywhere in widget tree.
+
+**Single ViewModel:**
+```dart
+FairyScope(
+  viewModel: (_) => ProfileViewModel(userId: widget.userId),
+  child: ProfilePage(),
+)
+```
+
+**Multiple ViewModels:**
+```dart
+FairyScope(
+  viewModels: [
+    (_) => UserViewModel(),
+    (_) => SettingsViewModel(),
+    (locator) => ProfileViewModel(
+      userVM: locator.get<UserViewModel>(),
+    ),
+  ],
+  child: DashboardPage(),
+)
+```
+
+**Auto-disposal control:**
+```dart
+FairyScope(
+  viewModel: (_) => MyViewModel(),
+  autoDispose: true,  // Default: auto-dispose when removed
+  child: MyPage(),
+)
+```
+
+#### FairyLocator
+Global singleton registry for app-wide services.
+
+```dart
+// Register in main()
+void main() {
+  FairyLocator.instance.registerSingleton<ApiService>(ApiService());
+  FairyLocator.instance.registerLazySingleton<DatabaseService>(
+    () => DatabaseService()
+  );
+  runApp(MyApp());
+}
+
+// Access anywhere
+final api = FairyLocator.instance.get<ApiService>();
+```
+
+#### Fairy (Resolver)
+Unified resolution checking scope → global → exception.
+
+```dart
+// In widgets
+final userVM = Fairy.of<UserViewModel>(context);
+final settingsVM = context.of<SettingsViewModel>();
+
+// Optional resolution (returns null if not found)
+final vm = Fairy.maybeOf<MyViewModel>(context);
+```
+
+**Resolution order:**
+1. Current FairyScope (nearest)
+2. Parent FairyScopes (ancestor)
+3. FairyLocator (global)
+4. Throws exception if not found
+
+## Memory Management
+
+### Auto-Disposal
+- Properties and commands created as fields are **automatically disposed** when parent ViewModel is disposed
+- No manual disposal needed for properties/commands
+- Exception: Nested ViewModels require manual disposal
+
+```dart
+class ParentViewModel extends ObservableObject {
+  final data = ObservableProperty<String>('');  // Auto-disposed
+  late final saveCommand = RelayCommand(_save);  // Auto-disposed
+  
+  late final childVM = ChildViewModel();  // ⚠️ Manual disposal required
+  
+  @override
+  void dispose() {
+    childVM.dispose();  // Must manually dispose nested ViewModels
+    super.dispose();    // Auto-disposes properties and commands
+  }
+}
+```
+
+### Manual Listeners - Critical Memory Leak Warning
+⚠️ **Always capture disposers** from `propertyChanged()` and `canExecuteChanged()` calls.
+
+```dart
+// ❌ MEMORY LEAK
+viewModel.counter.propertyChanged(() {
+  print('changed');
+});
+// Listener stays in memory forever!
+
+// ✅ CORRECT
+final disposer = viewModel.counter.propertyChanged(() {
+  print('changed');
+});
+// Later, clean up:
+disposer();
+
+// ✅ BEST: Use Bind/Command widgets (handle lifecycle automatically)
+```
+
+## Architecture Patterns
+
+### ViewModel Responsibilities
+✅ DO:
+- Contain business logic
+- Manage state with ObservableProperty
+- Expose commands for user actions
+- Coordinate with services/repositories
+
+❌ DON'T:
+- Reference widgets or BuildContext
+- Perform navigation
+- Contain UI logic or styling
+
+### View Responsibilities
+✅ DO:
+- Purely declarative widget composition
+- Bind to ViewModel properties and commands
+- Handle navigation
+
+❌ DON'T:
+- Contain business logic
+- Directly modify application state
+- Perform data validation
+
+## Best Practices
+
+### 1. Choose the Right Binding
+- **Single property**: Use `Bind<TViewModel, TValue>` with explicit selector
+- **Multiple properties**: Use `Bind.observer<TViewModel>` for convenience
+- **Avoid one-way binding**: Prefer returning `ObservableProperty` over raw values
+
+### 2. Command Dependencies
+When `canExecute` depends on other properties, refresh the command:
+
+```dart
+class MyViewModel extends ObservableObject {
+  final selectedItem = ObservableProperty<Item?>(null);
+  late final deleteCommand = RelayCommand(
+    _delete,
+    canExecute: () => selectedItem.value != null,
+  );
+  
+  late final VoidCallback _disposer;
+  
+  MyViewModel() {
+    _disposer = selectedItem.propertyChanged(() {
+      deleteCommand.notifyCanExecuteChanged();
+    });
+  }
+  
+  @override
+  void dispose() {
+    _disposer();
+    super.dispose();
+  }
+}
+```
+
+### 3. Selector Stability
+Selectors must return stable property references. Never create new instances:
+
+```dart
+// ❌ BAD: Creates new property each time
+Bind<MyViewModel, int>(
+  selector: (vm) => ObservableProperty<int>(vm.counter.value),
+  builder: ...
+)
+
+// ✅ GOOD: Returns stable property reference
+Bind<MyViewModel, int>(
+  selector: (vm) => vm.counter,
+  builder: ...
+)
+```
+
+### 4. Scoped vs Global DI
+- Use `FairyScope` for page-level ViewModels (auto-disposed)
+- Use `FairyLocator` for app-wide services (manual lifecycle)
+
+### 5. Testing
+ViewModels are easily testable:
+
+```dart
+test('increment updates counter', () {
+  final vm = CounterViewModel();
+  
+  expect(vm.counter.value, 0);
+  vm.incrementCommand.execute();
+  expect(vm.counter.value, 1);
+  
+  vm.dispose();
+});
+```
+
+## Common Patterns
+
+### Form Validation
+```dart
+class LoginViewModel extends ObservableObject {
+  final email = ObservableProperty<String>('');
+  final password = ObservableProperty<String>('');
+  
+  late final loginCommand = AsyncRelayCommand(
+    _login,
+    canExecute: () => _isValid,
+  );
+  
+  bool get _isValid => 
+    email.value.contains('@') && 
+    password.value.length >= 6;
+  
+  LoginViewModel() {
+    email.propertyChanged(() => loginCommand.notifyCanExecuteChanged());
+    password.propertyChanged(() => loginCommand.notifyCanExecuteChanged());
+  }
+  
+  Future<void> _login() async {
+    await authService.login(email.value, password.value);
+  }
+}
+```
+
+### Master-Detail
+```dart
+class ItemListViewModel extends ObservableObject {
+  final items = ObservableProperty<List<Item>>([]);
+  final selectedItem = ObservableProperty<Item?>(null);
+  
+  late final deleteCommand = RelayCommand(
+    _delete,
+    canExecute: () => selectedItem.value != null,
+  );
+  
+  late final VoidCallback _disposer;
+  
+  ItemListViewModel() {
+    _disposer = selectedItem.propertyChanged(() {
+      deleteCommand.notifyCanExecuteChanged();
+    });
+  }
+  
+  void _delete() {
+    final item = selectedItem.value;
+    if (item != null) {
+      items.value = items.value.where((i) => i != item).toList();
+      selectedItem.value = null;
+    }
+  }
+  
+  @override
+  void dispose() {
+    _disposer();
+    super.dispose();
+  }
+}
+```
+
+### Async Data Loading
+```dart
+class DataViewModel extends ObservableObject {
+  final data = ObservableProperty<List<String>>([]);
+  final isLoading = ObservableProperty<bool>(false);
+  final error = ObservableProperty<String?>(null);
+  
+  late final fetchCommand = AsyncRelayCommand(_fetchData);
+  
+  Future<void> _fetchData() async {
+    try {
+      isLoading.value = true;
+      error.value = null;
+      data.value = await api.getData();
+    } catch (e) {
+      error.value = e.toString();
+    } finally {
+      isLoading.value = false;
+    }
+  }
+}
+```
+
+## Advanced Features
+
+### Custom Equality
+ObservableProperty uses `!=` for change detection. Override `==` for custom types:
+
+```dart
+class User {
+  final String id;
+  final String name;
+  
+  User(this.id, this.name);
+  
+  @override
+  bool operator ==(Object other) =>
+    identical(this, other) ||
+    other is User && id == other.id;
+  
+  @override
+  int get hashCode => id.hashCode;
+}
+
+final user = ObservableProperty<User>(User('1', 'Alice'));
+```
+
+### Advanced Widgets (Public but Optional)
+For power users who need more control:
+- `BindObserver<TViewModel>` - Single property auto-tracking
+- `BindObserver2<TViewModel>` - Two properties auto-tracking
+- `BindObserver3<TViewModel>` - Three properties auto-tracking
+- `CommandWithParam<TViewModel, TParam>` - Direct parameterized command widget
+
+These are public but the factory constructors (`Bind.observer`, `Command.param`) are recommended.
+
+## Performance Characteristics
+
+- **Memory Management**: Highly optimized cleanup and disposal system
+- **Selective Rebuilds**: Exceptional performance with explicit selectors
+- **Auto-tracking**: `Bind.observer` delivers superior speed with 100% selectivity
+- **Rebuild Efficiency**: Only rebuilds widgets when their accessed properties change
+
+## Migration from 0.5.x to 1.0.0-rc.1
+
+### Breaking Changes
+
+1. **Remove extension methods** - Use direct types:
+   - `observableProperty<T>()` → `ObservableProperty<T>()`
+   - `computedProperty<T>()` → `ComputedProperty<T>()`
+   - `relayCommand()` → `RelayCommand()`
+   - `asyncRelayCommand()` → `AsyncRelayCommand()`
+
+2. **Remove parent parameter** from all commands:
+   - Before: `RelayCommand(execute, parent: this, canExecute: ...)`
+   - After: `RelayCommand(execute, canExecute: ...)`
+
+## Package Structure
+
+```
+lib/
+  fairy.dart                 # Main export file
+  src/
+    core/
+      observable_object.dart      # Base ViewModel class
+      observable_property.dart    # Reactive property
+      computed_property.dart      # Derived property
+      command.dart                # All command types
+    locator/
+      fairy_locator.dart          # Global DI registry
+      fairy_scope.dart            # Scoped DI widget
+      fairy_resolver.dart         # Resolution logic
+    ui/
+      bind_widget.dart            # Bind<TViewModel, TValue>
+      bind_observer_widget.dart   # Bind.observer variants
+      command_widget.dart         # Command<TViewModel>
+    utils/
+      change_notifier_extensions.dart
+    internal/
+      dependency_tracker.dart     # Property tracking system
+```
+
+## Common Errors and Solutions
+
+### Error: "No ViewModel found"
+**Solution**: Ensure ViewModel is registered in a FairyScope ancestor or FairyLocator.
+
+### Error: Memory leak warnings
+**Solution**: Always capture and call disposers from `propertyChanged()` or use `Bind`/`Command` widgets.
+
+### Error: Widget not rebuilding
+**Solution**: Ensure selector returns ObservableProperty, not raw value. Or use `Bind.observer`.
+
+### Error: Command not updating `canExecute`
+**Solution**: Call `command.notifyCanExecuteChanged()` when dependencies change.
+
+## Testing Considerations
+
+- ViewModels are pure Dart classes - easy to unit test
+- Use `FairyScope` in widget tests for integration testing
+- All 344 unit tests pass in the package
+- Test coverage includes all core functionality
+
+## Links
+
+- GitHub: https://github.com/AathifMahir/Fairy
+- Documentation: See README.md
+- Example: See example/ directory
+- Benchmarks: See benchmark/ directory
