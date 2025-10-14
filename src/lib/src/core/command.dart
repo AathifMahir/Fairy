@@ -393,7 +393,7 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
 /// }
 ///
 /// // In UI
-/// Command.param<UserViewModel, String>(
+/// Command.withParam<UserViewModel, String>(
 ///   command: (vm) => vm.loadUserCommand,
 ///   parameter: () => userId,
 ///   builder: (context, execute, canExecute, isRunning) {

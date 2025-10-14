@@ -101,7 +101,7 @@ class Command<TViewModel extends ObservableObject> extends StatefulWidget {
   ///
   /// Example:
   /// ```dart
-  /// Command.param<TodoViewModel, String>(
+  /// Command.withParam<TodoViewModel, String>(
   ///   command: (vm) => vm.deleteTodoCommand,
   ///   parameter: () => todoId, // Function for reactive parameter
   ///   builder: (context, execute, canExecute, isRunning) {
@@ -112,7 +112,7 @@ class Command<TViewModel extends ObservableObject> extends StatefulWidget {
   ///   },
   /// )
   /// ```
-  static CommandWithParam<TViewModel, TParam> param<TViewModel extends ObservableObject, TParam>({
+  static CommandWithParam<TViewModel, TParam> withParam<TViewModel extends ObservableObject, TParam>({
     Key? key,
     required dynamic Function(TViewModel vm) command,
     required TParam Function() parameter,

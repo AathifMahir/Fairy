@@ -6,14 +6,14 @@
 ///
 /// ## Learn Just 2 Widgets:
 /// - **Bind** - Reactive data binding (`Bind` / `Bind.observer`)
-/// - **Command** - User action binding (`Command` / `Command.param`)
+/// - **Command** - User action binding (`Command` / `Command.withParam`)
 ///
 /// ## Core Features:
 // ignore: unintended_html_in_doc_comment
 /// - **ObservableProperty<T>**: Typed, reactive properties for two-way binding
 /// - **RelayCommand / AsyncRelayCommand**: Command pattern with canExecute logic
 /// - **Auto-tracking**: `Bind.observer` automatically tracks accessed properties
-/// - **Parameterized commands**: `Command.param` for actions with parameters
+/// - **Parameterized commands**: `Command.withParam` for actions with parameters
 /// - **FairyLocator**: Global dependency injection
 /// - **FairyScope**: Widget-scoped dependency injection with automatic disposal
 ///

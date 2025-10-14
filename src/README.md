@@ -83,7 +83,7 @@ class CounterPage extends StatelessWidget {
             ),
             
             // Command binding (parameterized)
-            Command.param<CounterViewModel, int>(
+            Command.withParam<CounterViewModel, int>(
               command: (vm) => vm.addCommand,
               parameter: () => 5,
               builder: (context, execute, canExecute, isRunning) {
@@ -225,8 +225,8 @@ class TodoViewModel extends ObservableObject {
   );
 }
 
-// In UI - use Command.param:
-Command.param<TodoViewModel, String>(
+// In UI - use Command.withParam:
+Command.withParam<TodoViewModel, String>(
   command: (vm) => vm.deleteTodoCommand,
   parameter: () => todoId,
   builder: (context, execute, canExecute, isRunning) {
@@ -355,12 +355,12 @@ Command<UserViewModel>(
 )
 ```
 
-#### Parameterized Commands with `Command.param`
+#### Parameterized Commands with `Command.withParam`
 
 When your command needs parameters, use a function that returns the parameter value for reactive evaluation:
 
 ```dart
-Command.param<TodoViewModel, String>(
+Command.withParam<TodoViewModel, String>(
   command: (vm) => vm.deleteTodoCommand,
   parameter: () => todoId,  // Function for reactive evaluation
   builder: (context, execute, canExecute, isRunning) {
@@ -381,7 +381,7 @@ Bind<TodoViewModel, TextEditingController>(
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
-        return Command.param<TodoViewModel, String>(
+        return Command.withParam<TodoViewModel, String>(
           command: (vm) => vm.addTodoCommand,
           parameter: () => value.text,  // Reactive to text changes
           builder: (context, execute, canExecute, isRunning) {
@@ -626,7 +626,7 @@ class TodoListPage extends StatelessWidget {
                 return ValueListenableBuilder<TextEditingValue>(
                   valueListenable: controller,
                   builder: (context, value, _) {
-                    return Command.param<TodoListViewModel, String>(
+                    return Command.withParam<TodoListViewModel, String>(
                       command: (vm) => vm.addTodoCommand,
                       parameter: () => value.text,
                       builder: (context, execute, canExecute, isRunning) {

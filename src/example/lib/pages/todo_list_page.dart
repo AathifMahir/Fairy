@@ -257,7 +257,7 @@ class TodoListPage extends StatelessWidget {
 ///
 /// This dialog demonstrates:
 /// 1. Using Bind widget to access TextEditingController
-/// 2. Using Command.param widget for parameterized command
+/// 2. Using Command.withParam widget for parameterized command
 /// 3. Automatic button enable/disable based on canExecute
 class _AddTodoDialog extends StatelessWidget {
   const _AddTodoDialog();
@@ -306,7 +306,7 @@ class _AddTodoDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        // Use Command.param widget for Add button
+        // Use Command.withParam widget for Add button
         // We bind to the TextEditingController and use ValueListenableBuilder
         // to rebuild when the text changes
         Bind<TodoListViewModel, TextEditingController>(
@@ -316,7 +316,7 @@ class _AddTodoDialog extends StatelessWidget {
             return ValueListenableBuilder<TextEditingValue>(
               valueListenable: controller,
               builder: (context, value, _) {
-                return Command.param<TodoListViewModel, String>(
+                return Command.withParam<TodoListViewModel, String>(
                   command: (vm) => vm.addTodoCommand,
                   parameter: () => value.text, // Use the current value from ValueListenableBuilder
                   builder: (context, execute, canExecute, isRunning) {

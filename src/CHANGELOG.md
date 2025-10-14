@@ -1,3 +1,44 @@
+## 1.0.0-rc.4
+
+### 🔄 Breaking Changes
+
+#### Command.param Renamed to Command.withParam
+- **BREAKING**: `Command.param` factory constructor renamed to `Command.withParam`
+  - **Reason**: More explicit and easier for new users to understand, aligns better with Flutter API design conventions
+  - **Migration**: Replace all `Command.param` with `Command.withParam`
+  
+```dart
+// Before
+Command.param<TodoViewModel, String>(
+  command: (vm) => vm.deleteTodoCommand,
+  parameter: () => todoId,
+  builder: (context, execute, canExecute, isRunning) {
+    return IconButton(
+      onPressed: canExecute ? execute : null,
+      icon: const Icon(Icons.delete),
+    );
+  },
+)
+
+// After
+Command.withParam<TodoViewModel, String>(
+  command: (vm) => vm.deleteTodoCommand,
+  parameter: () => todoId,
+  builder: (context, execute, canExecute, isRunning) {
+    return IconButton(
+      onPressed: canExecute ? execute : null,
+      icon: const Icon(Icons.delete),
+    );
+  },
+)
+```
+
+### 📚 Documentation
+
+- Updated all documentation to use `Command.withParam` instead of `Command.param`
+- Updated README examples with new API name
+- Updated example app to demonstrate `Command.withParam` usage
+
 ## 1.0.0-rc.3
 
 ### ✨ New Features
