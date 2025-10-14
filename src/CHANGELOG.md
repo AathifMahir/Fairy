@@ -1,3 +1,127 @@
+## 1.0.0-rc.3
+
+### ✨ New Features
+
+#### Async Command Execution State Tracking
+- **`isRunning` property** added to async commands for automatic execution state tracking
+  - **`AsyncRelayCommand.isRunning`**: Tracks execution state (true while running, false otherwise)
+  - **`AsyncRelayCommandWithParam<T>.isRunning`**: Same behavior for parameterized async commands
+  - **Automatic concurrent execution prevention**: `canExecute` returns `false` while `isRunning` is `true`
+  - Eliminates need for manual loading state management
+  - Prevents double-click bugs automatically
+  - Enables easy loading indicators in UI
+
+#### Command Widget API Enhancement
+- **4th parameter `isRunning`** added to all Command builder signatures for consistency
+  - **`Command<TViewModel>`**: Builder now receives `isRunning` (always `false` for sync commands)
+  - **`Command.param<TViewModel, TParam>`**: Builder now receives `isRunning` (always `false` for sync commands)
+  - Async commands return actual `isRunning` state from the command
+  - Consistent API across all command types
+
+```dart
+// Async command with loading indicator
+Command<DataViewModel>(
+  command: (vm) => vm.fetchCommand,
+  builder: (context, execute, canExecute, isRunning) {
+    if (isRunning) return CircularProgressIndicator();
+    return ElevatedButton(
+      onPressed: execute,
+      child: Text('Fetch Data'),
+    );
+  },
+)
+
+// Sync command (isRunning always false)
+Command<TodoViewModel>(
+  command: (vm) => vm.deleteCommand,
+  builder: (context, execute, canExecute, isRunning) {
+    return IconButton(
+      onPressed: canExecute ? execute : null,
+      icon: Icon(Icons.delete),
+    );
+  },
+)
+```
+
+#### Overlay ViewModel Bridging
+- **`Fairy.bridge()`**: New utility to bridge ViewModels to overlay widget trees
+  - Solves the problem of dialogs, bottom sheets, and menus creating separate widget trees
+  - Captures parent context's FairyScope and makes it available to overlay
+  - Enables `Bind` and `Command` widgets to work seamlessly in overlays
+  - Gracefully falls back to FairyLocator if no FairyScope found
+
+```dart
+void _showDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (_) => Fairy.bridge(
+      context: context, // Makes parent FairyScope available
+      child: AlertDialog(
+        actions: [
+          Command<MyViewModel>(
+            command: (vm) => vm.saveCommand,
+            builder: (ctx, execute, canExecute, isRunning) =>
+              TextButton(onPressed: execute, child: Text('Save')),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+```
+
+### 🔄 Breaking Changes
+
+#### Command.param Parameter Type Change
+- **BREAKING**: `Command.param` parameter changed from static `TParam` to function `TParam Function()`
+  - **Reason**: Enables reactive parameter evaluation on rebuild
+  - **Before**: `parameter: todoId,`
+  - **After**: `parameter: () => todoId,`
+  - For reactive controller values, wrap with `ValueListenableBuilder`:
+
+```dart
+// Before (static parameter - doesn't react to changes)
+Command.param<TodoViewModel, String>(
+  parameter: controller.text, // Static value
+  builder: (context, execute, canExecute) { ... },
+)
+
+// After (reactive parameter)
+ValueListenableBuilder<TextEditingValue>(
+  valueListenable: controller,
+  builder: (context, value, _) {
+    return Command.param<TodoViewModel, String>(
+      parameter: () => value.text, // Reactive to text changes
+      builder: (context, execute, canExecute, isRunning) { ... },
+    );
+  },
+)
+```
+
+#### Command Builder Signature Update
+- **BREAKING**: All Command builder signatures now include 4th `isRunning` parameter
+  - **Before**: `builder: (context, execute, canExecute) { ... }`
+  - **After**: `builder: (context, execute, canExecute, isRunning) { ... }`
+  - Applies to both `Command<TViewModel>` and `Command.param<TViewModel, TParam>`
+  - `isRunning` is always present but only meaningful for async commands (false for sync)
+
+### 🧪 Testing
+
+- **401 tests** passing
+- Updated 5 tests for new concurrent execution prevention behavior
+- Added tests for `isRunning` state tracking
+- Added tests for Command widget `isRunning` parameter
+
+#### 📚 Documentation
+
+- Added comprehensive examples for `isRunning` usage
+- Added `Fairy.bridge()` documentation and examples
+- Updated all Command widget examples with 4th parameter
+- Added ValueListenableBuilder pattern for reactive parameters
+- Updated llms.txt with new API surface
+
+---
+
 ## 1.0.0-rc.2
 
 ### ✨ New Features
