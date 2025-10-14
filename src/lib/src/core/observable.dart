@@ -361,6 +361,34 @@ class ComputedProperty<T> extends ObservableNode {
   // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
 
+  // ========================================================================
+  // PUBLIC FAIRY API
+  // ========================================================================
+
+  /// Notifies all listeners that the computed value has changed.
+  ///
+  /// This is called automatically when dependencies change. You typically
+  /// don't need to call this manually.
+  @protected
+  void onPropertyChanged() => notifyListeners();
+
+  /// Listens to value changes on this computed property.
+  ///
+  /// Returns a disposal function that removes the listener when called.
+  ///
+  /// Example:
+  /// ```dart
+  /// final dispose = totalPrice.propertyChanged(() {
+  ///   print('Total changed to: ${totalPrice.value}');
+  /// });
+  /// // Later:
+  /// dispose();
+  /// ```
+  VoidCallback propertyChanged(VoidCallback listener) {
+    super.addListener(listener);
+    return () => super.removeListener(listener);
+  }
+
   /// Gets the current computed value and reports access for automatic tracking.
   ///
   /// Returns the cached value if available, otherwise recomputes.
