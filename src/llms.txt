@@ -21,6 +21,7 @@ Fairy is designed around "Learn just 2 widgets" - `Bind` and `Command` cover alm
 - Automatic disposal and memory management
 - Minimal boilerplate
 - Zero external dependencies (except Flutter)
+- Built-in recursive deep equality for collections (no external packages needed)
 
 ## API Surface
 
@@ -214,10 +215,27 @@ Command.param<TodoViewModel, String>(
 
 ### Dependency Injection
 
-#### FairyScope
-Widget-scoped DI with automatic disposal. Can be used anywhere in widget tree.
+#### FairyScope vs FairyLocator - When to Use What
 
-**Single ViewModel:**
+**CRITICAL RULE:** Use `FairyScope` for ViewModels, use `FairyLocator` for app-wide services only.
+
+**FairyScope** (Recommended for ViewModels):
+- ✅ Automatic disposal when widget is removed
+- ✅ Scoped to specific widget subtree
+- ✅ Perfect for page/feature ViewModels
+- ✅ Can pass widget-specific data (e.g., userId from route)
+- ✅ Proper lifecycle management
+
+**FairyLocator** (For Services Only):
+- ✅ Global app-wide services (ApiService, DatabaseService, etc.)
+- ❌ NOT for ViewModels (no automatic disposal, leads to memory leaks)
+- ✅ Services that live for entire app lifetime
+- ✅ Services shared across multiple features
+
+#### FairyScope
+Widget-scoped DI with automatic disposal. **ALWAYS use this for ViewModels.**
+
+**Single ViewModel (inline):**
 ```dart
 FairyScope(
   viewModel: (_) => ProfileViewModel(userId: widget.userId),
@@ -225,7 +243,7 @@ FairyScope(
 )
 ```
 
-**Multiple ViewModels:**
+**Multiple ViewModels (inline):**
 ```dart
 FairyScope(
   viewModels: [
@@ -239,6 +257,180 @@ FairyScope(
 )
 ```
 
+**Using static factory methods (RECOMMENDED PATTERN):**
+
+When organizing ViewModels in separate files or when you want reusable factory methods, use the static factory pattern. The key is understanding the return type that FairyScope expects.
+
+**Pattern 1: Simple ViewModel (no dependencies)**
+```dart
+// lib/viewmodels/login_viewmodel.dart
+class LoginViewModel extends ObservableObject {
+  final email = ObservableProperty<String>('');
+  final password = ObservableProperty<String>('');
+  
+  late final loginCommand = AsyncRelayCommand(_login);
+  
+  LoginViewModel();
+  
+  // ✅ CORRECT: Return type is LoginViewModel Function(FairyLocator)
+  // This is what FairyScope.viewModel parameter expects
+  static LoginViewModel Function(FairyLocator) create() {
+    return (_) => LoginViewModel();
+    // The _ means we don't need the locator parameter
+  }
+  
+  Future<void> _login() async {
+    // login logic
+  }
+}
+
+// lib/pages/login_page.dart
+class LoginPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FairyScope(
+      viewModel: LoginViewModel.create(),  // ✅ Pass the factory function
+      child: Scaffold(
+        body: LoginForm(),
+      ),
+    );
+  }
+}
+```
+
+**Pattern 2: ViewModel with Dependencies**
+```dart
+// lib/viewmodels/dashboard_viewmodel.dart
+class DashboardViewModel extends ObservableObject {
+  final UserViewModel userVM;
+  final ApiService apiService;
+  
+  final items = ObservableProperty<List<Item>>([]);
+  
+  // Constructor takes dependencies
+  DashboardViewModel({
+    required this.userVM,
+    required this.apiService,
+  });
+  
+  // ✅ CORRECT: Uses locator to resolve dependencies
+  static DashboardViewModel Function(FairyLocator) create() {
+    return (locator) => DashboardViewModel(
+      userVM: locator.get<UserViewModel>(),
+      apiService: locator.get<ApiService>(),
+    );
+  }
+}
+
+// Usage with multiple ViewModels
+FairyScope(
+  viewModels: [
+    UserViewModel.create(),        // Registered first
+    DashboardViewModel.create(),   // Can access UserViewModel
+  ],
+  child: DashboardPage(),
+)
+```
+
+**Pattern 3: ViewModel with Widget Parameters**
+```dart
+// lib/viewmodels/profile_viewmodel.dart
+class ProfileViewModel extends ObservableObject {
+  final String userId;
+  final ApiService apiService;
+  
+  final profile = ObservableProperty<Profile?>(null);
+  
+  ProfileViewModel({
+    required this.userId,
+    required this.apiService,
+  }) {
+    _loadProfile();
+  }
+  
+  // ✅ Factory that accepts widget parameters
+  static ProfileViewModel Function(FairyLocator) createWith(String userId) {
+    return (locator) => ProfileViewModel(
+      userId: userId,
+      apiService: locator.get<ApiService>(),
+    );
+  }
+  
+  Future<void> _loadProfile() async {
+    profile.value = await apiService.getProfile(userId);
+  }
+}
+
+// lib/pages/profile_page.dart
+class ProfilePage extends StatelessWidget {
+  final String userId;
+  
+  ProfilePage({required this.userId});
+  
+  @override
+  Widget build(BuildContext context) {
+    return FairyScope(
+      viewModel: ProfileViewModel.createWith(userId),  // ✅ Pass widget data
+      child: Scaffold(
+        body: ProfileContent(),
+      ),
+    );
+  }
+}
+```
+
+**Pattern 4: Organizing Factories in Separate Class**
+```dart
+// lib/viewmodels/viewmodel_factory.dart
+class ViewModelFactory {
+  // Static fields returning factory functions
+  static final loginViewModel = LoginViewModel.create();
+  static final userViewModel = UserViewModel.create();
+  static final settingsViewModel = SettingsViewModel.create();
+  
+  // Factory methods for ViewModels with parameters
+  static ProfileViewModel Function(FairyLocator) profileViewModel(String userId) {
+    return ProfileViewModel.createWith(userId);
+  }
+}
+
+// Usage
+FairyScope(
+  viewModel: ViewModelFactory.loginViewModel,  // ✅ Clean usage
+  child: LoginPage(),
+)
+
+FairyScope(
+  viewModel: ViewModelFactory.profileViewModel('user123'),
+  child: ProfilePage(),
+)
+```
+
+**Common Mistake - Using FairyLocator for ViewModels:**
+```dart
+// ❌ WRONG: This causes memory leaks!
+void main() {
+  // DON'T register ViewModels in FairyLocator
+  FairyLocator.instance.register<LoginViewModel>(LoginViewModel());
+  runApp(MyApp());
+}
+
+// ❌ The ViewModel is never disposed, stays in memory forever
+// ❌ When you navigate away from LoginPage, the ViewModel persists
+// ❌ Multiple instances accumulate over time = memory leak
+
+// ✅ CORRECT: Use FairyScope
+class LoginPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FairyScope(
+      viewModel: (_) => LoginViewModel(),  // ✅ Auto-disposed when page removed
+      child: Scaffold(...),
+    );
+  }
+}
+```
+
 **Auto-disposal control:**
 ```dart
 FairyScope(
@@ -249,15 +441,16 @@ FairyScope(
 ```
 
 #### FairyLocator
-Global singleton registry for app-wide services.
+Global singleton registry for **app-wide services ONLY**. Do NOT use for ViewModels.
 
 ```dart
-// Register in main()
+// Register in main() - ONLY for services
 void main() {
   FairyLocator.instance.registerSingleton<ApiService>(ApiService());
   FairyLocator.instance.registerLazySingleton<DatabaseService>(
     () => DatabaseService()
   );
+  // ❌ NEVER: FairyLocator.instance.register<MyViewModel>(MyViewModel());
   runApp(MyApp());
 }
 
@@ -401,9 +594,34 @@ Bind<MyViewModel, int>(
 )
 ```
 
-### 4. Scoped vs Global DI
-- Use `FairyScope` for page-level ViewModels (auto-disposed)
-- Use `FairyLocator` for app-wide services (manual lifecycle)
+### 4. Scoped vs Global DI - Critical Pattern
+**ALWAYS use `FairyScope` for ViewModels, NEVER `FairyLocator`**
+
+Why:
+- `FairyScope` automatically disposes ViewModels when widget is removed
+- `FairyLocator` has no lifecycle management → memory leaks for ViewModels
+- ViewModels are tied to UI lifecycle, services are not
+
+Pattern:
+```dart
+// ✅ CORRECT: ViewModels in FairyScope
+FairyScope(
+  viewModel: (_) => ProfileViewModel(),
+  child: ProfilePage(),
+)
+
+// ✅ CORRECT: Services in FairyLocator (main.dart)
+void main() {
+  FairyLocator.instance.registerSingleton<ApiService>(ApiService());
+  runApp(MyApp());
+}
+
+// ❌ WRONG: ViewModels in FairyLocator (memory leak!)
+void main() {
+  FairyLocator.instance.register<ProfileViewModel>(ProfileViewModel());
+  runApp(MyApp());
+}
+```
 
 ### 5. Testing
 ViewModels are easily testable:
@@ -508,8 +726,80 @@ class DataViewModel extends ObservableObject {
 
 ## Advanced Features
 
-### Custom Equality
-ObservableProperty uses `!=` for change detection. Override `==` for custom types:
+### Deep Equality for Collections
+
+By default, `ObservableProperty` uses **recursive deep equality** for `List`, `Map`, and `Set` types, comparing contents instead of references - even for deeply nested collections! This works automatically without any configuration.
+
+```dart
+// Simple collections
+final tags = ObservableProperty<List<String>>(['flutter', 'dart']);
+tags.value = ['flutter', 'dart'];  // ✅ No rebuild (same contents)
+
+// Nested collections work automatically!
+final matrix = ObservableProperty<List<List<int>>>([[1, 2], [3, 4]]);
+matrix.value = [[1, 2], [3, 4]];  // ✅ No rebuild (deep equality)
+
+// Arbitrary nesting depth
+final deep = ObservableProperty<List<Map<String, List<int>>>>([
+  {'a': [1, 2], 'b': [3, 4]},
+]);
+deep.value = [
+  {'a': [1, 2], 'b': [3, 4]},  // ✅ No rebuild (recursively equal)
+];
+
+// Complex mixed structures
+final complex = ObservableProperty<Map<String, dynamic>>({
+  'users': [
+    {'name': 'Alice', 'tags': ['admin', 'user']},
+  ],
+});
+complex.value = {
+  'users': [
+    {'name': 'Alice', 'tags': ['admin', 'user']},
+  ],
+};  // ✅ No rebuild (deep equality handles complexity)
+```
+
+**Disable deep equality for reference-based comparison:**
+```dart
+final items = ObservableProperty<List<Item>>(
+  [],
+  deepEquality: false,  // Use reference equality
+);
+
+items.value = [...items.value];  // ✅ Rebuilds (different reference)
+```
+
+**Using Equals utility class directly:**
+```dart
+import 'package:fairy/fairy.dart';
+
+// Direct comparison utilities (all support deep nesting)
+bool same = Equals.listEquals([1, 2], [1, 2]);  // true
+bool nested = Equals.listEquals([[1, 2]], [[1, 2]]);  // true (nested!)
+bool maps = Equals.mapEquals({'a': 1}, {'a': 1});  // true
+bool sets = Equals.setEquals({1, 2}, {2, 1});  // true (order doesn't matter)
+
+// Deep collection equality for any type
+bool complex = Equals.deepCollectionEquals(
+  {'users': [{'name': 'Alice'}]},
+  {'users': [{'name': 'Alice'}]},
+);  // true (recursively compares)
+
+// Hash codes for using collections as map keys
+int hash = Equals.listHash([[1, 2], [3, 4]]);
+int mapHash = Equals.mapHash({'a': [1, 2]});
+
+// Create equality function for generic types
+final equalsFn = Equals.deepEquals<List<int>>();
+if (equalsFn != null) {
+  print(equalsFn([1, 2], [1, 2]));  // true
+}
+```
+
+### Custom Type Equality
+
+**Custom types automatically use their `==` operator** - no special configuration needed. Deep equality only applies to direct `List`, `Map`, and `Set` types.
 
 ```dart
 class User {
@@ -518,6 +808,7 @@ class User {
   
   User(this.id, this.name);
   
+  // Optional: Override == to define custom equality
   @override
   bool operator ==(Object other) =>
     identical(this, other) ||
@@ -527,8 +818,54 @@ class User {
   int get hashCode => id.hashCode;
 }
 
+// Works automatically - uses User's == operator
 final user = ObservableProperty<User>(User('1', 'Alice'));
+user.value = User('1', 'Bob');  // ✅ No rebuild (same id)
+user.value = User('2', 'Alice');  // ✅ Rebuilds (different id)
 ```
+
+**For custom types containing collections (optional optimization):**
+
+Deep equality works automatically for collections at any level. Overriding `==` for custom types is **optional** - only needed if you want value-based equality instead of reference equality.
+
+```dart
+class Project {
+  final String name;
+  final List<String> tasks;
+  
+  Project(this.name, this.tasks);
+  
+  // OPTIONAL: Override == for value-based equality
+  @override
+  bool operator ==(Object other) =>
+    identical(this, other) ||
+    other is Project &&
+      name == other.name &&
+      Equals.listEquals(tasks, other.tasks);  // Deep equality for nested collections
+  
+  @override
+  int get hashCode => name.hashCode ^ Equals.listHash(tasks);
+}
+
+// Without overriding ==:
+final project1 = ObservableProperty<Project>(
+  Project('Work', ['Task 1', 'Task 2'])
+);
+project1.value = Project('Work', ['Task 1', 'Task 2']);  // ⚠️ Rebuilds (different reference)
+
+// With overridden ==:
+final project2 = ObservableProperty<Project>(
+  Project('Work', ['Task 1', 'Task 2'])
+);
+project2.value = Project('Work', ['Task 1', 'Task 2']);  // ✅ No rebuild (same value)
+```
+
+**Key Points:**
+- Deep equality is **recursive** - handles arbitrary nesting depth automatically
+- Works with mixed structures: `List<Map<String, List<int>>>`
+- Overriding `==` is **optional** - only needed for value-based equality of custom types
+- Collections inside custom types will be compared deeply when you do override `==`
+- No configuration needed - deep equality works automatically for all collection types
 
 ### Advanced Widgets (Public but Optional)
 For power users who need more control:
@@ -603,8 +940,13 @@ lib/
 
 - ViewModels are pure Dart classes - easy to unit test
 - Use `FairyScope` in widget tests for integration testing
-- All 344 unit tests pass in the package
-- Test coverage includes all core functionality
+- All 387 unit tests pass in the package (includes 43 deep equality tests)
+- Test coverage includes all core functionality including:
+  - Deep equality for collections (simple and deeply nested)
+  - Recursive deep equality for arbitrary nesting depth
+  - Mixed nested structures (List<Map<String, List<int>>>)
+  - Sets with nested collections
+  - Custom types with and without equality overrides
 
 ## Links
 
