@@ -218,6 +218,7 @@ void main() {
         var initialized = false;
         await locator.registerSingletonAsync<AsyncService>(
           () async {
+            // ignore: inference_failure_on_instance_creation
             await Future.delayed(const Duration(milliseconds: 10));
             initialized = true;
             return AsyncService();
@@ -271,8 +272,10 @@ void main() {
         await locator.registerSingletonAsync<AsyncService>(
           () async {
             initSteps.add('start');
+            // ignore: inference_failure_on_instance_creation
             await Future.delayed(const Duration(milliseconds: 5));
             initSteps.add('connect');
+            // ignore: inference_failure_on_instance_creation
             await Future.delayed(const Duration(milliseconds: 5));
             initSteps.add('ready');
             return AsyncService();
@@ -286,6 +289,7 @@ void main() {
       test('should be accessible synchronously after registration', () async {
         await locator.registerSingletonAsync<AsyncService>(
           () async {
+            // ignore: inference_failure_on_instance_creation
             await Future.delayed(const Duration(milliseconds: 10));
             return AsyncService();
           },
