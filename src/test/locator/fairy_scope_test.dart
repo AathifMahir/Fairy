@@ -1,3 +1,4 @@
+import 'package:fairy/src/internal/fairy_scope_data.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fairy/src/core/observable.dart';
