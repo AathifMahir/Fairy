@@ -1,3 +1,4 @@
+import 'package:fairy/src/internal/fairy_scope_bridge.dart';
 import 'package:flutter/widgets.dart';
 import '../core/observable.dart';
 import 'fairy_locator.dart';
@@ -39,10 +40,15 @@ class Fairy {
   /// final vm = Fairy.of<MyViewModel>(context);
   /// vm.doSomething();
   /// ```
-  /// 
+  ///
   Fairy._();
 
   static T of<T extends ObservableObject>(BuildContext context) {
+    // Check if we're in a bridged overlay first
+    final bridgedScope = FairyScopeBridge.of(context);
+    if (bridgedScope != null && bridgedScope.contains<T>()) {
+      return bridgedScope.get<T>();
+    }
     // Check nearest FairyScope first
     final scopeData = FairyScope.of(context);
     if (scopeData != null && scopeData.contains<T>()) {
@@ -79,6 +85,11 @@ class Fairy {
   /// }
   /// ```
   static T? maybeOf<T extends ObservableObject>(BuildContext context) {
+    // Check if we're in a bridged overlay first
+    final bridgedScope = FairyScopeBridge.of(context);
+    if (bridgedScope != null && bridgedScope.contains<T>()) {
+      return bridgedScope.get<T>();
+    }
     // Check FairyScope
     final scopeData = FairyScope.of(context);
     if (scopeData != null && scopeData.contains<T>()) {
@@ -92,4 +103,66 @@ class Fairy {
 
     return null;
   }
+
+  /// Bridges parent BuildContext to overlay widget tree.
+  ///
+  /// **Problem:** Overlays (dialogs, bottom sheets, menus) create separate
+  /// widget trees that can't access parent FairyScopes via normal context lookup.
+  ///
+  /// **Solution:** `Fairy.bridge()` captures the parent context's FairyScope
+  /// and makes it available to the overlay's context.
+  ///
+  /// **Example:**
+  /// ```dart
+  /// void _showDialog(BuildContext context) {
+  ///   showDialog(
+  ///     context: context,
+  ///     builder: (_) => Fairy.bridge(
+  ///       context: context, // Parent context with FairyScope
+  ///       child: AlertDialog(
+  ///         // Command and Bind widgets now work!
+  ///         actions: [
+  ///           Command<MyViewModel>(
+  ///             command: (vm) => vm.saveCommand,
+  ///             builder: (ctx, execute, canExecute, isRunning) =>
+  ///               TextButton(onPressed: execute, child: Text('Save')),
+  ///           ),
+  ///         ],
+  ///       ),
+  ///     ),
+  ///   );
+  /// }
+  /// ```
+  ///
+  /// **What it does:**
+  /// - Looks up parent context's FairyScope
+  /// - Creates an InheritedWidget that bridges the same scope to overlay
+  /// - `Fairy.of<T>()` inside overlay now works seamlessly
+  ///
+  /// **When to use:**
+  /// - Dialogs (`showDialog`)
+  /// - Bottom sheets (`showModalBottomSheet`)
+  /// - Menus (`showMenu`)
+  /// - Any overlay that creates a new route
+  static Widget bridge({
+    required BuildContext context,
+    required Widget child,
+  }) {
+    // Look up parent's FairyScope
+    final parentScope = FairyScope.of(context);
+
+    if (parentScope == null) {
+      // No FairyScope in parent, just return child
+      // (Fairy.of will fall back to FairyLocator if needed)
+      return child;
+    }
+
+    // Bridge the parent scope to overlay
+    return FairyScopeBridge(
+      scopeData: parentScope,
+      child: child,
+    );
+  }
 }
+
+
