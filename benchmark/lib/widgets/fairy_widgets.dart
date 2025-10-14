@@ -4,7 +4,7 @@ import '../models/fairy_models.dart';
 
 /// Fairy counter widget for performance testing (using explicit Bind)
 class FairyCounterWidget extends StatelessWidget {
-  const FairyCounterWidget({Key? key}) : super(key: key);
+  const FairyCounterWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class FairyCounterWidget extends StatelessWidget {
 
 /// Fairy counter widget using BindObserver (Consumer-like automatic tracking)
 class FairyObserverCounterWidget extends StatelessWidget {
-  const FairyObserverCounterWidget({Key? key}) : super(key: key);
+  const FairyObserverCounterWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
