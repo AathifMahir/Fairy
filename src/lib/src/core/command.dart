@@ -1,4 +1,3 @@
-import 'package:fairy/src/core/observable.dart';
 import 'package:fairy/src/core/observable_node.dart';
 import 'package:flutter/foundation.dart';
 
