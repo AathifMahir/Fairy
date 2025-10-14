@@ -4,7 +4,7 @@ import '../models/riverpod_models.dart';
 
 /// Riverpod counter widget for performance testing
 class RiverpodCounterWidget extends ConsumerWidget {
-  const RiverpodCounterWidget({Key? key}) : super(key: key);
+  const RiverpodCounterWidget({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
