@@ -5,7 +5,7 @@
 ## Package Identity
 
 - **Name**: fairy
-- **Version**: 1.0.0-rc.1
+- **Version**: 1.0.0-rc.3
 - **Type**: Flutter state management library
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **License**: BSD-3-Clause
@@ -100,17 +100,22 @@ userName.propertyChanged(() {
 ```
 
 #### AsyncRelayCommand
-Asynchronous command with automatic `isRunning` state.
+Asynchronous command with automatic `isRunning` state. Automatically prevents concurrent execution.
 
 ```dart
 late final fetchCommand = AsyncRelayCommand(_fetchData);
 
 Future<void> _fetchData() async {
   // fetchCommand.isRunning automatically true
+  // canExecute automatically returns false while running
   await api.getData();
   // fetchCommand.isRunning automatically false
 }
 ```
+
+**Key Properties:**
+- `bool isRunning` - Tracks execution state
+- `canExecute` returns false while `isRunning` is true (prevents double-clicks)
 
 #### RelayCommandWithParam<T>
 Parameterized synchronous command.
@@ -123,13 +128,17 @@ late final deleteCommand = RelayCommandWithParam<String>(
 ```
 
 #### AsyncRelayCommandWithParam<T>
-Parameterized asynchronous command.
+Parameterized asynchronous command with automatic `isRunning` state.
 
 ```dart
 late final fetchItemCommand = AsyncRelayCommandWithParam<String>(
   (id) async => await api.getItem(id),
 );
 ```
+
+**Key Properties:**
+- `bool isRunning` - Tracks execution state
+- `canExecute(T param)` returns false while `isRunning` is true
 
 ### UI Binding Widgets
 
@@ -188,29 +197,78 @@ Command binding for non-parameterized commands.
 ```dart
 Command<UserViewModel>(
   command: (vm) => vm.saveCommand,
-  builder: (context, execute, canExecute) {
+  builder: (context, execute, canExecute, isRunning) {
     return ElevatedButton(
       onPressed: canExecute ? execute : null,
-      child: Text('Save'),
+      child: isRunning ? Text('Saving...') : Text('Save'),
     );
   },
 )
 ```
 
+**Builder Signature:**
+```dart
+Widget Function(
+  BuildContext context,
+  VoidCallback execute,     // Executes the command
+  bool canExecute,          // Can the command run?
+  bool isRunning,           // Is async command running? (false for sync)
+) builder;
+```
+
+**Benefits of isRunning:**
+- Automatic loading indicators
+- Double-click prevention (async commands)
+- No manual state management
+
 #### Command.param<TViewModel, TParam>
-Command binding for parameterized commands.
+Command binding for parameterized commands. Parameter is a function for reactive evaluation.
 
 ```dart
 Command.param<TodoViewModel, String>(
   command: (vm) => vm.deleteCommand,
-  parameter: todoId,
-  builder: (context, execute, canExecute) {
+  parameter: () => todoId,  // Function evaluated on rebuild
+  builder: (context, execute, canExecute, isRunning) {
     return IconButton(
       onPressed: canExecute ? execute : null,
       icon: Icon(Icons.delete),
     );
   },
 )
+```
+
+**For reactive parameters from controllers:**
+```dart
+Bind<TodoViewModel, TextEditingController>(
+  selector: (vm) => vm.titleController,
+  builder: (context, controller, _) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        return Command.param<TodoViewModel, String>(
+          command: (vm) => vm.addCommand,
+          parameter: () => value.text,  // Reactive to text changes
+          builder: (context, execute, canExecute, isRunning) {
+            return ElevatedButton(
+              onPressed: canExecute ? execute : null,
+              child: Text('Add'),
+            );
+          },
+        );
+      },
+    );
+  },
+)
+```
+
+**Builder Signature:**
+```dart
+Widget Function(
+  BuildContext context,
+  VoidCallback execute,     // Executes command with current parameter
+  bool canExecute,          // Can the command run with current parameter?
+  bool isRunning,           // Is async command running? (false for sync)
+) builder;
 ```
 
 ### Dependency Injection
@@ -475,6 +533,58 @@ final vm = Fairy.maybeOf<MyViewModel>(context);
 2. Parent FairyScopes (ancestor)
 3. FairyLocator (global)
 4. Throws exception if not found
+
+#### Fairy.bridge() - Bridging ViewModels to Overlays
+
+**Problem:** Overlays (dialogs, bottom sheets, menus) create separate widget trees that can't access parent FairyScopes through normal context lookup.
+
+**Solution:** `Fairy.bridge()` captures the parent context's FairyScope and makes it available to the overlay's context.
+
+```dart
+void _showAddTodoDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (_) => Fairy.bridge(
+      context: context, // Parent context with FairyScope
+      child: AlertDialog(
+        title: Text('Add Todo'),
+        content: Bind<TodoViewModel, TextEditingController>(
+          selector: (vm) => vm.titleController,
+          builder: (context, controller, _) => TextField(controller: controller),
+        ),
+        actions: [
+          Command.param<TodoViewModel, String>(
+            command: (vm) => vm.addCommand,
+            parameter: () => titleText,
+            builder: (context, execute, canExecute, isRunning) {
+              return TextButton(
+                onPressed: canExecute ? execute : null,
+                child: Text('Add'),
+              );
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+```
+
+**What it does:**
+- Looks up parent context's FairyScope
+- Creates an InheritedWidget that bridges the same scope to overlay
+- `Bind` and `Command` widgets inside overlay now work seamlessly
+- If no FairyScope found, returns child unchanged (falls back to FairyLocator)
+
+**When to use:**
+- Dialogs (`showDialog`)
+- Bottom sheets (`showModalBottomSheet`, `showBottomSheet`)
+- Menus (`showMenu`)
+- Any overlay that creates a new route or separate widget tree
+
+**When NOT needed:**
+- Regular navigation (`Navigator.push`) - new routes have access to parent context
+- Widgets within the same widget tree - normal context lookup works
 
 ## Memory Management
 
