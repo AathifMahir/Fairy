@@ -24,7 +24,7 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModel: (_) => vm,
-            child: Bind<SimpleViewModel, String>(
+            child: Bind.viewModel<SimpleViewModel, String>(
               selector: (vm) => vm.message, // Raw String, not ObservableProperty
               builder: (context, value, update) {
                 capturedUpdate = update;
@@ -47,7 +47,7 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModel: (_) => vm,
-            child: Bind<SimpleViewModel, String>(
+            child: Bind.viewModel<SimpleViewModel, String>(
               selector: (vm) => vm.message,
               builder: (context, value, update) => Text(value),
             ),
@@ -72,7 +72,7 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModel: (_) => vm,
-            child: Bind<SimpleViewModel, String>(
+            child: Bind.viewModel<SimpleViewModel, String>(
               selector: (vm) => vm.message,
               builder: (context, value, update) {
                 buildCount++;

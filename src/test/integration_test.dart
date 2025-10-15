@@ -114,7 +114,7 @@ void main() {
               child: Column(
                 children: [
                   // Two-way binding: TextField updates counter directly
-                  Bind<CounterViewModel, int>(
+                  Bind.viewModel<CounterViewModel, int>(
                     selector: (vm) => vm.counter,
                     builder: (context, value, update) {
                       return TextField(
@@ -127,7 +127,7 @@ void main() {
                   ),
                   
                   // Display counter value (two-way binding via property, but read-only)
-                  Bind<CounterViewModel, int>(
+                  Bind.viewModel<CounterViewModel, int>(
                     selector: (vm) => vm.counter,
                     builder: (context, value, update) {
                       return Text('Count: $value', key: const Key('counterText'));
@@ -184,7 +184,7 @@ void main() {
                   ),
                   
                   // Display isProcessing state
-                  Bind<CounterViewModel, bool>(
+                  Bind.viewModel<CounterViewModel, bool>(
                     selector: (vm) => vm.isProcessing,
                     builder: (context, value, update) {
                       return Text(
@@ -281,7 +281,7 @@ void main() {
                 );
                 return vm!;
               },
-              child: Bind<CounterViewModel, int>(
+              child: Bind.viewModel<CounterViewModel, int>(
                 selector: (vm) => vm.counter,
                 builder: (context, value, update) => Text('$value'),
               ),
@@ -321,7 +321,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: Bind<CounterViewModel, int>(
+            body: Bind.viewModel<CounterViewModel, int>(
               selector: (vm) => vm.counter,
               builder: (context, value, update) => Text('$value'),
             ),
@@ -351,7 +351,7 @@ void main() {
               ),
               child: Column(
                 children: [
-                  Bind<CounterViewModel, int>(
+                  Bind.viewModel<CounterViewModel, int>(
                     selector: (vm) => vm.counter,
                     builder: (context, value, update) {
                       return Text('Value: $value', key: const Key('display'));

@@ -1,3 +1,10 @@
+## 1.0.0-rc.4
+
+- **API Enhancement**: Added `Bind.viewModel` named constructor as the recommended API for single ViewModel binding
+- **Breaking Change Preparation**: Reserved `Bind.viewModel2/3/4` naming pattern for future multi-ViewModel support
+- Updated all documentation and examples to use `Bind.viewModel` constructor
+- Updated all tests to use the new `Bind.viewModel` API
+
 ## 0.5.0+2
 
 - Improved documentation and fixed minor typos.

@@ -67,7 +67,7 @@ class CounterPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Bind<CounterViewModel, int>(
+            Bind.viewModel<CounterViewModel, int>(
               selector: (vm) => vm.counter,
               builder: (context, value, update) => Text('$value'),
             ),
@@ -139,7 +139,7 @@ class DataViewModel extends ObservableObject {
 ### Two-Way Binding
 
 ```dart
-Bind<UserViewModel, String>(
+Bind.viewModel<UserViewModel, String>(
   selector: (vm) => vm.name,
   builder: (context, value, update) {
     return TextField(

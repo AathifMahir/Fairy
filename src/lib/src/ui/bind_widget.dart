@@ -13,6 +13,9 @@ import '../locator/fairy_resolver.dart';
 /// **One-way binding:** When [selector] returns a raw [TValue], the widget
 /// subscribes to the entire ViewModel and the `update` callback is `null`.
 ///
+/// ## Recommended Usage:
+/// Use the [Bind.viewModel] named constructor for clearer intent:
+///
 /// ## Two-Way Binding Example:
 /// ```dart
 /// class UserViewModel extends ObservableObject {
@@ -23,7 +26,7 @@ import '../locator/fairy_resolver.dart';
 ///   }
 /// }
 ///
-/// Bind<UserViewModel, String>(
+/// Bind.viewModel<UserViewModel, String>(
 ///   selector: (vm) => vm.userName,  // Returns ObservableProperty<String>
 ///   builder: (context, value, update) {
 ///     return TextField(
@@ -46,7 +49,7 @@ import '../locator/fairy_resolver.dart';
 ///   int get doubled => count.value * 2;  // Computed property
 /// }
 ///
-/// Bind<CounterViewModel, int>(
+/// Bind.viewModel<CounterViewModel, int>(
 ///   selector: (vm) => vm.doubled,  // Returns int (raw value)
 ///   builder: (context, value, update) {
 ///     return Text('$value');  // update is null for one-way binding
@@ -59,6 +62,28 @@ import '../locator/fairy_resolver.dart';
 class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
 
   const Bind({
+    required this.selector, 
+    required this.builder, 
+    super.key,
+    this.oneTime = false,
+  });
+
+  /// Named constructor for single ViewModel binding.
+  ///
+  /// This is the recommended way to bind to a single ViewModel property.
+  /// Equivalent to the default constructor but provides clearer intent.
+  ///
+  /// Example:
+  /// ```dart
+  /// Bind.viewModel<UserViewModel, String>(
+  ///   selector: (vm) => vm.userName,
+  ///   builder: (context, value, update) => TextField(
+  ///     controller: TextEditingController(text: value),
+  ///     onChanged: update,
+  ///   ),
+  /// )
+  /// ```
+  const Bind.viewModel({
     required this.selector, 
     required this.builder, 
     super.key,

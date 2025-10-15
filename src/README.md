@@ -68,7 +68,7 @@ class CounterPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Data binding - automatically updates when counter changes
-            Bind<CounterViewModel, int>(
+            Bind.viewModel<CounterViewModel, int>(
               selector: (vm) => vm.counter,
               builder: (context, value, update) => Text('$value'),
             ),
@@ -302,7 +302,7 @@ The `Bind` widget automatically detects one-way vs two-way binding:
 When selector returns `ObservableProperty<T>`, you get two-way binding with an `update` callback:
 
 ```dart
-Bind<UserViewModel, String>(
+Bind.viewModel<UserViewModel, String>(
   selector: (vm) => vm.name,  // Returns ObservableProperty<String>
   builder: (context, value, update) {
     return TextField(
@@ -318,7 +318,7 @@ Bind<UserViewModel, String>(
 When selector returns raw `T`, you get one-way binding (read-only):
 
 ```dart
-Bind<UserViewModel, String>(
+Bind.viewModel<UserViewModel, String>(
   selector: (vm) => vm.name.value,  // Returns String
   builder: (context, value, update) {
     return Text(value);  // update is null for one-way binding
@@ -716,7 +716,7 @@ class _MyWidgetState extends State<MyWidget> {
 }
 
 // ✅ BEST: Use Bind/Command widgets (handle lifecycle automatically)
-Bind<MyViewModel, int>(
+Bind.viewModel<MyViewModel, int>(
   selector: (vm) => vm.counter,
   builder: (context, value, update) => Text('$value'),
 )
@@ -775,13 +775,13 @@ Even for read-only scenarios, using two-way binding (returning `ObservableProper
 
 ```dart
 // ✅ Simpler: Two-way binding
-Bind<MyVM, int>(
+Bind.viewModel<MyVM, int>(
   selector: (vm) => vm.counter,  // Returns ObservableProperty<int>
   builder: (context, value, update) => Text('$value'),
 )
 
 // ❌ More complex: One-way binding requires ViewModel.onPropertyChanged()
-Bind<MyVM, int>(
+Bind.viewModel<MyVM, int>(
   selector: (vm) => vm.counter.value,  // Returns int
   builder: (context, value, _) => Text('$value'),
 )

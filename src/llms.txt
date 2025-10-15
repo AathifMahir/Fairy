@@ -1,0 +1,112 @@
+# Fairy Framework - API Reference for LLMs
+
+Fairy is a lightweight MVVM framework for Flutter with reactive data binding, command patterns, and dependency injection.
+
+## Core API Surface
+
+### ObservableObject (Base ViewModel)
+- `class MyViewModel extends ObservableObject`
+- `onPropertyChanged()` - Notify listeners manually
+- `propertyChanged(listener)` - Subscribe to changes (returns disposer)
+- `dispose()` - Clean up resources
+
+### ObservableProperty<T> (Reactive State)
+- `final property = ObservableProperty<T>(initialValue, parent: this)`
+- `property.value` - Get/set value
+- `property.propertyChanged(listener)` - Subscribe (returns disposer)
+
+### ComputedProperty<T> (Derived State)
+- `late final computed = ComputedProperty<T>(() => expression, parent: this)`
+- Read-only computed values with automatic dependency tracking
+
+### Commands
+- `RelayCommand(execute: () {}, canExecute: () => bool, parent: this)`
+- `AsyncRelayCommand(execute: () async {}, parent: this)`
+- `RelayCommandWithParam<T>(execute: (param) {}, parent: this)`
+- `AsyncRelayCommandWithParam<T>(execute: (param) async {}, parent: this)`
+- `command.execute()` / `command.executeWithParam(value)`
+- `command.canExecute` - Current state
+- `command.notifyCanExecuteChanged()` - Re-evaluate canExecute
+- `command.canExecuteChanged(listener)` - Subscribe (returns disposer)
+
+### Data Binding Widget
+**Primary API (Recommended):**
+- `Bind.viewModel<TViewModel, TValue>(selector: ..., builder: ...)`
+
+**Legacy API (Still Supported):**
+- `Bind<TViewModel, TValue>(selector: ..., builder: ...)`
+
+**Auto-detection:**
+- Selector returns `ObservableProperty<T>` → two-way binding (update callback provided)
+- Selector returns `T` → one-way binding (update callback is null)
+
+**Example:**
+```dart
+Bind.viewModel<UserViewModel, String>(
+  selector: (vm) => vm.userName,  // Returns ObservableProperty<String>
+  builder: (context, value, update) => TextField(
+    controller: TextEditingController(text: value),
+    onChanged: update,  // Non-null for two-way binding
+  ),
+)
+```
+
+### Command Binding Widgets
+- `Command<TViewModel>(command: (vm) => vm.myCommand, builder: ...)`
+- `CommandWithParam<TViewModel, TParam>(command: (vm) => vm.myCommand, builder: ...)`
+
+### Dependency Injection
+
+**Scoped (Auto-disposed):**
+```dart
+FairyScope(
+  viewModel: (_) => MyViewModel(),
+  child: MyPage(),
+)
+```
+
+**Multiple ViewModels:**
+```dart
+FairyScope(
+  viewModels: [
+    (_) => ViewModel1(),
+    (_) => ViewModel2(),
+  ],
+  child: MyPage(),
+)
+```
+
+**Global Singleton:**
+```dart
+FairyLocator.instance.registerSingleton<T>(instance)
+FairyLocator.instance.registerFactory<T>(() => instance)
+FairyLocator.instance.get<T>()
+```
+
+**Resolution:**
+```dart
+Fairy.of<TViewModel>(context)  // Required
+Fairy.maybeOf<TViewModel>(context)  // Optional
+```
+
+## Memory Management Best Practices
+
+1. **Auto-disposal:** Pass `parent: this` to properties/commands for automatic cleanup
+2. **Manual listeners:** Always capture and call disposer from `propertyChanged()` and `canExecuteChanged()`
+3. **UI binding:** Use `Bind.viewModel` and `Command` widgets (automatic lifecycle)
+4. **Scoped VMs:** Use `FairyScope` for page-level ViewModels (auto-disposed)
+5. **Commands:** Call `notifyCanExecuteChanged()` when canExecute dependencies change
+
+## Future API (Reserved Naming)
+
+The following named constructors are reserved for future multi-ViewModel support:
+- `Bind.viewModel2<TViewModel1, TViewModel2, TValue>(...)`
+- `Bind.viewModel3<TViewModel1, TViewModel2, TViewModel3, TValue>(...)`
+- `Bind.viewModel4<TViewModel1, TViewModel2, TViewModel3, TViewModel4, TValue>(...)`
+
+## Critical Rules
+
+1. **Selectors must return stable references** - Never create new ObservableProperty instances in selectors
+2. **Always use named parameters** for commands: `execute:`, `canExecute:`, `parent:`
+3. **Capture disposers** from manual `propertyChanged()` / `canExecuteChanged()` calls
+4. **Use `Bind.viewModel`** as the primary API for clarity and consistency
