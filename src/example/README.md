@@ -47,7 +47,7 @@ CounterViewModel() {
 
 ### 4. **Data Binding**
 ```dart
-Bind<CounterViewModel, int>(
+Bind.viewModel<CounterViewModel, int>(
   selector: (vm) => vm.counter,
   builder: (context, value, update) {
     return Text('$value');
@@ -99,7 +99,7 @@ flutter run
 2. **Named Parameters**: All commands use named parameters for clarity (`execute:`, `canExecute:`, `parent:`)
 3. **Command Dependencies**: Refresh commands when their `canExecute` conditions change using `notifyCanExecuteChanged()`
 4. **Scoped Lifecycle**: Use `FairyScope.create` for widget-scoped ViewModels
-5. **Type Safety**: Leverage generics (`Bind<TViewModel, TValue>`) for compile-time safety
+5. **Type Safety**: Leverage generics (`Bind.viewModel<TViewModel, TValue>`) for compile-time safety
 6. **Declarative UI**: Views contain only widget composition, no business logic
 7. **Nested ViewModels**: Manual disposal required for nested `ObservableObject` instances
 

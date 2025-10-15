@@ -258,21 +258,21 @@ void main() {
                     children: [
                       // Each Bind watches a DIFFERENT property
                       // TValue is int, selector returns ObservableProperty<int> → Two-way binding
-                      Bind<FairyMultiPropertyViewModel, int>(
+                      Bind.viewModel<FairyMultiPropertyViewModel, int>(
                         selector: (vm) => vm.property1, // Returns ObservableProperty<int> → Two-way!
                         builder: (context, value, update) {
                           fairy1BuildsSelective++;
                           return Text('Fairy1: $value', key: const ValueKey('fairy1'));
                         },
                       ),
-                      Bind<FairyMultiPropertyViewModel, int>(
+                      Bind.viewModel<FairyMultiPropertyViewModel, int>(
                         selector: (vm) => vm.property2, // Returns ObservableProperty<int> → Two-way!
                         builder: (context, value, update) {
                           fairy2BuildsSelective++;
                           return Text('Fairy2: $value', key: const ValueKey('fairy2'));
                         },
                       ),
-                      Bind<FairyMultiPropertyViewModel, int>(
+                      Bind.viewModel<FairyMultiPropertyViewModel, int>(
                         selector: (vm) => vm.property3, // Returns ObservableProperty<int> → Two-way!
                         builder: (context, value, update) {
                           fairy3BuildsSelective++;
@@ -330,21 +330,21 @@ void main() {
                 builder: (context) => Column(
                   children: [
                     // Returns raw int → global notifications
-                    Bind<FairyMultiPropertyViewModel, int>(
+                    Bind.viewModel<FairyMultiPropertyViewModel, int>(
                       selector: (vm) => vm.property1.value,
                       builder: (context, value, update) {
                         fairy1BuildsGlobal++;
                         return Text('Fairy1: $value', key: const ValueKey('fairy1'));
                       },
                     ),
-                    Bind<FairyMultiPropertyViewModel, int>(
+                    Bind.viewModel<FairyMultiPropertyViewModel, int>(
                       selector: (vm) => vm.property2.value,
                       builder: (context, value, update) {
                         fairy2BuildsGlobal++;
                         return Text('Fairy2: $value', key: const ValueKey('fairy2'));
                       },
                     ),
-                    Bind<FairyMultiPropertyViewModel, int>(
+                    Bind.viewModel<FairyMultiPropertyViewModel, int>(
                       selector: (vm) => vm.property3.value,
                       builder: (context, value, update) {
                         fairy3BuildsGlobal++;

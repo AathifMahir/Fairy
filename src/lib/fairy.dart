@@ -36,7 +36,7 @@
 /// )
 ///
 /// // 3. Bind in UI
-/// Bind<CounterViewModel, int>(
+/// Bind.viewModel<CounterViewModel, int>(
 ///   selector: (vm) => vm.count,
 ///   builder: (ctx, value, update) => Text('$value'),
 /// )
