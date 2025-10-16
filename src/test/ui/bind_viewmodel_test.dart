@@ -15,7 +15,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) => Text(vm.name.value),
               ),
             ),
@@ -32,7 +32,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) => Text(vm.name.value),
               ),
             ),
@@ -56,7 +56,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) {
                   buildCount++;
                   return Text(vm.name.value); // Only accesses name
@@ -83,7 +83,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) => Text(vm.regularField),
               ),
             ),
@@ -108,7 +108,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) => Text('${vm.name.value}-${vm.age.value}'),
               ),
             ),
@@ -134,7 +134,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) {
                   buildCount++;
                   return Text('${vm.name.value}-${vm.age.value}');
@@ -164,7 +164,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) {
                   if (vm.age.value > 18) {
                     return Text(vm.name.value);
@@ -197,7 +197,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) {
                   buildCount++;
                   // Conditionally access name
@@ -241,7 +241,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) => Text('${vm.incrementCommand.canExecute}'),
               ),
             ),
@@ -268,7 +268,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) {
                   buildCount++;
                   return Text('${vm.age.value}');
@@ -303,7 +303,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) {
                   buildCount++;
                   return Text('${vm.name.value}-${vm.age.value}');
@@ -339,10 +339,10 @@ void main() {
               viewModel: (_) => vm,
               child: Column(
                 children: [
-                  Bind.observer<TestViewModel>(
+                  Bind.viewModel<TestViewModel>(
                     builder: (context, vm) => Text('Widget1: ${vm.name.value}'),
                   ),
-                  Bind.observer<TestViewModel>(
+                  Bind.viewModel<TestViewModel>(
                     builder: (context, vm) => Text('Widget2: ${vm.name.value}'),
                   ),
                 ],
@@ -372,13 +372,13 @@ void main() {
               viewModel: (_) => vm,
               child: Column(
                 children: [
-                  Bind.observer<TestViewModel>(
+                  Bind.viewModel<TestViewModel>(
                     builder: (context, vm) {
                       widget1Builds++;
                       return Text(vm.name.value);
                     },
                   ),
-                  Bind.observer<TestViewModel>(
+                  Bind.viewModel<TestViewModel>(
                     builder: (context, vm) {
                       widget2Builds++;
                       return Text('${vm.age.value}');
@@ -415,7 +415,7 @@ void main() {
         Widget buildApp() => MaterialApp(
           home: FairyScope(
             viewModel: (_) => vm,
-            child: Bind.observer<TestViewModel>(
+            child: Bind.viewModel<TestViewModel>(
               builder: (context, vm) {
                 final name = vm.name.value;
                 if (shouldThrow) {
@@ -452,7 +452,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) {
                   final name = vm.name.value; // Accessed before exception
                   if (vm.age.value > 50) {
@@ -482,7 +482,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<ComputedViewModel>(
+              child: Bind.viewModel<ComputedViewModel>(
                 builder: (context, vm) => Text(vm.fullName.value),
               ),
             ),
@@ -506,7 +506,7 @@ void main() {
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
-              child: Bind.observer<TestViewModel>(
+              child: Bind.viewModel<TestViewModel>(
                 builder: (context, vm) => Text(vm.name.value),
               ),
             ),
@@ -536,7 +536,7 @@ void main() {
               (_) => vm1,
               (_) => vm2,
             ],
-            child: Bind.observer2<FirstViewModel, SecondViewModel>(
+            child: Bind.viewModel2<FirstViewModel, SecondViewModel>(
               builder: (context, vm1, vm2) => 
                 Text('${vm1.name.value}-${vm2.name.value}'),
             ),
@@ -567,7 +567,7 @@ void main() {
               (_) => vm1,
               (_) => vm2,
             ],
-            child: Bind.observer2<FirstViewModel, SecondViewModel>(
+            child: Bind.viewModel2<FirstViewModel, SecondViewModel>(
               builder: (context, vm1, vm2) {
                 buildCount++;
                 return Text('${vm1.name.value}-${vm2.name.value}');
@@ -599,7 +599,7 @@ void main() {
               (_) => vm1,
               (_) => vm2,
             ],
-            child: Bind.observer2<FirstViewModel, SecondViewModel>(
+            child: Bind.viewModel2<FirstViewModel, SecondViewModel>(
               builder: (context, vm1, vm2) => 
                 Text('${vm1.regularField}-${vm2.regularField}'),
             ),
@@ -633,7 +633,7 @@ void main() {
               (_) => vm2,
               (_) => vm3,
             ],
-            child: Bind.observer3<FirstViewModel, SecondViewModel, ThirdViewModel>(
+            child: Bind.viewModel3<FirstViewModel, SecondViewModel, ThirdViewModel>(
               builder: (context, vm1, vm2, vm3) => 
                 Text('${vm1.name.value}-${vm2.name.value}-${vm3.name.value}'),
             ),
@@ -670,7 +670,7 @@ void main() {
               (_) => vm2,
               (_) => vm3,
             ],
-            child: Bind.observer3<FirstViewModel, SecondViewModel, ThirdViewModel>(
+            child: Bind.viewModel3<FirstViewModel, SecondViewModel, ThirdViewModel>(
               builder: (context, vm1, vm2, vm3) {
                 buildCount++;
                 // Only access name from vm1, age from vm2, nothing from vm3
@@ -717,7 +717,7 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModel: (_) => vm,
-            child: Bind.observer<TestViewModel>(
+            child: Bind.viewModel<TestViewModel>(
               builder: (context, vm) {
                 buildCount++;
                 return Text('${vm.age.value}');
