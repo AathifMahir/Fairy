@@ -5,14 +5,14 @@
 /// with minimal boilerplate.
 ///
 /// ## Learn Just 2 Widgets:
-/// - **Bind** - Reactive data binding (`Bind` / `Bind.observer`)
+/// - **Bind** - Reactive data binding (`Bind` / `Bind.viewModel`)
 /// - **Command** - User action binding (`Command` / `Command.param`)
 ///
 /// ## Core Features:
 // ignore: unintended_html_in_doc_comment
 /// - **ObservableProperty<T>**: Typed, reactive properties for two-way binding
 /// - **RelayCommand / AsyncRelayCommand**: Command pattern with canExecute logic
-/// - **Auto-tracking**: `Bind.observer` automatically tracks accessed properties
+/// - **Auto-tracking**: `Bind.viewModel` automatically tracks accessed properties
 /// - **Parameterized commands**: `Command.param` for actions with parameters
 /// - **FairyLocator**: Global dependency injection
 /// - **FairyScope**: Widget-scoped dependency injection with automatic disposal
@@ -42,7 +42,7 @@
 /// )
 ///
 /// // Or use auto-tracking
-/// Bind.observer<CounterViewModel>(
+/// Bind.viewModel<CounterViewModel>(
 ///   builder: (ctx, vm) => Text('${vm.count.value}'),
 /// )
 ///
@@ -73,9 +73,10 @@ export 'src/locator/fairy_scope.dart' show FairyScope;
 export 'src/locator/fairy_resolver.dart' show Fairy;
 // UI binding widgets
 export 'src/ui/bind_widget.dart' show Bind;
-export 'src/ui/bind_observer.dart'
-    show BindObserver, BindObserver2, BindObserver3;
+export 'src/ui/bind_viewmodel_widget.dart'
+    show BindViewModel, BindViewModel2, BindViewModel3;
 export 'src/ui/command_widget.dart' show Command, CommandWithParam;
+export 'src/ui/fairy_bridge.dart' show FairyBridge;
 // Utilities
 export 'src/utils/equals.dart' show Equals;
 export 'src/utils/lifecycle.dart' show Disposable, DisposeBag;
