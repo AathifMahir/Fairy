@@ -45,10 +45,10 @@ class FairyObserverCounterWidget extends StatelessWidget {
         builder: (context) {
           return Column(
             children: [
-              Bind.observer<FairyCounterViewModel>(
+              Bind.viewModel<FairyCounterViewModel>(
                 builder: (context, vm) => Text('Count: ${vm.counter.value}'),
               ),
-              Bind.observer<FairyCounterViewModel>(
+              Bind.viewModel<FairyCounterViewModel>(
                 builder: (context, vm) => ElevatedButton(
                   onPressed: () => vm.incrementCommand.execute(),
                   child: const Text('Increment'),
