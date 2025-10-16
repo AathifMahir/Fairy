@@ -1,26 +1,35 @@
-# 🧚 Fairy
+<div align="center">
+  <img src="src/logo.png" alt="Fairy Logo" width="300"/>
 
-[![pub package](https://img.shields.io/pub/v/fairy.svg)](https://pub.dev/packages/fairy)
-[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?logo=Flutter&logoColor=white)](https://flutter.dev)
+
+  [![pub package](https://img.shields.io/pub/v/fairy.svg)](https://pub.dev/packages/fairy)
+  [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+  [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?logo=Flutter&logoColor=white)](https://flutter.dev)
+
+</div>
 
 A lightweight MVVM framework for Flutter that provides strongly-typed, reactive data binding without code generation. Fairy combines reactive properties, command patterns, and dependency injection with minimal boilerplate.
 
+## 🎯 Design Philosophy
+
+**Simplicity Over Complexity** - Fairy is built around the principle that state management should be simple and intuitive. With just a **few widgets and types**, you have everything you need for most use cases. This simplicity-first approach is reflected throughout the entire library design, making it easy to learn, easy to use, and easy to maintain.
+
 ## ✨ Why Fairy?
 
-- **🚀 No Build Runner** - Pure runtime implementation, zero build_runner headaches
-- **🎯 Type-Safe** - Strongly-typed reactive properties with compile-time safety
-- **🔄 Auto UI Updates** - Data binding that just works
-- **⚡ Command Pattern** - Built-in action encapsulation with `canExecute` validation
-- **🏗️ DI Built-in** - Both scoped and global dependency injection
-- **🧩 Minimal Code** - Clean, intuitive API that stays out of your way
-- **📦 Lightweight** - Small footprint, zero external dependencies
+- **Few Widgets to Learn** - `Bind` for data, `Command` for actions - covers almost everything
+- **No Build Runner** - Pure runtime implementation, zero build_runner headaches
+- **Type-Safe** - Strongly-typed reactive properties with compile-time safety
+- **Auto UI Updates** - Data binding that just works
+- **Command Pattern** - Built-in action encapsulation with `canExecute` validation
+- **DI Built-in** - Both scoped and global dependency injection
+- **Minimal Code** - Clean, intuitive API that stays out of your way
+- **Lightweight** - Small footprint, zero external dependencies
 
 ## 📦 Installation
 
 ```yaml
 dependencies:
-  fairy: ^1.0.0-rc.3
+  fairy: ^1.0.0
 ```
 
 ## 🚀 Quick Start
@@ -32,31 +41,33 @@ import 'package:flutter/material.dart';
 // 1️⃣ Create a ViewModel
 class CounterViewModel extends ObservableObject {
   final counter = ObservableProperty<int>(0);
-  late final increment = RelayCommand(() => counter.value++);
+  final multiplier = ObservableProperty<int>(2);
+  late final incrementCommand = RelayCommand(() => counter.value++);
   late final addCommand = RelayCommandWithParam<int>((amount) => counter.value += amount);
 }
 
-// 2️⃣ Provide it with FairyScope (can be used anywhere!)
+// 2️⃣ Provide it with FairyScope
+// Recommended: At app root for app-wide ViewModels
+void main() {
+  runApp(
+    FairyScope(
+      viewModel: (_) => CounterViewModel(),
+      child: MyApp(),
+    ),
+  );
+}
+
+// Or anywhere in your widget tree (page-level, feature-level, etc.)
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: FairyScope(
-        viewModel: (_) => CounterViewModel(),
-        child: CounterPage(),
+        viewModel: (_) => ProfileViewModel(),
+        child: ProfilePage(),
       ),
     );
   }
-}
-
-// Or at app root, even above MaterialApp:
-void main() {
-  runApp(
-    FairyScope(
-      viewModel: (_) => AppViewModel(),
-      child: MyApp(),
-    ),
-  );
 }
 
 // 3️⃣ Bind to UI
@@ -73,13 +84,13 @@ class CounterPage extends StatelessWidget {
               selector: (vm) => vm.counter,
               builder: (context, value, update) => Text('$value'),
             ),
-            // Auto-tracking (convenient for multiple properties)
-            Bind.observer<CounterViewModel>(
-              builder: (context, vm) => Text('Count: ${vm.counter.value}'),
+            // Auto-Binding (convenient for multiple properties)
+            Bind.viewModel<CounterViewModel>(
+              builder: (context, vm) => Text('Count: ${vm.counter.value} × ${vm.multiplier.value}'),
             ),
             // Regular command
             Command<CounterViewModel>(
-              command: (vm) => vm.increment,
+              command: (vm) => vm.incrementCommand,
               builder: (context, execute, canExecute, isRunning) {
                 return ElevatedButton(
                   onPressed: execute,
@@ -214,8 +225,8 @@ Bind<UserViewModel, String>(
   },
 )
 
-// Auto-tracking - best for multiple properties
-Bind.observer<UserViewModel>(
+// Auto-Binding - best for multiple properties
+Bind.viewModel<UserViewModel>(
   builder: (context, vm) {
     return Column(
       children: [
@@ -226,6 +237,28 @@ Bind.observer<UserViewModel>(
     );
   },
 )
+```
+
+### Deep Equality for Collections
+
+Built-in recursive deep equality for collections without external dependencies:
+
+```dart
+class TodoViewModel extends ObservableObject {
+  // Deep equality enabled by default
+  final tags = ObservableProperty<List<String>>(['flutter', 'dart']);
+  
+  void updateTags() {
+    tags.value = ['flutter', 'dart'];  // No rebuild - same contents!
+    tags.value = ['flutter', 'web'];   // Rebuilds - different contents
+  }
+}
+
+// Works with nested collections automatically
+final deepData = ObservableProperty([
+  {'a': [1, 2], 'b': [3, 4]},
+  {'c': [5, 6], 'd': [7, 8]},
+]);
 ```
 
 ### Dependency Injection
@@ -261,7 +294,7 @@ FairyScope(
 void _showDialog(BuildContext context) {
   showDialog(
     context: context,
-    builder: (_) => Fairy.bridge(
+    builder: (_) => FairyBridge(
       context: context, // Makes parent FairyScope available
       child: AlertDialog(
         // Command and Bind widgets now work!
@@ -288,13 +321,13 @@ Fairy is designed for performance. Here are benchmark results comparing with pop
 | Build Performance (100 builds) | 122.0% | 101.4% | **100%** ⚡ |
 | Memory Management (50 cycles) | **100%** ⚡ | 111.8% | 107.2% |
 | Selective Rebuild (explicit Bind) | **100%** ⚡ | 131.9% | 120.0% |
-| Rebuild Performance (auto-tracking) | **100%** ⚡ | 104.0% | 109.6% |
+| Rebuild Performance (auto-binding) | **100%** ⚡ | 104.0% | 109.6% |
 
 ### 🏆 Fairy Achievements
 - **🥇 Best Memory Management** - 7-12% faster cleanup than competitors
 - **🥇 Fastest Selective Rebuilds** - 20-32% faster with explicit selectors
-- **🥇 Fastest Auto-tracking** - `Bind.observer` is 4-10% faster AND maintains 100% rebuild efficiency
-- **Unique**: `Bind.observer` achieves 100% selective efficiency while Provider/Riverpod global approaches only achieve 33%
+- **🥇 Fastest Auto-binding** - `Bind.viewModel` is 4-10% faster AND maintains 100% rebuild efficiency
+- **Unique**: `Bind.viewModel` achieves 100% selective efficiency while Provider/Riverpod global approaches only achieve 33%
 
 *Lower is better. Percentages relative to the fastest framework in each category.*
 
@@ -308,13 +341,15 @@ Fairy is designed for performance. Here are benchmark results comparing with pop
 
 ## 🧪 Testing
 
-Fairy is thoroughly tested with **299 unit tests** covering:
+Fairy is thoroughly tested with **401 tests** passing, covering:
 - ✅ Observable properties and computed properties
 - ✅ All command types (sync, async, parameterized)
 - ✅ Auto-disposal and memory management
 - ✅ Dependency injection (scoped and global)
 - ✅ Widget binding and lifecycle
 - ✅ Complex scenarios (nested scopes, inter-VM dependencies)
+- ✅ Deep equality for collections
+- ✅ FairyBridge overlay scenarios
 
 Run tests:
 ```bash
