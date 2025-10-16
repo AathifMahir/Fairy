@@ -232,6 +232,7 @@ class TodoListPage extends StatelessWidget {
 
 /// How to use Command widgets in dialogs?
 ///
+// ignore: unintended_html_in_doc_comment
 /// **Problem:** Command widgets need to resolve ViewModels using Fairy.of<T>(context),
 /// but showDialog() creates a NEW widget tree (overlay route) that doesn't have
 /// access to the parent page's FairyScope.
@@ -402,6 +403,7 @@ class _TodoItem extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: ListTile(
           leading: CircleAvatar(
+            // ignore: deprecated_member_use
             backgroundColor: todo.priorityColor.withOpacity(0.2),
             child: Icon(
               todo.isCompleted ? Icons.check_circle : Icons.circle_outlined,
