@@ -1,9 +1,16 @@
-# Fairy
+<div align="center">
+  <img src="logo.png" alt="Fairy Logo" width="300"/>
+</div>
 
 A lightweight MVVM framework for Flutter that provides strongly-typed, reactive data binding. Fairy combines reactive properties, command patterns, and dependency injection with minimal boilerplate.
 
+## Design Philosophy
+
+**Simplicity Over Complexity** - Fairy is built around the principle that state management should be simple and intuitive. With just a **few widgets and types**, you have everything you need for most use cases. This simplicity-first approach is reflected throughout the entire library design, making it easy to learn, easy to use, and easy to maintain.
+
 ## Features
 
+- 🎓 **Few Widgets to Learn**: `Bind` for data, `Command` for actions - covers almost everything
 - ✨ **No Code Generation**: Runtime-only implementation, no build_runner required
 - 🎯 **Type-Safe Binding**: Strongly-typed reactive properties and commands with compile-time safety
 - 🔄 **Automatic UI Updates**: Data binding that automatically updates your UI when state changes
@@ -20,7 +27,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^1.0.0-rc.3
+  fairy: ^1.0.0
 ```
 
 ### Basic Example
@@ -32,6 +39,7 @@ import 'package:flutter/material.dart';
 // 1. Create a ViewModel extending ObservableObject
 class CounterViewModel extends ObservableObject {
   final counter = ObservableProperty<int>(0);
+  final multiplier = ObservableProperty<int>(2);
   late final incrementCommand = RelayCommand(() => counter.value++);
   late final addCommand = RelayCommandWithParam<int>((amount) => counter.value += amount);
   
@@ -39,13 +47,24 @@ class CounterViewModel extends ObservableObject {
 }
 
 // 2. Use FairyScope to provide the ViewModel
+// Recommended: At app root for app-wide ViewModels
+void main() {
+  runApp(
+    FairyScope(
+      viewModel: (_) => CounterViewModel(),
+      child: MyApp(),
+    ),
+  );
+}
+
+// Or anywhere in your widget tree (page-level, feature-level, etc.)
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: FairyScope(
-        viewModel: (_) => CounterViewModel(),
-        child: CounterPage(),
+        viewModel: (_) => ProfileViewModel(),
+        child: ProfilePage(),
       ),
     );
   }
@@ -66,9 +85,9 @@ class CounterPage extends StatelessWidget {
               builder: (context, value, update) => Text('$value'),
             ),
             
-            // Option 2: Auto-tracking (convenient for multiple properties)
-            Bind.observer<CounterViewModel>(
-              builder: (context, vm) => Text('${vm.counter.value}'),
+            // Option 2: Auto Binding for multiple properties
+            Bind.viewModel<CounterViewModel>(
+              builder: (context, vm) => Text('Count: ${vm.counter.value} × ${vm.multiplier.value}'),
             ),
             
             // Command binding (non-parameterized)
@@ -276,7 +295,7 @@ class MyViewModel extends ObservableObject {
 
 ### 4. Data Binding with `Bind`
 
-The `Bind` widget handles reactive data binding. With just 2 widgets (`Bind` and `Command`), you're covering almost all your UI binding needs.
+The `Bind` widget handles reactive data binding. With just a few widgets (`Bind` and `Command`), you're covering almost all your UI binding needs.
 
 #### Explicit Binding (Recommended)
 
@@ -303,9 +322,9 @@ Bind<UserViewModel, String>(
 )
 ```
 
-#### Auto-Tracking with `Bind.observer`
+#### Auto-Binding with `Bind.viewModel`
 
-For multiple properties or rapid prototyping, use `Bind.observer` which automatically tracks accessed properties:
+For multiple properties, use `Bind.viewModel` which automatically tracks accessed properties and bind them:
 
 ```dart
 class UserViewModel extends ObservableObject {
@@ -314,8 +333,8 @@ class UserViewModel extends ObservableObject {
   final age = ObservableProperty<int>(30);
 }
 
-// Auto-tracks all accessed properties - no manual selectors needed!
-Bind.observer<UserViewModel>(
+// Auto-Binding all accessed properties - no manual selectors needed!
+Bind.viewModel<UserViewModel>(
   builder: (context, vm) {
     return Column(
       children: [
@@ -329,7 +348,7 @@ Bind.observer<UserViewModel>(
 )
 ```
 
-**When to use `Bind.observer`:**
+**When to use `Bind.viewModel`:**
 - Multiple related properties displayed together
 - Complex UI with many data points
 - Rapid prototyping and development
@@ -571,11 +590,11 @@ This design allows:
 
 **Note:** The API follows Flutter's convention (e.g., `Theme.of(context)`, `MediaQuery.of(context)`) for familiar and idiomatic usage.
 
-#### Bridging ViewModels to Overlays with `Fairy.bridge()`
+#### Bridging ViewModels to Overlays with `FairyBridge`
 
 **Problem:** Overlays (dialogs, bottom sheets, menus) create separate widget trees that can't access parent FairyScopes through normal context lookup.
 
-**Solution:** `Fairy.bridge()` captures the parent context's FairyScope and makes it available to the overlay's context.
+**Solution:** `FairyBridge` widget captures the parent context's FairyScope and makes it available to the overlay's context.
 
 ```dart
 class TodoListPage extends StatelessWidget {
@@ -594,7 +613,7 @@ class TodoListPage extends StatelessWidget {
   void _showAddTodoDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => Fairy.bridge(
+      builder: (_) => FairyBridge(
         context: context, // Parent context with FairyScope
         child: AlertDialog(
           title: Text('Add Todo'),
@@ -1013,14 +1032,14 @@ Bind<MyVM, int>(
 )
 ```
 
-**For multiple properties:** Use `Bind.observer` for convenience with excellent selective efficiency:
+**For multiple properties:** Use `Bind.viewModel` for convenience with excellent selective efficiency:
 
 ```dart
 // ✅ Best for multiple properties
-Bind.observer<UserViewModel>(
+Bind.viewModel<UserViewModel>(
   builder: (context, vm) {
     return Text('${vm.firstName.value} ${vm.lastName.value}');
-    // Both properties automatically tracked!
+    // Both properties automatically bounded!
   },
 )
 ```
@@ -1045,6 +1064,8 @@ See the [example](../example) directory for a complete counter app demonstrating
 - Scoped dependency injection
 
 ## Testing
+
+Fairy is thoroughly tested with **401 tests** passing, covering all core functionality including observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, and overlay scenarios.
 
 Fairy is designed for testability:
 
@@ -1081,14 +1102,14 @@ testWidgets('counter increments on button tap', (tester) async {
   expect(find.text('1'), findsOneWidget);
 });
 
-testWidgets('Bind.observer rebuilds on property change', (tester) async {
+testWidgets('Bind.viewModel rebuilds on property change', (tester) async {
   final vm = UserViewModel();
   
   await tester.pumpWidget(
     MaterialApp(
       home: FairyScope(
         viewModel: (_) => vm,
-        child: Bind.observer<UserViewModel>(
+        child: Bind.viewModel<UserViewModel>(
           builder: (context, vm) => Text('${vm.firstName.value}'),
         ),
       ),
@@ -1137,10 +1158,11 @@ testWidgets('Bind.observer rebuilds on property change', (tester) async {
 |---------|-------|----------|----------|------|------|
 | Code Generation | ❌ | ❌ | ✅ | ❌ | ❌ |
 | Type Safety | ✅ | ✅ | ✅ | ⚠️ | ✅ |
-| Boilerplate | Low | Low | Medium | Low | High |
-| Learning Curve | Low | Low | Medium | Low | Medium |
-| Command Pattern | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Two-Way Binding | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Boilerplate | **Low** | Low | Medium | Low | High |
+| Learning Curve | **Low** | Low | Medium | Low | Medium |
+| Command Pattern | **✅** | ❌ | ❌ | ❌ | ❌ |
+| Two-Way Binding | **✅** | ❌ | ❌ | ✅ | ❌ |
+| Auto-Disposal | **✅** | ⚠️ | ✅ | ✅ | ⚠️ |
 
 ## License
 
