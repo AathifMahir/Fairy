@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import '../core/observable.dart';
 import '../locator/fairy_resolver.dart';
-import 'bind_observer.dart';
+import 'bind_viewmodel_widget.dart';
 
 /// A widget that binds ViewModel data to UI with automatic type detection.
 ///
@@ -96,7 +96,7 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   /// 
   /// This is Fairy's equivalent to Provider's Consumer or Riverpod's ConsumerWidget.
   /// Unlike the standard [Bind] constructor which requires explicit selectors,
-  /// [observer] automatically tracks which properties and commands are accessed
+  /// [viewModel] automatically tracks which properties and commands are accessed
   /// and only rebuilds when those specific nodes change.
   /// 
   /// **When to use:**
@@ -111,7 +111,7 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   /// 
   /// Example:
   /// ```dart
-  /// Bind.observer<CounterViewModel>(
+  /// Bind.BindViewModel<CounterViewModel>(
   ///   builder: (context, vm) {
   ///     return Column(
   ///       children: [
@@ -124,11 +124,11 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   ///   },
   /// )
   /// ```
-  static BindObserver<TViewModel> observer<TViewModel extends ObservableObject>({
+  static BindViewModel<TViewModel> viewModel<TViewModel extends ObservableObject>({
     Key? key,
     required Widget Function(BuildContext context, TViewModel vm) builder,
   }) {
-    return BindObserver<TViewModel>(
+    return BindViewModel<TViewModel>(
       key: key,
       builder: builder,
     );
@@ -139,7 +139,7 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   /// 
   /// Example:
   /// ```dart
-  /// Bind.observer2<UserViewModel, SettingsViewModel>(
+  /// Bind.BindViewModel2<UserViewModel, SettingsViewModel>(
   ///   builder: (context, user, settings) {
   ///     return Column(
   ///       children: [
@@ -150,13 +150,13 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   ///   },
   /// )
   /// ```
-  static BindObserver2<TViewModel1, TViewModel2> observer2<
+  static BindViewModel2<TViewModel1, TViewModel2> viewModel2<
       TViewModel1 extends ObservableObject,
       TViewModel2 extends ObservableObject>({
     Key? key,
     required Widget Function(BuildContext context, TViewModel1 vm1, TViewModel2 vm2) builder,
   }) {
-    return BindObserver2<TViewModel1, TViewModel2>(
+    return BindViewModel2<TViewModel1, TViewModel2>(
       key: key,
       builder: builder,
     );
@@ -167,7 +167,7 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   /// 
   /// Example:
   /// ```dart
-  /// Bind.observer3<UserViewModel, SettingsViewModel, DataViewModel>(
+  /// Bind.BindViewModel3<UserViewModel, SettingsViewModel, DataViewModel>(
   ///   builder: (context, user, settings, data) {
   ///     return Column(
   ///       children: [
@@ -179,7 +179,7 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   ///   },
   /// )
   /// ```
-  static BindObserver3<TViewModel1, TViewModel2, TViewModel3> observer3<
+  static BindViewModel3<TViewModel1, TViewModel2, TViewModel3> viewModel3<
       TViewModel1 extends ObservableObject,
       TViewModel2 extends ObservableObject,
       TViewModel3 extends ObservableObject>({
@@ -191,7 +191,45 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
       TViewModel3 vm3,
     ) builder,
   }) {
-    return BindObserver3<TViewModel1, TViewModel2, TViewModel3>(
+    return BindViewModel3<TViewModel1, TViewModel2, TViewModel3>(
+      key: key,
+      builder: builder,
+    );
+  }
+
+  /// Creates a binding that automatically binds based on Property that's been accessed
+  /// from four ViewModels accessed during the builder function.
+  /// 
+  /// Example:
+  /// ```dart
+  /// Bind.BindViewModel4<UserViewModel, SettingsViewModel, DataViewModel, CounterViewModel>(
+  ///   builder: (context, user, settings, data) {
+  ///     return Column(
+  ///       children: [
+  ///         Text('User: ${user.name.value}'),
+  ///         Text('Theme: ${settings.theme.value}'),
+  ///         Text('Count: ${data.count.value}'),
+  ///         Text('Counter: ${counter.value}'),
+  ///       ],
+  ///     );
+  ///   },
+  /// )
+  /// ```
+  static BindViewModel4<TViewModel1, TViewModel2, TViewModel3, TViewModel4> viewModel4<
+      TViewModel1 extends ObservableObject,
+      TViewModel2 extends ObservableObject,
+      TViewModel3 extends ObservableObject,
+      TViewModel4 extends ObservableObject>({
+    Key? key,
+    required Widget Function(
+      BuildContext context,
+      TViewModel1 vm1,
+      TViewModel2 vm2,
+      TViewModel3 vm3,
+      TViewModel4 vm4,
+    ) builder,
+  }) {
+    return BindViewModel4<TViewModel1, TViewModel2, TViewModel3, TViewModel4>(
       key: key,
       builder: builder,
     );
