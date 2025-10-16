@@ -522,19 +522,19 @@ void main() {
               child: Builder(
                 builder: (context) => Column(
                   children: [
-                    Bind.observer<FairyMultiPropertyViewModel>(
+                    Bind.viewModel<FairyMultiPropertyViewModel>(
                       builder: (context, vm) {
                         widget1Builds++;
                         return Text('P1: ${vm.property1.value}');
                       },
                     ),
-                    Bind.observer<FairyMultiPropertyViewModel>(
+                    Bind.viewModel<FairyMultiPropertyViewModel>(
                       builder: (context, vm) {
                         widget2Builds++;
                         return Text('P2: ${vm.property2.value}');
                       },
                     ),
-                    Bind.observer<FairyMultiPropertyViewModel>(
+                    Bind.viewModel<FairyMultiPropertyViewModel>(
                       builder: (context, vm) {
                         widget3Builds++;
                         return Text('P3: ${vm.property3.value}');
@@ -585,7 +585,7 @@ void main() {
                 return vm!;
               },
               child: Builder(
-                builder: (context) => Bind.observer<FairyMultiPropertyViewModel>(
+                builder: (context) => Bind.viewModel<FairyMultiPropertyViewModel>(
                   builder: (context, vm) {
                     conditionalBuilds++;
                     // Conditionally access property2
@@ -644,7 +644,7 @@ void main() {
                 return vm!;
               },
               child: Builder(
-                builder: (context) => Bind.observer<FairyCounterViewModel>(
+                builder: (context) => Bind.viewModel<FairyCounterViewModel>(
                   builder: (context, vm) {
                     buildCount++;
                     return Text('${vm.counter.value}');
@@ -693,13 +693,13 @@ void main() {
                 child: Builder(
                   builder: (context) => Column(
                     children: [
-                      Bind.observer<FairyMultiPropertyViewModel>(
+                      Bind.viewModel<FairyMultiPropertyViewModel>(
                         builder: (context, vm) => Text('${vm.property1.value}'),
                       ),
-                      Bind.observer<FairyMultiPropertyViewModel>(
+                      Bind.viewModel<FairyMultiPropertyViewModel>(
                         builder: (context, vm) => Text('${vm.property2.value}'),
                       ),
-                      Bind.observer<FairyMultiPropertyViewModel>(
+                      Bind.viewModel<FairyMultiPropertyViewModel>(
                         builder: (context, vm) => Text('${vm.property3.value}'),
                       ),
                     ],
@@ -750,19 +750,19 @@ void main() {
               child: Builder(
                 builder: (context) => Column(
                   children: [
-                    Bind.observer<FairyMultiPropertyViewModel>(
+                    Bind.viewModel<FairyMultiPropertyViewModel>(
                       builder: (context, vm) {
                         fairyObserverBuilds1++;
                         return Text('Fairy1: ${vm.property1.value}', key: const ValueKey('fairy1'));
                       },
                     ),
-                    Bind.observer<FairyMultiPropertyViewModel>(
+                    Bind.viewModel<FairyMultiPropertyViewModel>(
                       builder: (context, vm) {
                         fairyObserverBuilds2++;
                         return Text('Fairy2: ${vm.property2.value}', key: const ValueKey('fairy2'));
                       },
                     ),
-                    Bind.observer<FairyMultiPropertyViewModel>(
+                    Bind.viewModel<FairyMultiPropertyViewModel>(
                       builder: (context, vm) {
                         fairyObserverBuilds3++;
                         return Text('Fairy3: ${vm.property3.value}', key: const ValueKey('fairy3'));
