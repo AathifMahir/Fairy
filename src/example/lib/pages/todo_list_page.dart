@@ -66,7 +66,7 @@ class TodoListPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Bind.observer<TodoListViewModel>(
+            child: Bind.viewModel<TodoListViewModel>(
               builder: (context, vm) {
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -216,9 +216,9 @@ class TodoListPage extends StatelessWidget {
   void _showAddTodoDialog(BuildContext context) {
     showDialog(
       context: context,
-      // Bridge parent context to overlay using Fairy.bridge()
+      // Bridge parent context to overlay using FairyBridge widget
       // This allows Command and Bind widgets to work inside dialogs!
-      builder: (dialogContext) => Fairy.bridge(
+      builder: (dialogContext) => FairyBridge(
         context: context,
         child: const _AddTodoDialog(),
       ),
@@ -236,12 +236,12 @@ class TodoListPage extends StatelessWidget {
 /// but showDialog() creates a NEW widget tree (overlay route) that doesn't have
 /// access to the parent page's FairyScope.
 ///
-/// **Solution:** Use `Fairy.bridge()` to bridge the parent context!
+/// **Solution:** Use `FairyBridge` widget to bridge the parent context!
 ///
 /// ```dart
 /// showDialog(
 ///   context: context,
-///   builder: (_) => Fairy.bridge(
+///   builder: (_) => FairyBridge(
 ///     context: context,  // Parent context with FairyScope
 ///     child: MyDialogWidget(),  // Now Command widgets work!
 ///   ),
