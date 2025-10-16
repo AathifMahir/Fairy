@@ -283,21 +283,25 @@ void main() {
         dispose();
         viewModel.dispose();
 
-        // Attempting to notify after disposal should throw
-        expect(() => viewModel.testNotify(), throwsFlutterError);
+        // With ObservableNode, dispose just clears listeners - no exception
+        // Notifying after disposal is safe (but listeners are cleared)
+        viewModel.testNotify();
+        expect(notificationCount, equals(1)); // Still 1, not incremented
       });
 
-      test('should throw when disposed multiple times', () {
+      test('should allow multiple disposals safely', () {
         viewModel.dispose();
-        // ChangeNotifier throws when disposed twice in debug mode
-        expect(() => viewModel.dispose(), throwsFlutterError);
+        // ObservableNode allows multiple disposals (just clears listeners)
+        expect(() => viewModel.dispose(), returnsNormally);
       });
 
-      test('should not allow adding listeners after disposal', () {
+      test('should allow adding listeners after disposal', () {
         viewModel.dispose();
+        // ObservableNode allows adding listeners after disposal
+        // (GC handles cleanup, disposal is just convenience)
         expect(
           () => viewModel.propertyChanged(() {}),
-          throwsFlutterError,
+          returnsNormally,
         );
       });
     });

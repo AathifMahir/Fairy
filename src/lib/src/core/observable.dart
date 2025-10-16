@@ -1,3 +1,6 @@
+import 'package:fairy/src/core/observable_node.dart';
+import 'package:fairy/src/internal/dependency_tracker.dart';
+import 'package:fairy/src/utils/equals.dart';
 import 'package:flutter/foundation.dart';
 
 /// Base class for ViewModels that provides change notification capabilities.
@@ -21,24 +24,7 @@ import 'package:flutter/foundation.dart';
 ///   }
 /// }
 /// ```
-abstract class ObservableObject extends ChangeNotifier {
-  final List<ChangeNotifier> _children = [];
-
-  /// Internal method to register a child ChangeNotifier for auto-disposal.
-  /// 
-  /// This is called automatically by ObservableProperty, ComputedProperty, and
-  /// command types when a parent is provided during construction.
-  /// 
-  /// Note: This is intentionally public (not @protected) to allow registration
-  /// from command classes that are not subclasses of ObservableObject.
-  void registerChild<T extends ChangeNotifier>(T notifier) {
-    // Skip nested ObservableObjects (they manage their own disposal)
-    if (notifier is ObservableObject) {
-      return;
-    }
-    
-    _children.add(notifier);
-  }
+abstract class ObservableObject extends ObservableNode {
 
   // ========================================================================
   // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
@@ -137,11 +123,6 @@ abstract class ObservableObject extends ChangeNotifier {
   /// ```
   @override
   void dispose() {
-    // Dispose children in reverse order to avoid notifying already-disposed dependents
-    for (final n in _children.reversed) {
-      n.dispose();
-    }
-    _children.clear();
     super.dispose();
   }
 }
@@ -173,20 +154,69 @@ abstract class ObservableObject extends ChangeNotifier {
 /// }
 /// ```
 ///
+/// **Deep Equality for Collections:**
+/// 
+/// By default, [ObservableProperty] uses deep equality for collections ([List], [Map], [Set]).
+/// This prevents unnecessary rebuilds when setting "equivalent" collections:
+///
+/// ```dart
+/// final tags = ObservableProperty<List<String>>(['admin', 'user']);
+/// 
+/// // Without deep equality: new object → rebuild (even though contents are identical)
+/// // With deep equality: same contents → no rebuild (optimized!)
+/// tags.value = ['admin', 'user'];
+/// ```
+///
+/// You can disable deep equality if needed (e.g., for performance with large collections):
+///
+/// ```dart
+/// // Disable deep equality (use reference equality only)
+/// final items = ObservableProperty<List<Item>>([], deepEquality: false);
+/// ```
+///
+/// **For custom types with collections:** Override the `==` operator on your model class:
+///
+/// ```dart
+/// class User {
+///   final String id;
+///   final List<String> tags;
+///   
+///   @override
+///   bool operator ==(Object other) =>
+///     identical(this, other) ||
+///     other is User && id == other.id && listEquals(tags, other.tags);
+///   
+///   @override
+///   int get hashCode => id.hashCode ^ tags.hashCode;
+/// }
+/// ```
+///
 /// **Important:** Always use `final` for [ObservableProperty] fields and return
 /// stable references from selectors. Never create new instances in getters.
-class ObservableProperty<T> extends ChangeNotifier {
+class ObservableProperty<T> extends ObservableNode {
   T _value;
+  final bool Function(T? a, T? b)? _deepEquals;
 
   /// Creates an [ObservableProperty] with an initial value.
-  /// 
-  /// If [parent] is provided, this property will be automatically disposed
-  /// when the parent is disposed. If null, you must manually call dispose().
-  ObservableProperty(this._value, {ObservableObject? parent}) {
-    if (parent != null) {
-      parent.registerChild(this);
-    }
-  }
+  ///
+  /// **Parameters:**
+  /// - [initialValue]: The initial value for this property
+  /// - [deepEquality]: Whether to use deep equality for collections ([List], [Map], [Set]).
+  ///   Defaults to `true`. When enabled, collections are compared by contents rather than reference.
+  ///
+  /// **Examples:**
+  ///
+  /// ```dart
+  /// // Basic usage with automatic deep equality for lists
+  /// final tags = ObservableProperty<List<String>>(['admin']);
+  ///
+  /// // Disable deep equality for performance with large collections
+  /// final largeList = ObservableProperty<List<Item>>([], deepEquality: false);
+  /// ```
+  ObservableProperty(
+    this._value, {
+    bool deepEquality = true,
+  }) : _deepEquals = deepEquality ? Equals.deepEquals<T>() : null;
 
   // ========================================================================
   // HIDDEN ChangeNotifier API (internal use only)
@@ -209,14 +239,23 @@ class ObservableProperty<T> extends ChangeNotifier {
   // PUBLIC FAIRY API
   // ========================================================================
 
-  /// Gets the current value.
-  T get value => _value;
+  /// Gets the current value and reports access for automatic tracking.
+  /// 
+  /// When accessed within a Bind.observer builder, this property will be
+  /// automatically subscribed to for rebuilds.
+  T get value {
+    // Report access for dependency tracking (no-op if not tracking)
+    DependencyTracker.reportAccess(this);
+    return _value;
+  }
 
   /// Sets a new value and notifies listeners only if the value differs.
   ///
-  /// Uses `!=` for comparison, so ensure your types have proper equality.
+  /// Uses deep equality for collections if [deepEquality] is enabled (default),
+  /// otherwise uses `==` comparison.
   set value(T newValue) {
-    if (_value != newValue) {
+    final isEqual = _deepEquals?.call(_value, newValue) ?? (_value == newValue);
+    if (!isEqual) {
       _value = newValue;
       super.notifyListeners();
     }
@@ -234,7 +273,8 @@ class ObservableProperty<T> extends ChangeNotifier {
   /// ```
   void update(T Function(T current) updater) {
     final newValue = updater(_value);
-    if (newValue != _value) {
+    final isEqual = _deepEquals?.call(_value, newValue) ?? (_value == newValue);
+    if (!isEqual) {
       _value = newValue;
       super.notifyListeners();
     }
@@ -283,22 +323,15 @@ class ObservableProperty<T> extends ChangeNotifier {
 ///   // Properties and computed properties auto-disposed by super.dispose()
 /// }
 /// ```
-class ComputedProperty<T> extends ChangeNotifier {
+class ComputedProperty<T> extends ObservableNode {
 
   /// Creates a computed property with a computation function and dependencies.
   ///
   /// The [compute] function is called to calculate the value.
-  /// The [dependencies] list contains all [Listenable] objects that this
+  /// The [dependencies] list contains all [ObservableNode] objects that this
   /// computed property depends on. When any dependency notifies, the cached
   /// value is invalidated and recalculated.
-  /// 
-  /// If [parent] is provided, this property will be automatically disposed
-  /// when the parent is disposed. If null, you must manually call dispose().
-  ComputedProperty(this._compute, this._dependencies, {ObservableObject? parent}) {
-    if (parent != null) {
-      parent.registerChild(this);
-    }
-    
+  ComputedProperty(this._compute, this._dependencies) {
     for (final dep in _dependencies) {
       dep.addListener(_onDependencyChanged);
     }
@@ -306,7 +339,7 @@ class ComputedProperty<T> extends ChangeNotifier {
     _cachedValue = _compute();
   }
   final T Function() _compute;
-  final List<Listenable> _dependencies;
+  final List<ObservableNode> _dependencies;
   T? _cachedValue;
   bool _isDisposed = false;
 
@@ -328,10 +361,43 @@ class ComputedProperty<T> extends ChangeNotifier {
   // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
 
-  /// Gets the current computed value.
+  // ========================================================================
+  // PUBLIC FAIRY API
+  // ========================================================================
+
+  /// Notifies all listeners that the computed value has changed.
+  ///
+  /// This is called automatically when dependencies change. You typically
+  /// don't need to call this manually.
+  @protected
+  void onPropertyChanged() => notifyListeners();
+
+  /// Listens to value changes on this computed property.
+  ///
+  /// Returns a disposal function that removes the listener when called.
+  ///
+  /// Example:
+  /// ```dart
+  /// final dispose = totalPrice.propertyChanged(() {
+  ///   print('Total changed to: ${totalPrice.value}');
+  /// });
+  /// // Later:
+  /// dispose();
+  /// ```
+  VoidCallback propertyChanged(VoidCallback listener) {
+    super.addListener(listener);
+    return () => super.removeListener(listener);
+  }
+
+  /// Gets the current computed value and reports access for automatic tracking.
   ///
   /// Returns the cached value if available, otherwise recomputes.
+  /// When accessed within a Bind.observer builder, this property will be
+  /// automatically subscribed to for rebuilds.
   T get value {
+    // Report access for dependency tracking (no-op if not tracking)
+    DependencyTracker.reportAccess(this);
+    
     if (_cachedValue == null && !_isDisposed) {
       _cachedValue = _compute();
     }

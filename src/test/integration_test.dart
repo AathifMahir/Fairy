@@ -33,19 +33,19 @@ class CounterViewModel extends ObservableObject {
   CounterViewModel(this._service) {
     counter.value = _service.getInitialCount();
     
-    incrementCommand = relayCommand(
+    incrementCommand = RelayCommand(
        _increment,
       canExecute: () => !isProcessing.value,
     );
     
-    decrementCommand = relayCommand(
+    decrementCommand = RelayCommand(
        _decrement,
       canExecute: () => counter.value > 0 && !isProcessing.value,
     );
     
-    resetCommand = asyncRelayCommand(_reset);
+    resetCommand = AsyncRelayCommand(_reset);
     
-    addValueCommand = relayCommandWithParam<int>(
+    addValueCommand = RelayCommandWithParam<int>(
        _addValue,
       canExecute: (value) => value > 0 && !isProcessing.value,
     );
@@ -137,7 +137,7 @@ void main() {
                   // Command: Increment button
                   Command<CounterViewModel>(
                     command: (vm) => vm.incrementCommand,
-                    builder: (context, execute, canExecute) {
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         key: const Key('incrementBtn'),
                         onPressed: canExecute ? execute : null,
@@ -149,7 +149,7 @@ void main() {
                   // Command: Decrement button (disabled when counter = 0)
                   Command<CounterViewModel>(
                     command: (vm) => vm.decrementCommand,
-                    builder: (context, execute, canExecute) {
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         key: const Key('decrementBtn'),
                         onPressed: canExecute ? execute : null,
@@ -161,7 +161,7 @@ void main() {
                   // Async Command: Reset button
                   Command<CounterViewModel>(
                     command: (vm) => vm.resetCommand,
-                    builder: (context, execute, canExecute) {
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         key: const Key('resetBtn'),
                         onPressed: canExecute ? execute : null,
@@ -173,8 +173,8 @@ void main() {
                   // Parameterized Command: Add 5 button
                   CommandWithParam<CounterViewModel, int>(
                     command: (vm) => vm.addValueCommand,
-                    parameter: 5,
-                    builder: (context, execute, canExecute) {
+                    parameter: () => 5,
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         key: const Key('add5Btn'),
                         onPressed: canExecute ? execute : null,
@@ -359,7 +359,7 @@ void main() {
                   ),
                   Command<CounterViewModel>(
                     command: (vm) => vm.incrementCommand,
-                    builder: (context, execute, canExecute) {
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         key: const Key('inc'),
                         onPressed: canExecute ? execute : null,
@@ -369,7 +369,7 @@ void main() {
                   ),
                   Command<CounterViewModel>(
                     command: (vm) => vm.decrementCommand,
-                    builder: (context, execute, canExecute) {
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         key: const Key('dec'),
                         onPressed: canExecute ? execute : null,

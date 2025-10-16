@@ -4,7 +4,7 @@ import '../models/provider_models.dart';
 
 /// Provider counter widget for performance testing
 class ProviderCounterWidget extends StatelessWidget {
-  const ProviderCounterWidget({Key? key}) : super(key: key);
+  const ProviderCounterWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

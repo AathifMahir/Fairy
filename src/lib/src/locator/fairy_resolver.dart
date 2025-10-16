@@ -1,3 +1,4 @@
+import 'package:fairy/src/internal/fairy_scope_bridge.dart';
 import 'package:flutter/widgets.dart';
 import '../core/observable.dart';
 import 'fairy_locator.dart';
@@ -39,10 +40,15 @@ class Fairy {
   /// final vm = Fairy.of<MyViewModel>(context);
   /// vm.doSomething();
   /// ```
-  /// 
+  ///
   Fairy._();
 
   static T of<T extends ObservableObject>(BuildContext context) {
+    // Check if we're in a bridged overlay first
+    final bridgedScope = FairyScopeBridge.of(context);
+    if (bridgedScope != null && bridgedScope.contains<T>()) {
+      return bridgedScope.get<T>();
+    }
     // Check nearest FairyScope first
     final scopeData = FairyScope.of(context);
     if (scopeData != null && scopeData.contains<T>()) {
@@ -79,6 +85,11 @@ class Fairy {
   /// }
   /// ```
   static T? maybeOf<T extends ObservableObject>(BuildContext context) {
+    // Check if we're in a bridged overlay first
+    final bridgedScope = FairyScopeBridge.of(context);
+    if (bridgedScope != null && bridgedScope.contains<T>()) {
+      return bridgedScope.get<T>();
+    }
     // Check FairyScope
     final scopeData = FairyScope.of(context);
     if (scopeData != null && scopeData.contains<T>()) {
@@ -93,3 +104,5 @@ class Fairy {
     return null;
   }
 }
+
+

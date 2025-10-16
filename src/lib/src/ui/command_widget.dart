@@ -88,6 +88,44 @@ class Command<TViewModel extends ObservableObject> extends StatefulWidget {
   const Command({
     required this.command, required this.builder, super.key,
   });
+
+  /// Creates a command binding for parameterized commands.
+  ///
+  /// This is a convenience factory that creates a [CommandWithParam] widget.
+  /// Use when your command requires a parameter at execution time.
+  ///
+  /// Supports both [RelayCommandWithParam] and [AsyncRelayCommandWithParam].
+  ///
+  /// The [parameter] is a function that returns the parameter value, allowing
+  /// for reactive parameter values that are re-evaluated on each check.
+  ///
+  /// Example:
+  /// ```dart
+  /// Command.param<TodoViewModel, String>(
+  ///   command: (vm) => vm.deleteTodoCommand,
+  ///   parameter: () => todoId, // Function for reactive parameter
+  ///   builder: (context, execute, canExecute, isRunning) {
+  ///     return IconButton(
+  ///       onPressed: canExecute ? execute : null,
+  ///       icon: const Icon(Icons.delete),
+  ///     );
+  ///   },
+  /// )
+  /// ```
+  static CommandWithParam<TViewModel, TParam> param<TViewModel extends ObservableObject, TParam>({
+    Key? key,
+    required dynamic Function(TViewModel vm) command,
+    required TParam Function() parameter,
+    required Widget Function(BuildContext context, VoidCallback execute, bool canExecute, bool isRunning) builder,
+  }) {
+    return CommandWithParam<TViewModel, TParam>(
+      key: key,
+      command: command,
+      parameter: parameter,
+      builder: builder,
+    );
+  }
+
   /// Selector function that extracts the command from the ViewModel.
   ///
   /// Must return a [RelayCommand] or [AsyncRelayCommand] instance.
@@ -102,10 +140,12 @@ class Command<TViewModel extends ObservableObject> extends StatefulWidget {
   /// - [context]: BuildContext
   /// - [execute]: Callback to execute the command
   /// - [canExecute]: Whether the command can currently execute
+  /// - [isRunning]: Whether the command is currently executing (always `false` for sync commands)
   final Widget Function(
     BuildContext context,
     VoidCallback execute,
     bool canExecute,
+    bool isRunning,
   ) builder;
 
   @override
@@ -172,18 +212,21 @@ class _CommandState<TViewModel extends ObservableObject>
 
   @override
   Widget build(BuildContext context) {
-    // Extract execute and canExecute from command
+    // Extract execute, canExecute, and isRunning from command
     final VoidCallback execute;
     final bool canExecute;
+    final bool isRunning;
 
     if (_commandInstance is RelayCommand) {
       final cmd = _commandInstance as RelayCommand;
       execute = cmd.execute;
       canExecute = cmd.canExecute;
+      isRunning = false; // Sync commands never run asynchronously
     } else if (_commandInstance is AsyncRelayCommand) {
       final cmd = _commandInstance as AsyncRelayCommand;
       execute = cmd.execute;
       canExecute = cmd.canExecute;
+      isRunning = cmd.isRunning; // Actual running state for async commands
     } else {
       throw StateError(
         'Command selector must return a RelayCommand or AsyncRelayCommand. '
@@ -191,7 +234,7 @@ class _CommandState<TViewModel extends ObservableObject>
       );
     }
 
-    return widget.builder(context, execute, canExecute);
+    return widget.builder(context, execute, canExecute, isRunning);
   }
 }
 
@@ -199,6 +242,9 @@ class _CommandState<TViewModel extends ObservableObject>
 ///
 /// Similar to [Command], but for [RelayCommandWithParam<T>] and
 /// [AsyncRelayCommandWithParam<T>] that require parameters.
+///
+/// The [parameter] is a function that returns the parameter value, allowing
+/// for reactive parameter values that are re-evaluated when checking [canExecute].
 ///
 /// Example:
 /// ```dart
@@ -217,8 +263,8 @@ class _CommandState<TViewModel extends ObservableObject>
 ///
 /// CommandWithParam<TodoViewModel, String>(
 ///   command: (vm) => vm.deleteTodoCommand,
-///   parameter: todoId,
-///   builder: (context, execute, canExecute) {
+///   parameter: () => todoId, // Function for reactive parameter
+///   builder: (context, execute, canExecute, isRunning) {
 ///     return IconButton(
 ///       onPressed: canExecute ? execute : null,
 ///       icon: const Icon(Icons.delete),
@@ -238,14 +284,24 @@ class CommandWithParam<TViewModel extends ObservableObject, TParam>
   /// Selector function that extracts the parameterized command.
   final dynamic Function(TViewModel vm) command;
 
-  /// The parameter to pass to the command when executed.
-  final TParam parameter;
+  /// Function that returns the parameter to pass to the command.
+  /// 
+  /// This is evaluated when checking [canExecute] and when executing,
+  /// allowing for reactive parameter values.
+  final TParam Function() parameter;
 
   /// Builder function that constructs the UI.
+  /// 
+  /// Parameters:
+  /// - [context]: BuildContext
+  /// - [execute]: Callback to execute the command with the parameter
+  /// - [canExecute]: Whether the command can currently execute with the parameter
+  /// - [isRunning]: Whether the command is currently executing (always `false` for sync commands)
   final Widget Function(
     BuildContext context,
     VoidCallback execute,
     bool canExecute,
+    bool isRunning,
   ) builder;
 
   @override
@@ -308,15 +364,21 @@ class _CommandWithParamState<TViewModel extends ObservableObject, TParam>
   Widget build(BuildContext context) {
     final VoidCallback execute;
     final bool canExecute;
+    final bool isRunning;
+
+    // Get the current parameter value
+    final param = widget.parameter();
 
     if (_commandInstance is RelayCommandWithParam<TParam>) {
       final cmd = _commandInstance as RelayCommandWithParam<TParam>;
-      execute = () => cmd.execute(widget.parameter);
-      canExecute = cmd.canExecute(widget.parameter);
+      execute = () => cmd.execute(param);
+      canExecute = cmd.canExecute(param);
+      isRunning = false; // Sync commands never run asynchronously
     } else if (_commandInstance is AsyncRelayCommandWithParam<TParam>) {
       final cmd = _commandInstance as AsyncRelayCommandWithParam<TParam>;
-      execute = () => cmd.execute(widget.parameter);
-      canExecute = cmd.canExecute(widget.parameter);
+      execute = () => cmd.execute(param);
+      canExecute = cmd.canExecute(param);
+      isRunning = cmd.isRunning; // Actual running state for async commands
     } else {
       throw StateError(
         'Command selector must return a RelayCommandWithParam<$TParam> or AsyncRelayCommandWithParam<$TParam>. '
@@ -324,6 +386,6 @@ class _CommandWithParamState<TViewModel extends ObservableObject, TParam>
       );
     }
 
-    return widget.builder(context, execute, canExecute);
+    return widget.builder(context, execute, canExecute, isRunning);
   }
 }

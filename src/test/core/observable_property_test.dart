@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fairy/src/core/observable.dart';
 
@@ -383,17 +382,20 @@ void main() {
 
         prop.dispose();
 
-        // Should throw when trying to modify after disposal
-        expect(() => prop.value = 10, throwsFlutterError);
+        // With ObservableNode, can still modify after disposal (GC handles cleanup)
+        // But listeners are cleared, so no notification
+        prop.value = 10;
+        expect(notificationCount, equals(1)); // Still 1, not incremented
       });
 
-      test('should not allow adding listeners after disposal', () {
+      test('should allow adding listeners after disposal', () {
         final prop = ObservableProperty<int>(0);
         prop.dispose();
 
+        // ObservableNode allows adding listeners after disposal
         expect(
           () => prop.propertyChanged(() {}),
-          throwsFlutterError,
+          returnsNormally,
         );
       });
 

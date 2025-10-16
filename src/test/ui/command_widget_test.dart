@@ -68,7 +68,7 @@ void main() {
               viewModel: (_) => vm,
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
                     child: const Text('Save'),
@@ -98,7 +98,7 @@ void main() {
               viewModel: (_) => vm,
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
                     child: Text(canExecute ? 'Enabled' : 'Disabled'),
@@ -125,7 +125,7 @@ void main() {
               viewModel: (_) => vm,
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
                     child: Text(canExecute ? 'Enabled' : 'Disabled'),
@@ -158,12 +158,10 @@ void main() {
               viewModel: (_) => vm,
               child: Command<AsyncTestViewModel>(
                 command: (vm) => vm.fetchCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
-                    child: vm.fetchCommand.isRunning
-                        ? const CircularProgressIndicator()
-                        : const Text('Fetch'),
+                    child: const Text('Fetch'),
                   );
                 },
               ),
@@ -173,19 +171,15 @@ void main() {
       );
 
       expect(vm.fetchCount, equals(0));
-      expect(vm.fetchCommand.isRunning, isFalse);
 
       // Trigger async command
       await tester.tap(find.byType(ElevatedButton));
       await tester.pump(); // Start execution
 
-      expect(vm.fetchCommand.isRunning, isTrue);
-
       // Wait for completion
       await tester.pumpAndSettle();
 
       expect(vm.fetchCount, equals(1));
-      expect(vm.fetchCommand.isRunning, isFalse);
     });
 
     testWidgets('should disable button during async execution', (tester) async {
@@ -198,10 +192,10 @@ void main() {
               viewModel: (_) => vm,
               child: Command<AsyncTestViewModel>(
                 command: (vm) => vm.fetchCommand,
-                builder: (context, execute, canExecute) {
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
-                    child: Text(canExecute ? 'Fetch' : 'Running'),
+                    child: isRunning ? const Text('Loading...') : const Text('Fetch'),
                   );
                 },
               ),
@@ -212,19 +206,22 @@ void main() {
 
       // Initially enabled
       expect(find.text('Fetch'), findsOneWidget);
+      expect(vm.fetchCount, equals(0));
 
       // Trigger command
       await tester.tap(find.byType(ElevatedButton));
       await tester.pump();
 
-      // Should be disabled during execution
-      expect(find.text('Running'), findsOneWidget);
+      // Button is now disabled during execution (automatic via isRunning)
       expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNull);
+      expect(find.text('Loading...'), findsOneWidget);
 
       await tester.pumpAndSettle();
 
-      // Re-enabled after completion
+      // Command executed and button re-enabled
+      expect(vm.fetchCount, equals(1));
       expect(find.text('Fetch'), findsOneWidget);
+      expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNotNull);
     });
 
     testWidgets('should work with parameterized commands', (tester) async {
@@ -238,8 +235,8 @@ void main() {
               viewModel: (_) => vm,
               child: CommandWithParam<ParamViewModel, String>(
                 command: (vm) => vm.processCommand,
-                parameter: testData, // Required parameter
-                builder: (context, execute, canExecute) {
+                parameter: () => testData, // Required parameter
+                builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
                     child: const Text('Process'),
@@ -271,7 +268,7 @@ void main() {
                 children: [
                   Command<TestViewModel>(
                     command: (vm) => vm.saveCommand,
-                    builder: (context, execute, canExecute) {
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         onPressed: canExecute ? execute : null,
                         child: const Text('Button 1'),
@@ -280,7 +277,7 @@ void main() {
                   ),
                   Command<TestViewModel>(
                     command: (vm) => vm.saveCommand,
-                    builder: (context, execute, canExecute) {
+                    builder: (context, execute, canExecute, isRunning) {
                       return ElevatedButton(
                         onPressed: canExecute ? execute : null,
                         child: const Text('Button 2'),
@@ -324,7 +321,7 @@ void main() {
           home: Scaffold(
             body: Command<TestViewModel>(
               command: (vm) => vm.saveCommand,
-              builder: (context, execute, canExecute) {
+              builder: (context, execute, canExecute, isRunning) {
                 return Text(canExecute ? 'Enabled' : 'Disabled');
               },
             ),
