@@ -4,6 +4,7 @@ import 'package:fairy/src/core/observable.dart';
 import 'package:fairy/src/locator/fairy_locator.dart';
 import 'package:fairy/src/locator/fairy_scope.dart';
 import 'package:fairy/src/locator/fairy_resolver.dart';
+import 'package:fairy/src/ui/fairy_bridge.dart';
 
 void main() {
   setUp(() {
@@ -419,7 +420,7 @@ void main() {
     });
   });
 
-  group('Fairy.bridge()', () {
+  group('FairyBridge()', () {
     testWidgets('should bridge parent FairyScope to overlay', (tester) async {
       final parentVm = TestViewModel();
       TestViewModel? resolvedInOverlay;
@@ -429,7 +430,7 @@ void main() {
           viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
-              return Fairy.bridge(
+              return FairyBridge(
                 context: parentContext,
                 child: Builder(
                   builder: (overlayContext) {
@@ -456,7 +457,7 @@ void main() {
           viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
-              return Fairy.bridge(
+              return FairyBridge(
                 context: parentContext,
                 child: Builder(
                   builder: (overlayContext) {
@@ -484,7 +485,7 @@ void main() {
       await tester.pumpWidget(
         Builder(
           builder: (parentContext) {
-            return Fairy.bridge(
+            return FairyBridge(
               context: parentContext,
               child: Builder(
                 builder: (overlayContext) {
@@ -510,7 +511,7 @@ void main() {
       await tester.pumpWidget(
         Builder(
           builder: (parentContext) {
-            return Fairy.bridge(
+            return FairyBridge(
               context: parentContext,
               child: Builder(
                 builder: (overlayContext) {
@@ -555,7 +556,7 @@ void main() {
             builder: (parentContext) {
               return Column(
                 children: [
-                  Fairy.bridge(
+                  FairyBridge(
                     context: parentContext,
                     child: Builder(
                       builder: (overlayContext) {
@@ -600,7 +601,7 @@ void main() {
           child: Builder(
             builder: (parentContext) {
               resolvedInParent = Fairy.of<TestViewModel>(parentContext);
-              return Fairy.bridge(
+              return FairyBridge(
                 context: parentContext,
                 child: Builder(
                   builder: (overlayContext) {
@@ -635,7 +636,7 @@ void main() {
           ],
           child: Builder(
             builder: (parentContext) {
-              return Fairy.bridge(
+              return FairyBridge(
                 context: parentContext,
                 child: Builder(
                   builder: (overlayContext) {
@@ -666,12 +667,12 @@ void main() {
           viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
-              return Fairy.bridge(
+              return FairyBridge(
                 context: parentContext,
                 child: Builder(
                   builder: (firstOverlayContext) {
                     resolvedInFirstOverlay = Fairy.of<TestViewModel>(firstOverlayContext);
-                    return Fairy.bridge(
+                    return FairyBridge(
                       context: firstOverlayContext,
                       child: Builder(
                         builder: (secondOverlayContext) {
@@ -707,7 +708,7 @@ void main() {
             viewModel: (_) => innerVm,
             child: Builder(
               builder: (innerContext) {
-                return Fairy.bridge(
+                return FairyBridge(
                   context: innerContext,
                   child: Builder(
                     builder: (overlayContext) {
@@ -735,7 +736,7 @@ void main() {
           viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
-              return Fairy.bridge(
+              return FairyBridge(
                 context: parentContext,
                 child: Builder(
                   builder: (overlayContext) {
@@ -768,7 +769,7 @@ void main() {
           viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
-              return Fairy.bridge(
+              return FairyBridge(
                 context: parentContext,
                 child: Builder(
                   builder: (overlayContext) {
@@ -796,7 +797,7 @@ void main() {
             builder: (parentContext) {
               if (!bridgeBuilt) {
                 bridgeBuilt = true;
-                return Fairy.bridge(
+                return FairyBridge(
                   context: parentContext,
                   child: const SizedBox(),
                 );
@@ -838,7 +839,7 @@ void main() {
           viewModel: (_) => scopeVm,
           child: Builder(
             builder: (parentContext) {
-              return Fairy.bridge(
+              return FairyBridge(
                 context: parentContext,
                 child: Builder(
                   builder: (overlayContext) {
@@ -876,7 +877,7 @@ void main() {
                           const Text('Page Content'),
                           // Dialog overlay
                           Positioned.fill(
-                            child: Fairy.bridge(
+                            child: FairyBridge(
                               context: pageContext, // Bridge from page context
                               child: Builder(
                                 builder: (dialogContext) {
