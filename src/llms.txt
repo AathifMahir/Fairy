@@ -5,7 +5,7 @@
 ## Package Identity
 
 - **Name**: fairy
-- **Version**: 1.0.0-rc.3
+- **Version**: 1.0.0
 - **Type**: Flutter state management library
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **License**: BSD-3-Clause
@@ -168,11 +168,11 @@ Bind<UserViewModel, String>(
 )
 ```
 
-#### Bind.observer<TViewModel>
-Auto-tracking data binding - automatically tracks accessed properties.
+#### Bind.viewModel<TViewModel>
+Auto data binding - automatically tracks accessed properties.
 
 ```dart
-Bind.observer<UserViewModel>(
+Bind.viewModel<UserViewModel>(
   builder: (context, vm) {
     return Column(
       children: [
@@ -534,17 +534,17 @@ final vm = Fairy.maybeOf<MyViewModel>(context);
 3. FairyLocator (global)
 4. Throws exception if not found
 
-#### Fairy.bridge() - Bridging ViewModels to Overlays
+#### FairyBridge() - Bridging ViewModels to Overlays
 
 **Problem:** Overlays (dialogs, bottom sheets, menus) create separate widget trees that can't access parent FairyScopes through normal context lookup.
 
-**Solution:** `Fairy.bridge()` captures the parent context's FairyScope and makes it available to the overlay's context.
+**Solution:** `FairyBridge()` captures the parent context's FairyScope and makes it available to the overlay's context.
 
 ```dart
 void _showAddTodoDialog(BuildContext context) {
   showDialog(
     context: context,
-    builder: (_) => Fairy.bridge(
+    builder: (_) => FairyBridge(
       context: context, // Parent context with FairyScope
       child: AlertDialog(
         title: Text('Add Todo'),
@@ -657,7 +657,7 @@ disposer();
 
 ### 1. Choose the Right Binding
 - **Single property**: Use `Bind<TViewModel, TValue>` with explicit selector
-- **Multiple properties**: Use `Bind.observer<TViewModel>` for convenience
+- **Multiple properties**: Use `Bind.viewModel<TViewModel>` for convenience
 - **Avoid one-way binding**: Prefer returning `ObservableProperty` over raw values
 
 ### 2. Command Dependencies
@@ -979,18 +979,19 @@ project2.value = Project('Work', ['Task 1', 'Task 2']);  // ✅ No rebuild (same
 
 ### Advanced Widgets (Public but Optional)
 For power users who need more control:
-- `BindObserver<TViewModel>` - Single property auto-tracking
-- `BindObserver2<TViewModel>` - Two properties auto-tracking
-- `BindObserver3<TViewModel>` - Three properties auto-tracking
+- `BindViewModel<TViewModel>` - Single property auto-binding
+- `BindViewModel2<TViewModel>` - Two properties auto-binding
+- `BindViewModel3<TViewModel>` - Three properties auto-binding
+- `BindViewModel4<TViewModel>` - Four properties auto-binding
 - `CommandWithParam<TViewModel, TParam>` - Direct parameterized command widget
 
-These are public but the factory constructors (`Bind.observer`, `Command.param`) are recommended.
+These are public but the factory constructors (`Bind.viewModel`, `Command.param`) are recommended.
 
 ## Performance Characteristics
 
 - **Memory Management**: Highly optimized cleanup and disposal system
 - **Selective Rebuilds**: Exceptional performance with explicit selectors
-- **Auto-tracking**: `Bind.observer` delivers superior speed with 100% selectivity
+- **Auto-binding**: `Bind.viewModel` delivers superior speed with 100% selectivity
 - **Rebuild Efficiency**: Only rebuilds widgets when their accessed properties change
 
 ## Migration from 0.5.x to 1.0.0-rc.1
@@ -1024,7 +1025,7 @@ lib/
       fairy_resolver.dart         # Resolution logic
     ui/
       bind_widget.dart            # Bind<TViewModel, TValue>
-      bind_observer_widget.dart   # Bind.observer variants
+      bind_viewmodel_widget.dart   # Bind.viewModel variants
       command_widget.dart         # Command<TViewModel>
     utils/
       change_notifier_extensions.dart
@@ -1041,7 +1042,7 @@ lib/
 **Solution**: Always capture and call disposers from `propertyChanged()` or use `Bind`/`Command` widgets.
 
 ### Error: Widget not rebuilding
-**Solution**: Ensure selector returns ObservableProperty, not raw value. Or use `Bind.observer`.
+**Solution**: Ensure selector returns ObservableProperty, not raw value. Or use `Bind.viewModel`.
 
 ### Error: Command not updating `canExecute`
 **Solution**: Call `command.notifyCanExecuteChanged()` when dependencies change.
