@@ -1,3 +1,5 @@
+import 'package:fairy/src/utils/lifecycle.dart';
+
 /// A global dependency injection container for app-wide services and ViewModels.
 ///
 /// [FairyLocator] is a singleton that provides service location capabilities
@@ -205,7 +207,21 @@ class FairyLocator {
   T get<T extends Object>() {
     // Check singletons first
     if (_singletons.containsKey(T)) {
-      return _singletons[T]! as T;
+      final instance = _singletons[T]! as T;
+
+      if (instance is Disposable && instance.isDisposed) {
+        throw StateError(
+          'ViewModel of type $T has been disposed and cannot be accessed.\n'
+          'This usually happens when:\n'
+          '1. ViewModel was manually disposed but not unregistered\n'
+          '2. App is shutting down\n'
+          'Consider unregistering disposed ViewModels:\n'
+          '  vm.dispose();\n'
+          '  FairyLocator.instance.unregister<$T>();',
+        );
+      }
+      
+      return instance;
     }
 
     // Check factories
