@@ -63,44 +63,50 @@ class TodoListViewModel extends ObservableObject {
     filterPriority = ObservableProperty<TodoPriority?>(null);
 
     // Computed property automatically updates when dependencies change
-    filteredTodos = ComputedProperty<List<Todo>>(() {
-      var result = todos.value;
+    filteredTodos = ComputedProperty<List<Todo>>(
+      () {
+        var result = todos.value;
 
-      // Filter by active status
-      if (showOnlyActive.value) {
-        result = result.where((todo) => !todo.isCompleted).toList();
-      }
+        // Filter by active status
+        if (showOnlyActive.value) {
+          result = result.where((todo) => !todo.isCompleted).toList();
+        }
 
-      // Filter by priority
-      if (filterPriority.value != null) {
-        result = result
-            .where((todo) => todo.priority == filterPriority.value)
-            .toList();
-      }
+        // Filter by priority
+        if (filterPriority.value != null) {
+          result = result
+              .where((todo) => todo.priority == filterPriority.value)
+              .toList();
+        }
 
-      // Filter by search text
-      if (filterText.value.isNotEmpty) {
-        final query = filterText.value.toLowerCase();
-        result = result
-            .where(
-              (todo) =>
-                  todo.title.toLowerCase().contains(query) ||
-                  todo.description.toLowerCase().contains(query),
-            )
-            .toList();
-      }
+        // Filter by search text
+        if (filterText.value.isNotEmpty) {
+          final query = filterText.value.toLowerCase();
+          result = result
+              .where(
+                (todo) =>
+                    todo.title.toLowerCase().contains(query) ||
+                    todo.description.toLowerCase().contains(query),
+              )
+              .toList();
+        }
 
-      return result;
-    }, [todos, filterText, showOnlyActive, filterPriority]);
+        return result;
+      },
+      [todos, filterText, showOnlyActive, filterPriority],
+      this,
+    );
 
-    totalCount = ComputedProperty<int>(() => todos.value.length, [todos]);
+    totalCount = ComputedProperty<int>(() => todos.value.length, [todos], this);
     completedCount = ComputedProperty<int>(
       () => todos.value.where((t) => t.isCompleted).length,
       [todos],
+      this,
     );
     activeCount = ComputedProperty<int>(
       () => todos.value.where((t) => !t.isCompleted).length,
       [todos],
+      this,
     );
 
     // Initialize commands
