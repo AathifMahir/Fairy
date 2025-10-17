@@ -1,3 +1,85 @@
+## 1.1.1
+
+**Memory Leak Prevention Release** - Critical fix for ComputedProperty memory leaks with required parent parameter.
+
+This release addresses a critical memory leak in `ComputedProperty` and introduces a cleaner, more explicit API that makes memory safety impossible to miss.
+
+### 🔒 Memory Leak Fix
+
+#### ComputedProperty Required Parent Parameter
+- **Parent parameter is now required and positional** for `ComputedProperty`
+  - **Before**: `ComputedProperty<T>(compute, dependencies)` - optional parent, easy to forget
+  - **After**: `ComputedProperty<T>(compute, dependencies, this)` - required parent, impossible to forget
+  - Prevents memory leaks by ensuring ComputedProperty is always auto-disposed
+  - Cleaner, more concise syntax with positional parameter
+  - Compiler enforces correct usage - no runtime surprises
+
+#### Why This Matters
+ComputedProperty creates circular references with its dependencies:
+- ComputedProperty → dependencies (strong reference)
+- dependencies._listeners → ComputedProperty._onDependencyChanged (strong reference back)
+- Without disposal, this cycle prevents garbage collection
+
+The required parent parameter ensures:
+- ✅ **Deterministic disposal** - no magic, no finalizers needed
+- ✅ **Zero memory leaks** - impossible to forget disposal
+- ✅ **Explicit is better than implicit** - follows Dart/Flutter philosophy
+- ✅ **Compile-time safety** - errors caught at compile time, not runtime
+
+### 🔧 API Improvements
+
+#### Simplified ComputedProperty API
+```dart
+class UserViewModel extends ObservableObject {
+  final firstName = ObservableProperty<String>('John');
+  final lastName = ObservableProperty<String>('Doe');
+  
+  // New: Required parent parameter (positional)
+  late final fullName = ComputedProperty<String>(
+    () => '${firstName.value} ${lastName.value}',
+    [firstName, lastName],
+    this, // Required - automatic disposal when ViewModel is disposed
+  );
+}
+```
+
+### 📚 Documentation Updates
+
+- Updated all examples to show required parent parameter
+- Enhanced ComputedProperty documentation with memory leak prevention
+- Updated README with new syntax
+- Clarified when parent parameter is needed
+
+### 🧪 Testing
+
+- **442 tests** passing (unchanged)
+- Updated 6 parent-child disposal tests
+- Removed tests for optional parent behavior
+- Added test for post-disposal protection
+
+### 💡 Migration Guide
+
+Update all `ComputedProperty` instances to include the parent parameter:
+
+```dart
+// Before (v1.1.0)
+late final total = ComputedProperty<double>(
+  () => subtotal.value + tax.value,
+  [subtotal, tax],
+);
+
+// After (v1.1.1)
+late final total = ComputedProperty<double>(
+  () => subtotal.value + tax.value,
+  [subtotal, tax],
+  this, // Add parent parameter
+);
+```
+
+This change applies to all ComputedProperty instances in your ViewModels. The compiler will catch any missing parameters, making migration straightforward.
+
+---
+
 ## 1.1.0
 
 **Lifecycle & Disposal Management Release** - Enhanced disposal safety, improved error handling, and better documentation.

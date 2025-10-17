@@ -26,6 +26,9 @@ import 'package:flutter/foundation.dart';
 /// }
 /// ```
 abstract class ObservableObject extends ObservableNode with Disposable {
+  // Track children for automatic disposal
+  final List<Disposable> _children = [];
+
   // ========================================================================
   // HIDDEN ObservableNode API (marked @protected for internal framework use)
   // ========================================================================
@@ -46,6 +49,30 @@ abstract class ObservableObject extends ObservableNode with Disposable {
   // ========================================================================
   // PUBLIC FAIRY API (MVVM-style naming)
   // ========================================================================
+
+  /// Registers a child object for automatic disposal.
+  ///
+  /// When this ViewModel is disposed, all registered children will be
+  /// automatically disposed as well. This is used internally by properties
+  /// and commands that accept a `parent` parameter.
+  ///
+  /// Example:
+  /// ```dart
+  /// class MyViewModel extends ObservableObject {
+  ///
+  ///   /// Computed property automatically registered for disposal
+  ///   late final myComputed = ComputedProperty<int>(
+  ///    () => _someValue * 2,
+  ///    [someDependency],
+  ///    this,
+  ///   );
+  /// }
+  /// ```
+  @protected
+  void _registerChild(Disposable child) {
+    throwIfDisposed();
+    _children.add(child);
+  }
 
   /// Notifies all listeners that one or more properties have changed.
   ///
@@ -117,18 +144,36 @@ abstract class ObservableObject extends ObservableNode with Disposable {
   ///
   /// Always call `super.dispose()` at the end of your override.
   ///
+  /// This method automatically disposes all registered children (properties,
+  /// computed properties, and commands that were created with `parent: this`).
+  ///
   /// Example:
   /// ```dart
   /// @override
   /// void dispose() {
   ///   // Clean up resources
   ///   _subscription.cancel();
-  ///   super.dispose();
+  ///   super.dispose(); // Auto-disposes registered children
   /// }
   /// ```
   @override
   void dispose() {
+    // Dispose all registered children first
+    for (final child in _children) {
+      if (!child.isDisposed) {
+        try {
+          child.dispose();
+        } catch (e) {
+          debugPrint('Error disposing child ${child.runtimeType}: $e');
+        }
+      }
+    }
+    _children.clear();
+
+    // Clear own listeners
     clearListeners();
+
+    // Set isDisposed flag from Disposable mixin
     super.dispose();
   }
 }
@@ -326,6 +371,7 @@ class ObservableProperty<T> extends ObservableNode {
 ///   late final fullName = ComputedProperty<String>(
 ///     () => '${firstName.value} ${lastName.value}',
 ///     [firstName, lastName],
+///     this, // Required parent for automatic disposal
 ///   );
 /// }
 /// ```
@@ -335,16 +381,19 @@ class ObservableProperty<T> extends ObservableNode {
 /// late final subtotal = ComputedProperty<double>(
 ///   () => items.value.fold(0.0, (sum, item) => sum + item.price),
 ///   [items],
+///   this,
 /// );
 ///
 /// late final tax = ComputedProperty<double>(
 ///   () => subtotal.value * taxRate.value,
 ///   [subtotal, taxRate], // Depends on another computed property
+///   this,
 /// );
 ///
 /// late final total = ComputedProperty<double>(
 ///   () => subtotal.value + tax.value,
 ///   [subtotal, tax],
+///   this,
 /// );
 /// ```
 ///
@@ -353,16 +402,19 @@ class ObservableProperty<T> extends ObservableNode {
 /// late final isEmailValid = ComputedProperty<bool>(
 ///   () => email.value.contains('@') && email.value.length > 5,
 ///   [email],
+///   this,
 /// );
 ///
 /// late final canSubmit = ComputedProperty<bool>(
 ///   () => isEmailValid.value && isPasswordValid.value,
 ///   [isEmailValid, isPasswordValid],
+///   this,
 /// );
 ///
 /// late final submitCommand = RelayCommand(
 ///   _submit,
 ///   canExecute: () => canSubmit.value,
+///   this,
 /// );
 /// ```
 ///
@@ -374,31 +426,37 @@ class ObservableProperty<T> extends ObservableNode {
 /// 5. Auto-disposes all listeners with parent ViewModel
 ///
 /// See the [README](https://pub.dev/packages/fairy#computedproperty) for more examples.
-class ComputedProperty<T> extends ObservableNode {
+class ComputedProperty<T> extends ObservableNode with Disposable {
   /// Creates a computed property with a computation function and dependencies.
   ///
   /// The [_compute] function calculates the derived value and should only depend on
   /// the provided [_dependencies]. When any dependency changes, the value is automatically
   /// recomputed. Always use `late final` for automatic disposal.
   ///
+  /// The required [parent] parameter ensures automatic disposal when the parent
+  /// ViewModel is disposed, preventing memory leaks.
+  ///
   /// Example:
   /// ```dart
   /// late final fullName = ComputedProperty<String>(
   ///   () => '${firstName.value} ${lastName.value}',
   ///   [firstName, lastName],
+  ///   this, // Required parent for automatic disposal
   /// );
   /// ```
-  ComputedProperty(this._compute, this._dependencies) {
+  ComputedProperty(this._compute, this._dependencies, ObservableObject parent) {
     for (final dep in _dependencies) {
       dep.addListener(_onDependencyChanged);
     }
     // Initialize cache
     _cachedValue = _compute();
+
+    // Register with parent for automatic disposal
+    parent._registerChild(this);
   }
   final T Function() _compute;
   final List<ObservableNode> _dependencies;
   T? _cachedValue;
-  bool _isDisposed = false;
 
   // ========================================================================
   // HIDDEN ObservableNode API (internal use only)
@@ -441,6 +499,7 @@ class ComputedProperty<T> extends ObservableNode {
   /// dispose();
   /// ```
   VoidCallback propertyChanged(VoidCallback listener) {
+    throwIfDisposed();
     super.addListener(listener);
     return () => super.removeListener(listener);
   }
@@ -451,17 +510,18 @@ class ComputedProperty<T> extends ObservableNode {
   /// When accessed within a Bind.observer builder, this property will be
   /// automatically subscribed to for rebuilds.
   T get value {
+    throwIfDisposed();
     // Report access for dependency tracking (no-op if not tracking)
     DependencyTracker.reportAccess(this);
 
-    if (_cachedValue == null && !_isDisposed) {
+    if (_cachedValue == null && !isDisposed) {
       _cachedValue = _compute();
     }
     return _cachedValue as T;
   }
 
   void _onDependencyChanged() {
-    if (_isDisposed) {
+    if (isDisposed) {
       return;
     }
     final newValue = _compute();
@@ -473,10 +533,24 @@ class ComputedProperty<T> extends ObservableNode {
 
   @override
   void dispose() {
-    _isDisposed = true;
+    if (isDisposed) return;
+
+    // Remove listeners from all dependencies
     for (final dep in _dependencies) {
-      dep.removeListener(_onDependencyChanged);
+      try {
+        dep.removeListener(_onDependencyChanged);
+      } catch (e) {
+        // Dependency might be disposed already, that's okay
+      }
     }
+
+    // Clear cache
+    _cachedValue = null;
+
+    // Clear own listeners
+    clearListeners();
+
+    // Set isDisposed flag from Disposable mixin
     super.dispose();
   }
 }

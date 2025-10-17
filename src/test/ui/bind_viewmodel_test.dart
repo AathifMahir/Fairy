@@ -813,6 +813,7 @@ class ComputedViewModel extends ObservableObject {
     fullName = ComputedProperty<String>(
       () => '${firstName.value} ${lastName.value}',
       [firstName, lastName],
+      this,
     );
   }
 
