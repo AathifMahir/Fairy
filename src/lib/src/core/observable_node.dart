@@ -47,6 +47,11 @@ abstract class ObservableNode {
     }
   }
 
+  /// Clears all listeners. Called during disposal.
+  @protected
+  void clearListeners() => _listeners.clear();
+
   /// Optional: clear all listeners (manual cleanup if needed), if not Dart GC will handle it
+  @mustCallSuper
   void dispose() => _listeners.clear();
 }
