@@ -72,7 +72,7 @@ void main() {
 
         viewModel.testNotify();
         expect(notificationCount, equals(2));
-        
+
         dispose();
       });
 
@@ -90,7 +90,7 @@ void main() {
         expect(listener1Count, equals(1));
         expect(listener2Count, equals(1));
         expect(listener3Count, equals(1));
-        
+
         dispose1();
         dispose2();
         dispose3();
@@ -122,14 +122,14 @@ void main() {
         viewModel.setCountWithHelper(5);
         expect(viewModel.count, equals(5));
         expect(notificationCount, equals(1));
-        
+
         dispose();
       });
 
       test('should NOT notify listeners when value is the same', () {
         var notificationCount = 0;
         viewModel.setCountWithHelper(10);
-        
+
         final dispose = viewModel.propertyChanged(() {
           notificationCount++;
         });
@@ -137,7 +137,7 @@ void main() {
         viewModel.setCountWithHelper(10); // Same value
         expect(viewModel.count, equals(10));
         expect(notificationCount, equals(0)); // No notification
-        
+
         dispose();
       });
 
@@ -198,7 +198,7 @@ void main() {
         viewModel.setName('Bob');
         expect(viewModel.name, equals('Bob'));
         expect(notificationCount, equals(2));
-        
+
         dispose();
       });
 
@@ -233,7 +233,7 @@ void main() {
         );
         expect(changed, isFalse);
         expect(notificationCount, equals(2));
-        
+
         dispose();
       });
     });
@@ -248,7 +248,7 @@ void main() {
         viewModel.setCountManually(42);
         expect(viewModel.count, equals(42));
         expect(notificationCount, equals(1));
-        
+
         dispose();
       });
 
@@ -265,7 +265,7 @@ void main() {
         // Set to same value but still notify (manual control)
         viewModel.setCountManually(5);
         expect(notificationCount, equals(2)); // Still notifies
-        
+
         dispose();
       });
     });
@@ -283,25 +283,26 @@ void main() {
         dispose();
         viewModel.dispose();
 
-        // With ObservableNode, dispose just clears listeners - no exception
-        // Notifying after disposal is safe (but listeners are cleared)
-        viewModel.testNotify();
-        expect(notificationCount, equals(1)); // Still 1, not incremented
+        // With disposal checks, notifying after disposal throws
+        expect(
+          () => viewModel.testNotify(),
+          throwsA(isA<StateError>()),
+        );
+        expect(notificationCount, equals(1)); // Still 1, didn't get notified
       });
 
       test('should allow multiple disposals safely', () {
         viewModel.dispose();
-        // ObservableNode allows multiple disposals (just clears listeners)
+        // Multiple disposals are safe (idempotent)
         expect(() => viewModel.dispose(), returnsNormally);
       });
 
-      test('should allow adding listeners after disposal', () {
+      test('should throw when adding listeners after disposal', () {
         viewModel.dispose();
-        // ObservableNode allows adding listeners after disposal
-        // (GC handles cleanup, disposal is just convenience)
+        // ObservableObject throws when operations are attempted after disposal
         expect(
           () => viewModel.propertyChanged(() {}),
-          returnsNormally,
+          throwsA(isA<StateError>()),
         );
       });
     });
@@ -309,7 +310,7 @@ void main() {
     group('listen() method', () {
       test('should support multiple listeners', () {
         final counts = <int>[];
-        
+
         final dispose1 = viewModel.propertyChanged(() => counts.add(1));
         final dispose2 = viewModel.propertyChanged(() => counts.add(2));
         final dispose3 = viewModel.propertyChanged(() => counts.add(3));
@@ -317,7 +318,7 @@ void main() {
         viewModel.testNotify();
 
         expect(counts, equals([1, 2, 3]));
-        
+
         dispose1();
         dispose2();
         dispose3();
@@ -335,7 +336,7 @@ void main() {
 
         // Flutter's ChangeNotifier calls each registration separately
         expect(count, equals(3));
-        
+
         dispose1();
         dispose2();
         dispose3();
@@ -347,24 +348,24 @@ void main() {
 
         final dispose1 = viewModel.propertyChanged(listener);
         final dispose2 = viewModel.propertyChanged(listener);
-        
+
         dispose1(); // Removes one
-        
+
         viewModel.testNotify();
         expect(count, equals(1)); // One listener still registered
-        
+
         dispose2();
       });
-      
+
       test('should return disposer function that removes listener', () {
         var count = 0;
         final dispose = viewModel.propertyChanged(() => count++);
-        
+
         viewModel.testNotify();
         expect(count, equals(1));
-        
+
         dispose(); // Remove listener
-        
+
         viewModel.testNotify();
         expect(count, equals(1)); // Count unchanged - listener removed
       });
@@ -383,10 +384,10 @@ void main() {
 
       test('should return false after all listeners are removed', () {
         void listener() {}
-        
+
         final dispose = viewModel.propertyChanged(listener);
         expect(viewModel.testHasListeners, isTrue);
-        
+
         dispose();
         expect(viewModel.testHasListeners, isFalse);
       });
@@ -405,7 +406,7 @@ void main() {
         expect(viewModel.count, equals(2));
         expect(viewModel.name, equals('Test'));
         expect(notificationCount, equals(3));
-        
+
         dispose();
       });
 
@@ -418,7 +419,7 @@ void main() {
         viewModel.testNotify();
 
         expect(notificationCount, equals(3));
-        
+
         dispose();
       });
     });

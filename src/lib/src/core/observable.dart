@@ -1,14 +1,15 @@
 import 'package:fairy/src/core/observable_node.dart';
 import 'package:fairy/src/internal/dependency_tracker.dart';
 import 'package:fairy/src/utils/equals.dart';
+import 'package:fairy/src/utils/lifecycle.dart';
 import 'package:flutter/foundation.dart';
 
 /// Base class for ViewModels that provides change notification capabilities.
 ///
-/// Extends [ChangeNotifier] to enable reactive updates when model state changes.
+/// Extends [ObservableNode] to enable reactive updates when model state changes.
 /// Use this as a base for all ViewModels in your application.
 ///
-/// The raw [ChangeNotifier] API is hidden to provide a cleaner MVVM-style interface:
+/// The raw [ObservableNode] API is hidden to provide a cleaner MVVM-style interface:
 /// - Use [onPropertyChanged] instead of [notifyListeners]
 /// - Use [propertyChanged] instead of [addListener]
 ///
@@ -24,29 +25,28 @@ import 'package:flutter/foundation.dart';
 ///   }
 /// }
 /// ```
-abstract class ObservableObject extends ObservableNode {
+abstract class ObservableObject extends ObservableNode with Disposable {
+  // ========================================================================
+  // HIDDEN ObservableNode API (marked @protected for internal framework use)
+  // ========================================================================
 
-  // ========================================================================
-  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
-  // ========================================================================
-  
   @override
   @protected
   void addListener(VoidCallback listener) => super.addListener(listener);
-  
+
   @override
   @protected
   void removeListener(VoidCallback listener) => super.removeListener(listener);
-  
+
   @override
   @protected
   // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
-  
+
   // ========================================================================
   // PUBLIC FAIRY API (MVVM-style naming)
   // ========================================================================
-  
+
   /// Notifies all listeners that one or more properties have changed.
   ///
   /// Call this method after changing properties to trigger UI rebuilds.
@@ -61,7 +61,10 @@ abstract class ObservableObject extends ObservableNode {
   /// }
   /// ```
   @protected
-  void onPropertyChanged() => notifyListeners();
+  void onPropertyChanged() {
+    throwIfDisposed();
+    notifyListeners();
+  }
 
   /// Listens to property changes on this ViewModel.
   ///
@@ -74,13 +77,14 @@ abstract class ObservableObject extends ObservableNode {
   /// final dispose = viewModel.propertyChanged(() {
   ///   print('ViewModel changed!');
   /// });
-  /// 
+  ///
   /// // Later, clean up:
   /// dispose();
   /// ```
   VoidCallback propertyChanged(VoidCallback listener) {
-    super.addListener(listener);
-    return () => super.removeListener(listener);
+    throwIfDisposed();
+    addListener(listener);
+    return () => removeListener(listener);
   }
 
   /// Helper method to set a property with automatic change detection.
@@ -100,6 +104,7 @@ abstract class ObservableObject extends ObservableNode {
   /// ```
   @protected
   bool setProperty<T>(T oldValue, T newValue, void Function() assign) {
+    throwIfDisposed();
     if (oldValue != newValue) {
       assign();
       onPropertyChanged();
@@ -123,6 +128,7 @@ abstract class ObservableObject extends ObservableNode {
   /// ```
   @override
   void dispose() {
+    clearListeners();
     super.dispose();
   }
 }
@@ -155,13 +161,13 @@ abstract class ObservableObject extends ObservableNode {
 /// ```
 ///
 /// **Deep Equality for Collections:**
-/// 
+///
 /// By default, [ObservableProperty] uses deep equality for collections ([List], [Map], [Set]).
 /// This prevents unnecessary rebuilds when setting "equivalent" collections:
 ///
 /// ```dart
 /// final tags = ObservableProperty<List<String>>(['admin', 'user']);
-/// 
+///
 /// // Without deep equality: new object → rebuild (even though contents are identical)
 /// // With deep equality: same contents → no rebuild (optimized!)
 /// tags.value = ['admin', 'user'];
@@ -180,12 +186,12 @@ abstract class ObservableObject extends ObservableNode {
 /// class User {
 ///   final String id;
 ///   final List<String> tags;
-///   
+///
 ///   @override
 ///   bool operator ==(Object other) =>
 ///     identical(this, other) ||
 ///     other is User && id == other.id && listEquals(tags, other.tags);
-///   
+///
 ///   @override
 ///   int get hashCode => id.hashCode ^ tags.hashCode;
 /// }
@@ -219,28 +225,28 @@ class ObservableProperty<T> extends ObservableNode {
   }) : _deepEquals = deepEquality ? Equals.deepEquals<T>() : null;
 
   // ========================================================================
-  // HIDDEN ChangeNotifier API (internal use only)
+  // HIDDEN ObservableNode API (internal use only)
   // ========================================================================
-  
+
   @override
   @protected
   void addListener(VoidCallback listener) => super.addListener(listener);
-  
+
   @override
   @protected
   void removeListener(VoidCallback listener) => super.removeListener(listener);
-  
+
   @override
   @protected
   // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
-  
+
   // ========================================================================
   // PUBLIC FAIRY API
   // ========================================================================
 
   /// Gets the current value and reports access for automatic tracking.
-  /// 
+  ///
   /// When accessed within a Bind.observer builder, this property will be
   /// automatically subscribed to for rebuilds.
   T get value {
@@ -298,39 +304,90 @@ class ObservableProperty<T> extends ObservableNode {
   }
 }
 
-/// A read-only property that automatically recomputes when dependencies change.
+/// A read-only, reactive property that automatically recomputes when dependencies change.
 ///
-/// [ComputedProperty] is useful for derived values that depend on other
-/// observable properties. It caches the computed result and only recalculates
-/// when one of its dependencies notifies listeners.
+/// [ComputedProperty] eliminates manual synchronization by automatically deriving values
+/// from other observable properties. It's cached, efficient, and makes ViewModels cleaner.
 ///
-/// Example:
+/// **Key Benefits:**
+/// - Zero maintenance - no manual listener setup or cleanup
+/// - Automatic caching - only recomputes when dependencies actually change
+/// - Composable - can depend on other computed properties
+/// - Type-safe with compile-time safety
+/// - Auto-disposal prevents memory leaks
+///
+/// **Basic Usage:**
 /// ```dart
-/// class ShoppingCartViewModel extends ObservableObject {
-///   late final ObservableProperty<List<Item>> items;
-///   late final ComputedProperty<double> totalPrice;
+/// class UserViewModel extends ObservableObject {
+///   final firstName = ObservableProperty<String>('John');
+///   final lastName = ObservableProperty<String>('Doe');
 ///
-///   ShoppingCartViewModel() {
-///     items = ObservableProperty<List<Item>>([], parent: this);
-///     
-///     totalPrice = ComputedProperty<double>(
-///       () => items.value.fold(0.0, (sum, item) => sum + item.price),
-///       [items],
-///       parent: this,
-///     );
-///   }
-///
-///   // Properties and computed properties auto-disposed by super.dispose()
+///   // Automatically updates when firstName or lastName changes
+///   late final fullName = ComputedProperty<String>(
+///     () => '${firstName.value} ${lastName.value}',
+///     [firstName, lastName],
+///   );
 /// }
 /// ```
+///
+/// **Chained Computations (Shopping Cart):**
+/// ```dart
+/// late final subtotal = ComputedProperty<double>(
+///   () => items.value.fold(0.0, (sum, item) => sum + item.price),
+///   [items],
+/// );
+///
+/// late final tax = ComputedProperty<double>(
+///   () => subtotal.value * taxRate.value,
+///   [subtotal, taxRate], // Depends on another computed property
+/// );
+///
+/// late final total = ComputedProperty<double>(
+///   () => subtotal.value + tax.value,
+///   [subtotal, tax],
+/// );
+/// ```
+///
+/// **Form Validation:**
+/// ```dart
+/// late final isEmailValid = ComputedProperty<bool>(
+///   () => email.value.contains('@') && email.value.length > 5,
+///   [email],
+/// );
+///
+/// late final canSubmit = ComputedProperty<bool>(
+///   () => isEmailValid.value && isPasswordValid.value,
+///   [isEmailValid, isPasswordValid],
+/// );
+///
+/// late final submitCommand = RelayCommand(
+///   _submit,
+///   canExecute: () => canSubmit.value,
+/// );
+/// ```
+///
+/// **How It Works:**
+/// 1. Registers listeners on all dependencies during construction
+/// 2. Caches the computed value
+/// 3. Recomputes when any dependency notifies
+/// 4. Notifies own listeners only if value actually changed
+/// 5. Auto-disposes all listeners with parent ViewModel
+///
+/// See the [README](https://pub.dev/packages/fairy#computedproperty) for more examples.
 class ComputedProperty<T> extends ObservableNode {
-
   /// Creates a computed property with a computation function and dependencies.
   ///
-  /// The [compute] function is called to calculate the value.
-  /// The [dependencies] list contains all [ObservableNode] objects that this
-  /// computed property depends on. When any dependency notifies, the cached
-  /// value is invalidated and recalculated.
+  /// The [_compute] function calculates the derived value and should only depend on
+  /// the provided [_dependencies]. When any dependency changes, the value is automatically
+  /// recomputed. Always use `late final` for automatic disposal.
+  ///
+  /// Example:
+  /// ```dart
+  /// late final fullName = ComputedProperty<String>(
+  ///   () => '${firstName.value} ${lastName.value}',
+  ///   [firstName, lastName],
+  /// );
+  /// ```
   ComputedProperty(this._compute, this._dependencies) {
     for (final dep in _dependencies) {
       dep.addListener(_onDependencyChanged);
@@ -343,19 +400,18 @@ class ComputedProperty<T> extends ObservableNode {
   T? _cachedValue;
   bool _isDisposed = false;
 
-
-    // ========================================================================
-  // HIDDEN ChangeNotifier API (internal use only)
   // ========================================================================
-  
+  // HIDDEN ObservableNode API (internal use only)
+  // ========================================================================
+
   @override
   @protected
   void addListener(VoidCallback listener) => super.addListener(listener);
-  
+
   @override
   @protected
   void removeListener(VoidCallback listener) => super.removeListener(listener);
-  
+
   @override
   @protected
   // ignore: unnecessary_overrides
@@ -397,7 +453,7 @@ class ComputedProperty<T> extends ObservableNode {
   T get value {
     // Report access for dependency tracking (no-op if not tracking)
     DependencyTracker.reportAccess(this);
-    
+
     if (_cachedValue == null && !_isDisposed) {
       _cachedValue = _compute();
     }

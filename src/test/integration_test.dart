@@ -18,77 +18,77 @@ class CounterService {
 /// Main ViewModel with multiple features
 class CounterViewModel extends ObservableObject {
   final CounterService _service;
-  
+
   final counter = ObservableProperty<int>(0);
   final isProcessing = ObservableProperty<bool>(false);
-  
+
   late final RelayCommand incrementCommand;
   late final RelayCommand decrementCommand;
   late final AsyncRelayCommand resetCommand;
   late final RelayCommandWithParam<int> addValueCommand;
-  
+
   late final VoidCallback _disposeIsProcessingListener;
   late final VoidCallback _disposeCounterListener;
 
   CounterViewModel(this._service) {
     counter.value = _service.getInitialCount();
-    
+
     incrementCommand = RelayCommand(
-       _increment,
+      _increment,
       canExecute: () => !isProcessing.value,
     );
-    
+
     decrementCommand = RelayCommand(
-       _decrement,
+      _decrement,
       canExecute: () => counter.value > 0 && !isProcessing.value,
     );
-    
+
     resetCommand = AsyncRelayCommand(_reset);
-    
+
     addValueCommand = RelayCommandWithParam<int>(
-       _addValue,
+      _addValue,
       canExecute: (value) => value > 0 && !isProcessing.value,
     );
-    
+
     // When isProcessing changes, refresh commands
     _disposeIsProcessingListener = isProcessing.propertyChanged(() {
       incrementCommand.notifyCanExecuteChanged();
       decrementCommand.notifyCanExecuteChanged();
       addValueCommand.notifyCanExecuteChanged();
     });
-    
+
     // When counter changes, refresh decrement command (requires > 0)
     _disposeCounterListener = counter.propertyChanged(() {
       decrementCommand.notifyCanExecuteChanged();
     });
   }
-  
+
   @override
   void dispose() {
     _disposeIsProcessingListener();
     _disposeCounterListener();
     super.dispose();
   }
-  
+
   void _increment() {
     counter.value++;
   }
-  
+
   void _decrement() {
     counter.value--;
   }
-  
+
   Future<void> _reset() async {
     isProcessing.value = true;
     await Future<void>.delayed(const Duration(milliseconds: 50));
     counter.value = _service.getInitialCount();
     isProcessing.value = false;
   }
-  
+
   void _addValue(int value) {
     counter.value += value;
   }
-  
+
   // counter and isProcessing auto-disposed by super.dispose()
 }
 
@@ -103,7 +103,8 @@ void main() {
       FairyLocator.instance.unregister<CounterService>();
     });
 
-    testWidgets('full stack: DI + reactive properties + commands + binding', (tester) async {
+    testWidgets('full stack: DI + reactive properties + commands + binding',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -119,21 +120,25 @@ void main() {
                     builder: (context, value, update) {
                       return TextField(
                         key: const Key('counterField'),
-                        controller: TextEditingController(text: value.toString())
-                          ..selection = TextSelection.collapsed(offset: value.toString().length),
-                        onChanged: (text) => update?.call(int.tryParse(text) ?? 0),
+                        controller:
+                            TextEditingController(text: value.toString())
+                              ..selection = TextSelection.collapsed(
+                                  offset: value.toString().length),
+                        onChanged: (text) =>
+                            update?.call(int.tryParse(text) ?? 0),
                       );
                     },
                   ),
-                  
+
                   // Display counter value (two-way binding via property, but read-only)
                   Bind<CounterViewModel, int>(
                     selector: (vm) => vm.counter,
                     builder: (context, value, update) {
-                      return Text('Count: $value', key: const Key('counterText'));
+                      return Text('Count: $value',
+                          key: const Key('counterText'));
                     },
                   ),
-                  
+
                   // Command: Increment button
                   Command<CounterViewModel>(
                     command: (vm) => vm.incrementCommand,
@@ -145,7 +150,7 @@ void main() {
                       );
                     },
                   ),
-                  
+
                   // Command: Decrement button (disabled when counter = 0)
                   Command<CounterViewModel>(
                     command: (vm) => vm.decrementCommand,
@@ -157,7 +162,7 @@ void main() {
                       );
                     },
                   ),
-                  
+
                   // Async Command: Reset button
                   Command<CounterViewModel>(
                     command: (vm) => vm.resetCommand,
@@ -169,7 +174,7 @@ void main() {
                       );
                     },
                   ),
-                  
+
                   // Parameterized Command: Add 5 button
                   CommandWithParam<CounterViewModel, int>(
                     command: (vm) => vm.addValueCommand,
@@ -182,7 +187,7 @@ void main() {
                       );
                     },
                   ),
-                  
+
                   // Display isProcessing state
                   Bind<CounterViewModel, bool>(
                     selector: (vm) => vm.isProcessing,
@@ -206,7 +211,9 @@ void main() {
       expect(find.text('Count: 10'), findsOneWidget);
       expect(find.text('Ready'), findsOneWidget);
       expect(
-        tester.widget<ElevatedButton>(find.byKey(const Key('decrementBtn'))).onPressed,
+        tester
+            .widget<ElevatedButton>(find.byKey(const Key('decrementBtn')))
+            .onPressed,
         isNotNull,
       );
 
@@ -226,7 +233,8 @@ void main() {
       expect(find.text('Count: 15'), findsOneWidget);
 
       // Test two-way binding via TextField
-      final textField = tester.widget<TextField>(find.byKey(const Key('counterField')));
+      final textField =
+          tester.widget<TextField>(find.byKey(const Key('counterField')));
       textField.controller!.text = '20';
       textField.onChanged!('20');
       await tester.pumpAndSettle();
@@ -239,7 +247,9 @@ void main() {
       }
       expect(find.text('Count: 0'), findsOneWidget);
       expect(
-        tester.widget<ElevatedButton>(find.byKey(const Key('decrementBtn'))).onPressed,
+        tester
+            .widget<ElevatedButton>(find.byKey(const Key('decrementBtn')))
+            .onPressed,
         isNull, // Button should be disabled
       );
 
@@ -254,7 +264,9 @@ void main() {
       expect(find.text('Processing...'), findsOneWidget);
       // Commands should be disabled during processing
       expect(
-        tester.widget<ElevatedButton>(find.byKey(const Key('incrementBtn'))).onPressed,
+        tester
+            .widget<ElevatedButton>(find.byKey(const Key('incrementBtn')))
+            .onPressed,
         isNull,
       );
 
@@ -263,7 +275,9 @@ void main() {
       expect(find.text('Count: 10'), findsOneWidget); // Reset to initial value
       expect(find.text('Ready'), findsOneWidget);
       expect(
-        tester.widget<ElevatedButton>(find.byKey(const Key('incrementBtn'))).onPressed,
+        tester
+            .widget<ElevatedButton>(find.byKey(const Key('incrementBtn')))
+            .onPressed,
         isNotNull, // Re-enabled
       );
     });
@@ -307,7 +321,8 @@ void main() {
       expect(vm!.counter.value, 5); // Can still read/write after disposal
     });
 
-    testWidgets('global DI: ViewModel survives widget disposal', (tester) async {
+    testWidgets('global DI: ViewModel survives widget disposal',
+        (tester) async {
       final vm = CounterViewModel(
         FairyLocator.instance.get<CounterService>(),
       );
@@ -341,7 +356,8 @@ void main() {
       expect(vm.counter.value, 15);
     });
 
-    testWidgets('complex user flow: realistic counter app interaction', (tester) async {
+    testWidgets('complex user flow: realistic counter app interaction',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -407,7 +423,8 @@ void main() {
       expect(find.text('Value: 0'), findsOneWidget);
 
       // Verify decrement button is disabled at 0
-      final decrementBtn = tester.widget<ElevatedButton>(find.byKey(const Key('dec')));
+      final decrementBtn =
+          tester.widget<ElevatedButton>(find.byKey(const Key('dec')));
       expect(decrementBtn.onPressed, isNull);
 
       // Increment should still work
@@ -416,7 +433,8 @@ void main() {
       expect(find.text('Value: 1'), findsOneWidget);
 
       // Decrement button should be re-enabled
-      final decrementBtnAfter = tester.widget<ElevatedButton>(find.byKey(const Key('dec')));
+      final decrementBtnAfter =
+          tester.widget<ElevatedButton>(find.byKey(const Key('dec')));
       expect(decrementBtnAfter.onPressed, isNotNull);
     });
   });

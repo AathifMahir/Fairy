@@ -18,7 +18,8 @@ void main() {
   });
 
   group('Fairy.of()', () {
-    testWidgets('should resolve ViewModel from FairyScope first', (tester) async {
+    testWidgets('should resolve ViewModel from FairyScope first',
+        (tester) async {
       final scopeVm = ScopedViewModel();
       ScopedViewModel? resolvedVm;
 
@@ -38,7 +39,8 @@ void main() {
       expect(identical(resolvedVm, scopeVm), isTrue);
     });
 
-    testWidgets('should resolve ViewModel from FairyLocator if not in scope', (tester) async {
+    testWidgets('should resolve ViewModel from FairyLocator if not in scope',
+        (tester) async {
       final globalVm = GlobalViewModel();
       FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
 
@@ -57,7 +59,8 @@ void main() {
       expect(identical(resolvedVm, globalVm), isTrue);
     });
 
-    testWidgets('should prioritize FairyScope over FairyLocator', (tester) async {
+    testWidgets('should prioritize FairyScope over FairyLocator',
+        (tester) async {
       final scopeVm = TestViewModel();
       final globalVm = TestViewModel();
 
@@ -83,7 +86,8 @@ void main() {
       expect(identical(resolvedVm, globalVm), isFalse);
     });
 
-    testWidgets('should throw StateError when ViewModel not found', (tester) async {
+    testWidgets('should throw StateError when ViewModel not found',
+        (tester) async {
       await tester.pumpWidget(
         Builder(
           builder: (context) {
@@ -92,7 +96,8 @@ void main() {
               fail('Should have thrown StateError');
             } catch (e) {
               expect(e, isA<StateError>());
-              expect(e.toString(), contains('No ViewModel of type TestViewModel found'));
+              expect(e.toString(),
+                  contains('No ViewModel of type TestViewModel found'));
             }
             return const SizedBox();
           },
@@ -100,7 +105,8 @@ void main() {
       );
     });
 
-    testWidgets('should provide helpful error message with registration hints', (tester) async {
+    testWidgets('should provide helpful error message with registration hints',
+        (tester) async {
       await tester.pumpWidget(
         Builder(
           builder: (context) {
@@ -108,7 +114,8 @@ void main() {
               Fairy.of<TestViewModel>(context);
               fail('Should have thrown StateError');
             } catch (e) {
-              expect(e.toString(), contains('FairyLocator.instance.registerSingleton'));
+              expect(e.toString(),
+                  contains('FairyLocator.instance.registerSingleton'));
               expect(e.toString(), contains('FairyScope'));
               expect(e.toString(), contains('Make sure to either'));
             }
@@ -132,15 +139,16 @@ void main() {
             child: Builder(
               builder: (context) {
                 resolvedInner = Fairy.of<InnerViewModel>(context);
-                
+
                 // OuterViewModel should not be found in inner scope
                 try {
                   Fairy.of<OuterViewModel>(context);
-                  fail('Should have thrown - OuterViewModel not in inner scope');
+                  fail(
+                      'Should have thrown - OuterViewModel not in inner scope');
                 } catch (e) {
                   expect(e, isA<StateError>());
                 }
-                
+
                 return const SizedBox();
               },
             ),
@@ -182,7 +190,8 @@ void main() {
       );
     });
 
-    testWidgets('should work with FairyScope and FairyLocator together', (tester) async {
+    testWidgets('should work with FairyScope and FairyLocator together',
+        (tester) async {
       final scopeVm = ScopedViewModel();
       final globalVm = GlobalViewModel();
 
@@ -267,7 +276,8 @@ void main() {
       expect(resolvedVm, isNull);
     });
 
-    testWidgets('should prioritize FairyScope over FairyLocator', (tester) async {
+    testWidgets('should prioritize FairyScope over FairyLocator',
+        (tester) async {
       final scopeVm = TestViewModel();
       final globalVm = TestViewModel();
 
@@ -313,7 +323,8 @@ void main() {
       expect(resolvedVm, isNull);
     });
 
-    testWidgets('should work with mixed scope and global ViewModels', (tester) async {
+    testWidgets('should work with mixed scope and global ViewModels',
+        (tester) async {
       final scopeVm = ScopedViewModel();
       final globalVm = GlobalViewModel();
 
@@ -448,7 +459,8 @@ void main() {
       expect(identical(resolvedInOverlay, parentVm), isTrue);
     });
 
-    testWidgets('should allow Bind widgets to work in bridged overlay', (tester) async {
+    testWidgets('should allow Bind widgets to work in bridged overlay',
+        (tester) async {
       final parentVm = TestViewModel();
       TestViewModel? resolvedInBind;
 
@@ -502,7 +514,8 @@ void main() {
       expect(identical(resolvedInOverlay, globalVm), isTrue);
     });
 
-    testWidgets('should fallback to FairyLocator when no parent scope', (tester) async {
+    testWidgets('should fallback to FairyLocator when no parent scope',
+        (tester) async {
       final globalVm = GlobalViewModel();
       FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
 
@@ -515,7 +528,8 @@ void main() {
               context: parentContext,
               child: Builder(
                 builder: (overlayContext) {
-                  resolvedInOverlay = Fairy.maybeOf<GlobalViewModel>(overlayContext);
+                  resolvedInOverlay =
+                      Fairy.maybeOf<GlobalViewModel>(overlayContext);
                   return const SizedBox();
                 },
               ),
@@ -528,7 +542,8 @@ void main() {
       expect(identical(resolvedInOverlay, globalVm), isTrue);
     });
 
-    testWidgets('should preserve parent scope after bridge is destroyed', (tester) async {
+    testWidgets('should preserve parent scope after bridge is destroyed',
+        (tester) async {
       final parentVm = TestViewModel();
       TestViewModel? resolvedBeforeBridge;
       TestViewModel? resolvedAfterBridge;
@@ -587,10 +602,12 @@ void main() {
 
       expect(resolvedAfterBridge, isNotNull);
       expect(identical(resolvedAfterBridge, parentVm), isTrue);
-      expect(!parentVm.isDisposed, isTrue, reason: 'Parent VM should not be disposed');
+      expect(!parentVm.isDisposed, isTrue,
+          reason: 'Parent VM should not be disposed');
     });
 
-    testWidgets('should not affect parent context ViewModel resolution', (tester) async {
+    testWidgets('should not affect parent context ViewModel resolution',
+        (tester) async {
       final parentVm = TestViewModel();
       TestViewModel? resolvedInParent;
       TestViewModel? resolvedInOverlay;
@@ -621,7 +638,8 @@ void main() {
       expect(identical(resolvedInParent, parentVm), isTrue);
     });
 
-    testWidgets('should bridge multiple ViewModels from same scope', (tester) async {
+    testWidgets('should bridge multiple ViewModels from same scope',
+        (tester) async {
       final vm1 = TestViewModel();
       final vm2 = ScopedViewModel();
 
@@ -671,12 +689,14 @@ void main() {
                 context: parentContext,
                 child: Builder(
                   builder: (firstOverlayContext) {
-                    resolvedInFirstOverlay = Fairy.of<TestViewModel>(firstOverlayContext);
+                    resolvedInFirstOverlay =
+                        Fairy.of<TestViewModel>(firstOverlayContext);
                     return FairyBridge(
                       context: firstOverlayContext,
                       child: Builder(
                         builder: (secondOverlayContext) {
-                          resolvedInSecondOverlay = Fairy.of<TestViewModel>(secondOverlayContext);
+                          resolvedInSecondOverlay =
+                              Fairy.of<TestViewModel>(secondOverlayContext);
                           return const SizedBox();
                         },
                       ),
@@ -695,7 +715,8 @@ void main() {
       expect(identical(resolvedInSecondOverlay, parentVm), isTrue);
     });
 
-    testWidgets('should bridge nearest FairyScope in nested scopes', (tester) async {
+    testWidgets('should bridge nearest FairyScope in nested scopes',
+        (tester) async {
       final outerVm = TestViewModel();
       final innerVm = ScopedViewModel();
 
@@ -712,7 +733,8 @@ void main() {
                   context: innerContext,
                   child: Builder(
                     builder: (overlayContext) {
-                      resolvedInOverlay = Fairy.of<ScopedViewModel>(overlayContext);
+                      resolvedInOverlay =
+                          Fairy.of<ScopedViewModel>(overlayContext);
                       return const SizedBox();
                     },
                   ),
@@ -727,7 +749,8 @@ void main() {
       expect(identical(resolvedInOverlay, innerVm), isTrue);
     });
 
-    testWidgets('should throw if ViewModel not in bridged scope or locator', (tester) async {
+    testWidgets('should throw if ViewModel not in bridged scope or locator',
+        (tester) async {
       final parentVm = TestViewModel();
       var didThrow = false;
 
@@ -745,7 +768,10 @@ void main() {
                       fail('Should have thrown StateError');
                     } catch (e) {
                       expect(e, isA<StateError>());
-                      expect(e.toString(), contains('No ViewModel of type GlobalViewModel found'));
+                      expect(
+                          e.toString(),
+                          contains(
+                              'No ViewModel of type GlobalViewModel found'));
                       didThrow = true;
                     }
                     return const SizedBox();
@@ -760,7 +786,8 @@ void main() {
       expect(didThrow, isTrue);
     });
 
-    testWidgets('should return null with maybeOf if not in bridged scope', (tester) async {
+    testWidgets('should return null with maybeOf if not in bridged scope',
+        (tester) async {
       final parentVm = TestViewModel();
       GlobalViewModel? resolvedInOverlay;
 
@@ -773,7 +800,8 @@ void main() {
                 context: parentContext,
                 child: Builder(
                   builder: (overlayContext) {
-                    resolvedInOverlay = Fairy.maybeOf<GlobalViewModel>(overlayContext);
+                    resolvedInOverlay =
+                        Fairy.maybeOf<GlobalViewModel>(overlayContext);
                     return const SizedBox();
                   },
                 ),
@@ -786,7 +814,8 @@ void main() {
       expect(resolvedInOverlay, isNull);
     });
 
-    testWidgets('bridge should not dispose parent ViewModel when removed', (tester) async {
+    testWidgets('bridge should not dispose parent ViewModel when removed',
+        (tester) async {
       final parentVm = TestViewModel();
       var bridgeBuilt = false;
 
@@ -823,10 +852,12 @@ void main() {
         ),
       );
 
-      expect(parentVm.isDisposed, isFalse, reason: 'Parent VM should remain alive after bridge removal');
+      expect(parentVm.isDisposed, isFalse,
+          reason: 'Parent VM should remain alive after bridge removal');
     });
 
-    testWidgets('should prioritize bridged scope over FairyLocator', (tester) async {
+    testWidgets('should prioritize bridged scope over FairyLocator',
+        (tester) async {
       final scopeVm = TestViewModel();
       final globalVm = TestViewModel();
 
@@ -882,7 +913,8 @@ void main() {
                               child: Builder(
                                 builder: (dialogContext) {
                                   // Inside dialog - should access page VM
-                                  resolvedInDialog = Fairy.of<TestViewModel>(dialogContext);
+                                  resolvedInDialog =
+                                      Fairy.of<TestViewModel>(dialogContext);
                                   return Container(
                                     color: const Color(0x80000000),
                                     child: const Center(
@@ -911,7 +943,8 @@ void main() {
   });
 
   group('ViewModelLocator edge cases', () {
-    testWidgets('should handle multiple ViewModels of different types', (tester) async {
+    testWidgets('should handle multiple ViewModels of different types',
+        (tester) async {
       final vm1 = TestViewModel();
       final vm2 = ScopedViewModel();
       final vm3 = GlobalViewModel();
@@ -980,7 +1013,8 @@ void main() {
       expect(identical(resolvedVm, globalVm), isTrue);
     });
 
-    testWidgets('should return null with tryResolve when both empty', (tester) async {
+    testWidgets('should return null with tryResolve when both empty',
+        (tester) async {
       TestViewModel? resolvedVm;
 
       await tester.pumpWidget(

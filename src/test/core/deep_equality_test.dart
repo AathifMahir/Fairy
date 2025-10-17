@@ -52,7 +52,8 @@ void main() {
         ];
 
         // Deep equality now recursively compares nested lists
-        expect(notifyCount, 0, reason: 'Should not rebuild for deeply equal nested lists');
+        expect(notifyCount, 0,
+            reason: 'Should not rebuild for deeply equal nested lists');
 
         // Different nested content - should rebuild
         prop.value = [
@@ -60,7 +61,8 @@ void main() {
           [3, 5]
         ]; // Changed 4 to 5
 
-        expect(notifyCount, 1, reason: 'Should rebuild for different nested content');
+        expect(notifyCount, 1,
+            reason: 'Should rebuild for different nested content');
       });
     });
 
@@ -193,7 +195,8 @@ void main() {
 
     group('Deep Equality Disabled', () {
       test('lists use reference equality when deepEquality is false', () {
-        final prop = ObservableProperty<List<int>>([1, 2, 3], deepEquality: false);
+        final prop =
+            ObservableProperty<List<int>>([1, 2, 3], deepEquality: false);
         var notifyCount = 0;
         prop.propertyChanged(() => notifyCount++);
 
@@ -268,7 +271,8 @@ void main() {
         // Update returns same contents
         prop.update((current) => [1, 2, 3]);
 
-        expect(notifyCount, 0, reason: 'Deep equality should prevent notification');
+        expect(notifyCount, 0,
+            reason: 'Deep equality should prevent notification');
       });
 
       test('update() triggers on different list', () {
@@ -316,7 +320,8 @@ void main() {
     group('Custom Types with Collections (No Custom Equality)', () {
       test('triggers rebuild for same contents without overridden ==', () {
         final todo1 = TodoItem('Work', ['Task 1', 'Task 2']);
-        final todo2 = TodoItem('Work', ['Task 1', 'Task 2']); // Same data, different object
+        final todo2 = TodoItem(
+            'Work', ['Task 1', 'Task 2']); // Same data, different object
 
         final prop = ObservableProperty<TodoItem>(todo1);
         var notifyCount = 0;
@@ -340,10 +345,12 @@ void main() {
 
         // Same reference
         prop.value = todo;
-        expect(notifyCount, 0, reason: 'Identical reference should not trigger rebuild');
+        expect(notifyCount, 0,
+            reason: 'Identical reference should not trigger rebuild');
       });
 
-      test('demonstrates need for custom equality in models with collections', () {
+      test('demonstrates need for custom equality in models with collections',
+          () {
         // This test shows why users should override == for models with collections
 
         final todo1 = TodoItem('Work', ['Task 1']);
@@ -353,7 +360,8 @@ void main() {
 
         // Add a task by creating new TodoItem
         prop.value = TodoItem('Work', ['Task 1', 'Task 2']);
-        expect(notifyCount, 1, reason: 'Should trigger rebuild for different data');
+        expect(notifyCount, 1,
+            reason: 'Should trigger rebuild for different data');
 
         // Set back to original data (new object)
         prop.value = TodoItem('Work', ['Task 1']);
@@ -469,7 +477,8 @@ void main() {
         final address2 = Address('123 Main St', ['Park', 'School']);
         final person2 = Person('Bob', address2, {'z', 'y', 'x'}, ['skill']);
         prop.value = person2;
-        expect(notifyCount, 0, reason: 'Different set order should not rebuild');
+        expect(notifyCount, 0,
+            reason: 'Different set order should not rebuild');
       });
 
       test('deep nested equality with multiple collection types', () {
@@ -511,12 +520,24 @@ void main() {
       test('deeply nested structures with multiple levels', () {
         // 3 levels deep: List<Map<String, List<int>>>
         final deep1 = [
-          {'a': [1, 2], 'b': [3, 4]},
-          {'c': [5, 6], 'd': [7, 8]},
+          {
+            'a': [1, 2],
+            'b': [3, 4]
+          },
+          {
+            'c': [5, 6],
+            'd': [7, 8]
+          },
         ];
         final deep2 = [
-          {'a': [1, 2], 'b': [3, 4]},
-          {'c': [5, 6], 'd': [7, 8]},
+          {
+            'a': [1, 2],
+            'b': [3, 4]
+          },
+          {
+            'c': [5, 6],
+            'd': [7, 8]
+          },
         ];
 
         final prop = ObservableProperty<List<Map<String, List<int>>>>(deep1);
@@ -529,8 +550,14 @@ void main() {
 
         // Change deep nested value
         final deep3 = [
-          {'a': [1, 2], 'b': [3, 4]},
-          {'c': [5, 6], 'd': [7, 9]}, // Changed 8 to 9
+          {
+            'a': [1, 2],
+            'b': [3, 4]
+          },
+          {
+            'c': [5, 6],
+            'd': [7, 9]
+          }, // Changed 8 to 9
         ];
         prop.value = deep3;
         expect(notifyCount, 1, reason: 'Should detect deep nested change');
@@ -540,29 +567,35 @@ void main() {
         // Map<String, dynamic> with mixed types
         final complex1 = {
           'users': [
-            {'name': 'Alice', 'tags': ['admin', 'user']},
-            {'name': 'Bob', 'tags': ['user']},
+            {
+              'name': 'Alice',
+              'tags': ['admin', 'user']
+            },
+            {
+              'name': 'Bob',
+              'tags': ['user']
+            },
           ],
           'settings': {
             'theme': 'dark',
-            'notifications': [
-              'email',
-              'push'
-            ]
+            'notifications': ['email', 'push']
           },
         };
 
         final complex2 = {
           'users': [
-            {'name': 'Alice', 'tags': ['admin', 'user']},
-            {'name': 'Bob', 'tags': ['user']},
+            {
+              'name': 'Alice',
+              'tags': ['admin', 'user']
+            },
+            {
+              'name': 'Bob',
+              'tags': ['user']
+            },
           ],
           'settings': {
             'theme': 'dark',
-            'notifications': [
-              'email',
-              'push'
-            ]
+            'notifications': ['email', 'push']
           },
         };
 
@@ -572,7 +605,8 @@ void main() {
 
         // Same data - should NOT rebuild
         prop.value = complex2;
-        expect(notifyCount, 0, reason: 'Should handle complex nested structures');
+        expect(notifyCount, 0,
+            reason: 'Should handle complex nested structures');
       });
 
       test('set with nested lists', () {
@@ -591,7 +625,8 @@ void main() {
 
         // Same elements, different order - should NOT rebuild (sets are unordered)
         prop.value = set2;
-        expect(notifyCount, 0, reason: 'Set order should not matter with deep equality');
+        expect(notifyCount, 0,
+            reason: 'Set order should not matter with deep equality');
 
         // Different nested content
         final set3 = {
@@ -599,10 +634,13 @@ void main() {
           [3, 5]
         }; // Changed [3, 4] to [3, 5]
         prop.value = set3;
-        expect(notifyCount, 1, reason: 'Should detect nested list changes in set');
+        expect(notifyCount, 1,
+            reason: 'Should detect nested list changes in set');
       });
 
-      test('demonstrates why deepEquality: false is needed for custom collections', () {
+      test(
+          'demonstrates why deepEquality: false is needed for custom collections',
+          () {
         // If deepEquality is true (default), it won't work as expected
         // because Person is not a List/Map/Set itself
         final address = Address('Street', ['L1']);
@@ -617,7 +655,8 @@ void main() {
         final address2 = Address('Street', ['L1']);
         final person2 = Person('Name', address2, {'h'}, ['s']);
         prop1.value = person2;
-        expect(count1, 0, reason: 'deepEquality: true still uses Person == operator');
+        expect(count1, 0,
+            reason: 'deepEquality: true still uses Person == operator');
 
         // With deepEquality: false - also uses Person's == operator
         final prop2 = ObservableProperty<Person>(person, deepEquality: false);
@@ -625,7 +664,8 @@ void main() {
         prop2.propertyChanged(() => count2++);
 
         prop2.value = person2;
-        expect(count2, 0, reason: 'deepEquality: false uses Person == operator');
+        expect(count2, 0,
+            reason: 'deepEquality: false uses Person == operator');
 
         // Both behave the same because Person is not a collection type
         // deepEquality parameter only matters for List/Map/Set types
@@ -677,7 +717,8 @@ void main() {
           {'urgent', 'backend'},
         );
         prop.value = project3;
-        expect(notifyCount, 2, reason: 'Still rebuilds without custom equality');
+        expect(notifyCount, 2,
+            reason: 'Still rebuilds without custom equality');
       });
 
       test('only identical reference prevents rebuild', () {
@@ -690,7 +731,8 @@ void main() {
 
         // Same reference - no rebuild
         prop.value = project;
-        expect(notifyCount, 0, reason: 'Identical reference should not rebuild');
+        expect(notifyCount, 0,
+            reason: 'Identical reference should not rebuild');
 
         // Different reference, same data - rebuilds
         final mainTodo2 = TodoItem('Task', ['A']);
@@ -793,7 +835,8 @@ void main() {
         expect(
           notifyCount,
           1,
-          reason: 'Different Project reference triggers rebuild despite same nested objects',
+          reason:
+              'Different Project reference triggers rebuild despite same nested objects',
         );
       });
     });

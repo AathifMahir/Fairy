@@ -5,9 +5,9 @@ import 'package:fairy/fairy.dart';
 // Simple ViewModel for one-way binding tests
 class SimpleViewModel extends ObservableObject {
   String _message = 'Initial';
-  
+
   String get message => _message;
-  
+
   void updateMessage(String value) {
     _message = value;
     onPropertyChanged(); // Explicitly notify listeners
@@ -16,16 +16,18 @@ class SimpleViewModel extends ObservableObject {
 
 void main() {
   group('Bind widget - One-Way Binding', () {
-    testWidgets('should detect raw value and provide null update callback', (tester) async {
+    testWidgets('should detect raw value and provide null update callback',
+        (tester) async {
       final vm = SimpleViewModel();
       void Function(String)? capturedUpdate;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<SimpleViewModel, String>(
-              selector: (vm) => vm.message, // Raw String, not ObservableProperty
+              selector: (vm) =>
+                  vm.message, // Raw String, not ObservableProperty
               builder: (context, value, update) {
                 capturedUpdate = update;
                 return Text(value);
@@ -42,7 +44,7 @@ void main() {
 
     testWidgets('should rebuild when ViewModel notifies', (tester) async {
       final vm = SimpleViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -67,7 +69,7 @@ void main() {
     testWidgets('should not rebuild when oneTime is true', (tester) async {
       final vm = SimpleViewModel();
       int buildCount = 0;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(

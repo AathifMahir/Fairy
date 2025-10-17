@@ -18,7 +18,7 @@ import 'bind_viewmodel_widget.dart';
 /// ```dart
 /// class UserViewModel extends ObservableObject {
 ///   late final ObservableProperty<String> userName;
-///   
+///
 ///   UserViewModel() {
 ///     userName = ObservableProperty<String>('', parent: this);
 ///   }
@@ -39,11 +39,11 @@ import 'bind_viewmodel_widget.dart';
 /// ```dart
 /// class CounterViewModel extends ObservableObject {
 ///   late final ObservableProperty<int> count;
-///   
+///
 ///   CounterViewModel() {
 ///     count = ObservableProperty<int>(0, parent: this);
 ///   }
-///   
+///
 ///   int get doubled => count.value * 2;  // Computed property
 /// }
 ///
@@ -58,13 +58,13 @@ import 'bind_viewmodel_widget.dart';
 /// **Critical:** Selectors must return **stable references**. Never create
 /// new [ObservableProperty] instances inside selectors.
 class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
-
   const Bind({
-    required this.selector, 
-    required this.builder, 
+    required this.selector,
+    required this.builder,
     super.key,
     this.oneTime = false,
   });
+
   /// Selector function that extracts the bindable value from the ViewModel.
   ///
   /// Can return either:
@@ -93,22 +93,22 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
 
   /// Creates a binding that automatically observes all [ObservableNode] instances
   /// accessed during the builder function.
-  /// 
+  ///
   /// This is Fairy's equivalent to Provider's Consumer or Riverpod's ConsumerWidget.
   /// Unlike the standard [Bind] constructor which requires explicit selectors,
   /// [viewModel] automatically tracks which properties and commands are accessed
   /// and only rebuilds when those specific nodes change.
-  /// 
+  ///
   /// **When to use:**
   /// - Multiple properties from same ViewModel
   /// - Dynamic access patterns (conditional branches)
   /// - Command state tracking ([AsyncRelayCommand.isRunning])
   /// - Rapid prototyping
-  /// 
+  ///
   /// **When NOT to use:**
   /// - Single property binding (use standard `Bind<TViewModel, TValue>`)
   /// - Performance-critical widgets (explicit selectors are 5-10% faster)
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// Bind.BindViewModel<CounterViewModel>(
@@ -124,7 +124,8 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   ///   },
   /// )
   /// ```
-  static BindViewModel<TViewModel> viewModel<TViewModel extends ObservableObject>({
+  static BindViewModel<TViewModel>
+      viewModel<TViewModel extends ObservableObject>({
     Key? key,
     required Widget Function(BuildContext context, TViewModel vm) builder,
   }) {
@@ -136,7 +137,7 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
 
   /// Creates a binding that automatically observes all [ObservableNode] instances
   /// from two ViewModels accessed during the builder function.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// Bind.BindViewModel2<UserViewModel, SettingsViewModel>(
@@ -154,7 +155,9 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
       TViewModel1 extends ObservableObject,
       TViewModel2 extends ObservableObject>({
     Key? key,
-    required Widget Function(BuildContext context, TViewModel1 vm1, TViewModel2 vm2) builder,
+    required Widget Function(
+            BuildContext context, TViewModel1 vm1, TViewModel2 vm2)
+        builder,
   }) {
     return BindViewModel2<TViewModel1, TViewModel2>(
       key: key,
@@ -164,7 +167,7 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
 
   /// Creates a binding that automatically observes all [ObservableNode] instances
   /// from three ViewModels accessed during the builder function.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// Bind.BindViewModel3<UserViewModel, SettingsViewModel, DataViewModel>(
@@ -199,7 +202,7 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
 
   /// Creates a binding that automatically binds based on Property that's been accessed
   /// from four ViewModels accessed during the builder function.
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// Bind.BindViewModel4<UserViewModel, SettingsViewModel, DataViewModel, CounterViewModel>(
@@ -215,11 +218,12 @@ class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   ///   },
   /// )
   /// ```
-  static BindViewModel4<TViewModel1, TViewModel2, TViewModel3, TViewModel4> viewModel4<
-      TViewModel1 extends ObservableObject,
-      TViewModel2 extends ObservableObject,
-      TViewModel3 extends ObservableObject,
-      TViewModel4 extends ObservableObject>({
+  static BindViewModel4<TViewModel1, TViewModel2, TViewModel3, TViewModel4>
+      viewModel4<
+          TViewModel1 extends ObservableObject,
+          TViewModel2 extends ObservableObject,
+          TViewModel3 extends ObservableObject,
+          TViewModel4 extends ObservableObject>({
     Key? key,
     required Widget Function(
       BuildContext context,
@@ -272,11 +276,13 @@ class _BindState<TViewModel extends ObservableObject, TValue>
     if (_selected is ObservableProperty<TValue>) {
       // Two-way binding: subscribe to the property directly
       _listener = () => setState(() {});
-      _listenerDisposer = (_selected as ObservableProperty<TValue>).propertyChanged(_listener!);
+      _listenerDisposer =
+          (_selected as ObservableProperty<TValue>).propertyChanged(_listener!);
     } else if (_selected is ComputedProperty<TValue>) {
       // One-way binding with ComputedProperty: subscribe to the computed property
       _listener = () => setState(() {});
-      _listenerDisposer = (_selected as ComputedProperty<TValue>).propertyChanged(_listener!);
+      _listenerDisposer =
+          (_selected as ComputedProperty<TValue>).propertyChanged(_listener!);
     } else {
       // One-way binding: subscribe to ViewModel and re-evaluate selector
       _listener = () => setState(() {
@@ -298,10 +304,12 @@ class _BindState<TViewModel extends ObservableObject, TValue>
       if (!widget.oneTime) {
         if (_selected is ObservableProperty<TValue>) {
           _listener = () => setState(() {});
-          _listenerDisposer = (_selected as ObservableProperty<TValue>).propertyChanged(_listener!);
+          _listenerDisposer = (_selected as ObservableProperty<TValue>)
+              .propertyChanged(_listener!);
         } else if (_selected is ComputedProperty<TValue>) {
           _listener = () => setState(() {});
-          _listenerDisposer = (_selected as ComputedProperty<TValue>).propertyChanged(_listener!);
+          _listenerDisposer = (_selected as ComputedProperty<TValue>)
+              .propertyChanged(_listener!);
         } else {
           _listener = () => setState(() {
                 _selected = widget.selector(_viewModel);
@@ -335,16 +343,11 @@ class _BindState<TViewModel extends ObservableObject, TValue>
         property.value,
         (newValue) => property.value = newValue,
       );
-    } 
-    else if (_selected is ComputedProperty<TValue>) {
+    } else if (_selected is ComputedProperty<TValue>) {
       // One-way binding with ComputedProperty
       final computed = _selected as ComputedProperty<TValue>;
-      return widget.builder(
-        context, 
-        computed.value, 
-        null);
-    }    
-    else {
+      return widget.builder(context, computed.value, null);
+    } else {
       // One-way binding
       final value = _selected as TValue;
       return widget.builder(context, value, null);

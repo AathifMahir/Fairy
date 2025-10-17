@@ -10,22 +10,6 @@ mixin Disposable {
   /// Whether this object has been disposed.
   bool get isDisposed => _isDisposed;
 
-  /// Marks this object as disposed.
-  ///
-  /// Call this in your dispose method:
-  /// ```dart
-  /// @override
-  /// void dispose() {
-  ///   markDisposed();
-  ///   // cleanup...
-  ///   super.dispose();
-  /// }
-  /// ```
-  @protected
-  void markDisposed() {
-    _isDisposed = true;
-  }
-
   /// Throws if this object has been disposed.
   ///
   /// Use at the beginning of methods to prevent operations on disposed objects:
@@ -43,6 +27,14 @@ mixin Disposable {
       );
     }
   }
+
+  /// Marks this object as disposed.
+  /// used by subclasses in their [dispose] implementations.
+  @protected
+  @mustCallSuper
+  void dispose() {
+    _isDisposed = true;
+  }
 }
 
 /// Helper for managing multiple disposables as a group.
@@ -52,7 +44,7 @@ mixin Disposable {
 /// Example:
 /// ```dart
 /// class MyViewModel extends ObservableObject {
-///   final _disposables = DisposeBag();
+///   final _disposables = DisposableBag();
 ///
 ///   MyViewModel() {
 ///     _disposables.add(_subscription);
@@ -66,7 +58,7 @@ mixin Disposable {
 ///   }
 /// }
 /// ```
-class DisposeBag {
+class DisposableBag {
   final List<VoidCallback> _disposables = [];
 
   /// Adds a dispose callback to the bag.
@@ -79,7 +71,7 @@ class DisposeBag {
     for (final disposable in _disposables) {
       try {
         disposable();
-      // ignore: avoid_catches_without_on_clauses
+        // ignore: avoid_catches_without_on_clauses
       } catch (e) {
         // Log error but continue disposing other resources
         debugPrint('Error disposing resource: $e');

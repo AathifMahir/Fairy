@@ -148,9 +148,8 @@ class FairyScope extends StatefulWidget {
   ///   final vm = scopeData.get<MyViewModel>();
   /// }
   /// ```
-  static FairyScopeData? of(BuildContext context) => context
-        .dependOnInheritedWidgetOfExactType<_FairyScopeInherited>()
-        ?.data;
+  static FairyScopeData? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_FairyScopeInherited>()?.data;
 
   @override
   State<FairyScope> createState() => _FairyScopeState();
@@ -212,14 +211,13 @@ class _FairyScopeState extends State<FairyScope> {
 
   @override
   Widget build(BuildContext context) => _FairyScopeInherited(
-      data: _data,
-      child: widget.child,
-    );
+        data: _data,
+        child: widget.child,
+      );
 }
 
 /// InheritedWidget that provides [FairyScopeData] to the widget tree.
 class _FairyScopeInherited extends InheritedWidget {
-
   const _FairyScopeInherited({
     required this.data,
     required super.child,

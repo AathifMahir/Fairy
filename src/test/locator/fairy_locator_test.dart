@@ -18,14 +18,14 @@ void main() {
       test('should return same instance', () {
         final instance1 = FairyLocator.instance;
         final instance2 = FairyLocator.instance;
-        
+
         expect(identical(instance1, instance2), isTrue);
       });
 
       test('should maintain state across accesses', () {
         final locator1 = FairyLocator.instance;
         locator1.registerSingleton<TestService>(TestService());
-        
+
         final locator2 = FairyLocator.instance;
         expect(locator2.contains<TestService>(), isTrue);
       });
@@ -35,7 +35,7 @@ void main() {
       test('should register and retrieve singleton instance', () {
         final service = TestService();
         locator.registerSingleton<TestService>(service);
-        
+
         final retrieved = locator.get<TestService>();
         expect(identical(retrieved, service), isTrue);
       });
@@ -43,18 +43,18 @@ void main() {
       test('should return same instance on multiple gets', () {
         final service = TestService();
         locator.registerSingleton<TestService>(service);
-        
+
         final retrieved1 = locator.get<TestService>();
         final retrieved2 = locator.get<TestService>();
         final retrieved3 = locator.get<TestService>();
-        
+
         expect(identical(retrieved1, retrieved2), isTrue);
         expect(identical(retrieved2, retrieved3), isTrue);
       });
 
       test('should throw if type already registered', () {
         locator.registerSingleton<TestService>(TestService());
-        
+
         expect(
           () => locator.registerSingleton<TestService>(TestService()),
           throwsStateError,
@@ -63,7 +63,7 @@ void main() {
 
       test('should throw if type already registered as transient', () {
         locator.registerTransient<TestService>(() => TestService());
-        
+
         expect(
           () => locator.registerSingleton<TestService>(TestService()),
           throwsStateError,
@@ -74,11 +74,11 @@ void main() {
         final service = TestService();
         final repository = TestRepository();
         final logger = TestLogger();
-        
+
         locator.registerSingleton<TestService>(service);
         locator.registerSingleton<TestRepository>(repository);
         locator.registerSingleton<TestLogger>(logger);
-        
+
         expect(identical(locator.get<TestService>(), service), isTrue);
         expect(identical(locator.get<TestRepository>(), repository), isTrue);
         expect(identical(locator.get<TestLogger>(), logger), isTrue);
@@ -87,7 +87,7 @@ void main() {
       test('should support interface and implementation', () {
         final impl = ConcreteService();
         locator.registerSingleton<AbstractService>(impl);
-        
+
         final retrieved = locator.get<AbstractService>();
         expect(retrieved, isA<ConcreteService>());
         expect(identical(retrieved, impl), isTrue);
@@ -101,7 +101,7 @@ void main() {
           createCount++;
           return TestService();
         });
-        
+
         final instance = locator.get<TestService>();
         expect(instance, isA<TestService>());
         expect(createCount, equals(1));
@@ -109,11 +109,11 @@ void main() {
 
       test('should create new instance on each get', () {
         locator.registerTransient<TestService>(() => TestService());
-        
+
         final instance1 = locator.get<TestService>();
         final instance2 = locator.get<TestService>();
         final instance3 = locator.get<TestService>();
-        
+
         expect(identical(instance1, instance2), isFalse);
         expect(identical(instance2, instance3), isFalse);
       });
@@ -124,20 +124,20 @@ void main() {
           callCount++;
           return TestService();
         });
-        
+
         locator.get<TestService>();
         expect(callCount, equals(1));
-        
+
         locator.get<TestService>();
         expect(callCount, equals(2));
-        
+
         locator.get<TestService>();
         expect(callCount, equals(3));
       });
 
       test('should throw if type already registered', () {
         locator.registerTransient<TestService>(() => TestService());
-        
+
         expect(
           () => locator.registerTransient<TestService>(() => TestService()),
           throwsStateError,
@@ -146,7 +146,7 @@ void main() {
 
       test('should throw if type already registered as singleton', () {
         locator.registerSingleton<TestService>(TestService());
-        
+
         expect(
           () => locator.registerTransient<TestService>(() => TestService()),
           throwsStateError,
@@ -161,20 +161,20 @@ void main() {
           createCount++;
           return TestService();
         });
-        
+
         expect(createCount, equals(0)); // Not created yet
-        
+
         locator.get<TestService>();
         expect(createCount, equals(1)); // Created on first get
       });
 
       test('should return same instance on subsequent gets', () {
         locator.registerLazySingleton<TestService>(() => TestService());
-        
+
         final instance1 = locator.get<TestService>();
         final instance2 = locator.get<TestService>();
         final instance3 = locator.get<TestService>();
-        
+
         expect(identical(instance1, instance2), isTrue);
         expect(identical(instance2, instance3), isTrue);
       });
@@ -185,17 +185,17 @@ void main() {
           callCount++;
           return TestService();
         });
-        
+
         locator.get<TestService>();
         locator.get<TestService>();
         locator.get<TestService>();
-        
+
         expect(callCount, equals(1)); // Only called once
       });
 
       test('should throw if type already registered', () {
         locator.registerLazySingleton<TestService>(() => TestService());
-        
+
         expect(
           () => locator.registerLazySingleton<TestService>(() => TestService()),
           throwsStateError,
@@ -209,7 +209,7 @@ void main() {
         await locator.registerSingletonAsync<AsyncService>(
           () async => service,
         );
-        
+
         final retrieved = locator.get<AsyncService>();
         expect(identical(retrieved, service), isTrue);
       });
@@ -224,7 +224,7 @@ void main() {
             return AsyncService();
           },
         );
-        
+
         // Should be initialized immediately after registration
         expect(initialized, isTrue);
       });
@@ -233,11 +233,11 @@ void main() {
         await locator.registerSingletonAsync<AsyncService>(
           () async => AsyncService(),
         );
-        
+
         final retrieved1 = locator.get<AsyncService>();
         final retrieved2 = locator.get<AsyncService>();
         final retrieved3 = locator.get<AsyncService>();
-        
+
         expect(identical(retrieved1, retrieved2), isTrue);
         expect(identical(retrieved2, retrieved3), isTrue);
       });
@@ -246,7 +246,7 @@ void main() {
         await locator.registerSingletonAsync<AsyncService>(
           () async => AsyncService(),
         );
-        
+
         await expectLater(
           locator.registerSingletonAsync<AsyncService>(
             () async => AsyncService(),
@@ -257,7 +257,7 @@ void main() {
 
       test('should throw if type already registered as singleton', () async {
         locator.registerSingleton<TestService>(TestService());
-        
+
         await expectLater(
           locator.registerSingletonAsync<TestService>(
             () async => TestService(),
@@ -268,7 +268,7 @@ void main() {
 
       test('should work with complex async initialization', () async {
         var initSteps = <String>[];
-        
+
         await locator.registerSingletonAsync<AsyncService>(
           () async {
             initSteps.add('start');
@@ -281,7 +281,7 @@ void main() {
             return AsyncService();
           },
         );
-        
+
         expect(initSteps, equals(['start', 'connect', 'ready']));
         expect(locator.get<AsyncService>(), isA<AsyncService>());
       });
@@ -294,7 +294,7 @@ void main() {
             return AsyncService();
           },
         );
-        
+
         // Should not throw - already initialized
         final service = locator.get<AsyncService>();
         expect(service, isA<AsyncService>());
@@ -304,14 +304,14 @@ void main() {
     group('registerLazySingletonAsync()', () {
       test('should register without immediate initialization', () async {
         var initialized = false;
-        
+
         await locator.registerLazySingletonAsync<AsyncService>(
           () async {
             initialized = true;
             return AsyncService();
           },
         );
-        
+
         // Should NOT be initialized yet
         expect(initialized, isFalse);
         expect(locator.contains<AsyncService>(), isTrue);
@@ -321,7 +321,7 @@ void main() {
         await locator.registerLazySingletonAsync<AsyncService>(
           () async => AsyncService(),
         );
-        
+
         expect(
           () => locator.get<AsyncService>(),
           throwsStateError,
@@ -332,7 +332,7 @@ void main() {
         await locator.registerLazySingletonAsync<AsyncService>(
           () async => AsyncService(),
         );
-        
+
         try {
           locator.get<AsyncService>();
           fail('Should have thrown');
@@ -348,7 +348,7 @@ void main() {
         await locator.registerLazySingletonAsync<AsyncService>(
           () async => AsyncService(),
         );
-        
+
         await expectLater(
           locator.registerLazySingletonAsync<AsyncService>(
             () async => AsyncService(),
@@ -362,14 +362,14 @@ void main() {
       test('should retrieve registered singleton', () {
         final service = TestService();
         locator.registerSingleton<TestService>(service);
-        
+
         final retrieved = locator.get<TestService>();
         expect(identical(retrieved, service), isTrue);
       });
 
       test('should retrieve from transient', () {
         locator.registerTransient<TestService>(() => TestService());
-        
+
         final retrieved = locator.get<TestService>();
         expect(retrieved, isA<TestService>());
       });
@@ -394,7 +394,7 @@ void main() {
 
       test('should work with generics', () {
         locator.registerSingleton<List<String>>(['a', 'b']);
-        
+
         final list = locator.get<List<String>>();
         expect(list, equals(['a', 'b']));
       });
@@ -429,7 +429,7 @@ void main() {
       test('should work for multiple types', () {
         locator.registerSingleton<TestService>(TestService());
         locator.registerTransient<TestRepository>(() => TestRepository());
-        
+
         expect(locator.contains<TestService>(), isTrue);
         expect(locator.contains<TestRepository>(), isTrue);
         expect(locator.contains<TestLogger>(), isFalse);
@@ -440,7 +440,7 @@ void main() {
       test('should remove singleton registration', () {
         locator.registerSingleton<TestService>(TestService());
         expect(locator.contains<TestService>(), isTrue);
-        
+
         locator.unregister<TestService>();
         expect(locator.contains<TestService>(), isFalse);
       });
@@ -448,7 +448,7 @@ void main() {
       test('should remove transient registration', () {
         locator.registerTransient<TestService>(() => TestService());
         expect(locator.contains<TestService>(), isTrue);
-        
+
         locator.unregister<TestService>();
         expect(locator.contains<TestService>(), isFalse);
       });
@@ -456,7 +456,7 @@ void main() {
       test('should remove lazy singleton registration', () {
         locator.registerLazySingleton<TestService>(() => TestService());
         expect(locator.contains<TestService>(), isTrue);
-        
+
         locator.unregister<TestService>();
         expect(locator.contains<TestService>(), isFalse);
       });
@@ -464,7 +464,7 @@ void main() {
       test('should allow re-registration after unregister', () {
         locator.registerSingleton<TestService>(TestService());
         locator.unregister<TestService>();
-        
+
         expect(
           () => locator.registerSingleton<TestService>(TestService()),
           returnsNormally,
@@ -478,9 +478,9 @@ void main() {
       test('should not dispose instances automatically', () {
         final service = DisposableService();
         locator.registerSingleton<DisposableService>(service);
-        
+
         locator.unregister<DisposableService>();
-        
+
         // Service should NOT be disposed automatically
         expect(service.isDisposed, isFalse);
       });
@@ -491,13 +491,13 @@ void main() {
         locator.registerSingleton<TestService>(TestService());
         locator.registerTransient<TestRepository>(() => TestRepository());
         locator.registerLazySingleton<TestLogger>(() => TestLogger());
-        
+
         expect(locator.contains<TestService>(), isTrue);
         expect(locator.contains<TestRepository>(), isTrue);
         expect(locator.contains<TestLogger>(), isTrue);
-        
+
         locator.clear();
-        
+
         expect(locator.contains<TestService>(), isFalse);
         expect(locator.contains<TestRepository>(), isFalse);
         expect(locator.contains<TestLogger>(), isFalse);
@@ -506,7 +506,7 @@ void main() {
       test('should allow new registrations after clear', () {
         locator.registerSingleton<TestService>(TestService());
         locator.clear();
-        
+
         expect(
           () => locator.registerSingleton<TestService>(TestService()),
           returnsNormally,
@@ -522,9 +522,9 @@ void main() {
       test('should work same as clear', () {
         locator.registerSingleton<TestService>(TestService());
         locator.registerTransient<TestRepository>(() => TestRepository());
-        
+
         locator.reset();
-        
+
         expect(locator.contains<TestService>(), isFalse);
         expect(locator.contains<TestRepository>(), isFalse);
       });
@@ -538,13 +538,13 @@ void main() {
         locator.registerTransient<TestService>(() {
           return TestService();
         });
-        
+
         // Retrieve and verify
         final logger = locator.get<TestLogger>();
         final repo = locator.get<TestRepository>();
         final service1 = locator.get<TestService>();
         final service2 = locator.get<TestService>();
-        
+
         expect(identical(logger, locator.get<TestLogger>()), isTrue);
         expect(identical(repo, locator.get<TestRepository>()), isTrue);
         expect(identical(service1, service2), isFalse); // Transient creates new
@@ -555,7 +555,7 @@ void main() {
         locator.registerSingleton<TestService>(TestService());
         locator.registerTransient<TestRepository>(() => TestRepository());
         locator.registerLazySingleton<TestLogger>(() => TestLogger());
-        
+
         // All should be retrievable
         expect(locator.get<TestService>(), isA<TestService>());
         expect(locator.get<TestRepository>(), isA<TestRepository>());
@@ -565,14 +565,14 @@ void main() {
       test('should handle unregister and re-register correctly', () {
         final service1 = TestService();
         locator.registerSingleton<TestService>(service1);
-        
+
         expect(identical(locator.get<TestService>(), service1), isTrue);
-        
+
         locator.unregister<TestService>();
-        
+
         final service2 = TestService();
         locator.registerSingleton<TestService>(service2);
-        
+
         expect(identical(locator.get<TestService>(), service2), isTrue);
         expect(identical(service1, service2), isFalse);
       });
@@ -580,10 +580,10 @@ void main() {
       test('should maintain type safety', () {
         locator.registerSingleton<TestService>(TestService());
         locator.registerSingleton<TestRepository>(TestRepository());
-        
+
         final service = locator.get<TestService>();
         final repo = locator.get<TestRepository>();
-        
+
         expect(service, isA<TestService>());
         expect(repo, isA<TestRepository>());
         expect(service, isNot(isA<TestRepository>()));
@@ -591,35 +591,35 @@ void main() {
 
       test('should work with abstract types', () {
         locator.registerSingleton<AbstractService>(ConcreteService());
-        
+
         final service = locator.get<AbstractService>();
         expect(service, isA<ConcreteService>());
       });
 
       test('should handle lazy initialization correctly', () {
         var initializationOrder = <String>[];
-        
+
         locator.registerLazySingleton<TestService>(() {
           initializationOrder.add('service');
           return TestService();
         });
-        
+
         locator.registerLazySingleton<TestRepository>(() {
           initializationOrder.add('repo');
           return TestRepository();
         });
-        
+
         // Nothing created yet
         expect(initializationOrder, isEmpty);
-        
+
         // Get repository first
         locator.get<TestRepository>();
         expect(initializationOrder, equals(['repo']));
-        
+
         // Then get service
         locator.get<TestService>();
         expect(initializationOrder, equals(['repo', 'service']));
-        
+
         // Getting again shouldn't re-create
         locator.get<TestRepository>();
         locator.get<TestService>();
@@ -634,27 +634,28 @@ void main() {
         );
         locator.registerLazySingleton<TestLogger>(() => TestLogger());
         locator.registerTransient<TestRepository>(() => TestRepository());
-        
+
         // All should be retrievable
         expect(locator.get<TestService>(), isA<TestService>());
         expect(locator.get<AsyncService>(), isA<AsyncService>());
         expect(locator.get<TestLogger>(), isA<TestLogger>());
         expect(locator.get<TestRepository>(), isA<TestRepository>());
-        
+
         // Verify singleton vs transient behavior
         final async1 = locator.get<AsyncService>();
         final async2 = locator.get<AsyncService>();
         expect(identical(async1, async2), isTrue); // Async singleton
-        
+
         final repo1 = locator.get<TestRepository>();
         final repo2 = locator.get<TestRepository>();
         expect(identical(repo1, repo2), isFalse); // Transient
       });
 
-      test('should support async initialization in app startup pattern', () async {
+      test('should support async initialization in app startup pattern',
+          () async {
         // Simulating app startup with multiple async services
         final futures = <Future<void>>[];
-        
+
         futures.add(
           locator.registerSingletonAsync<AsyncService>(
             () async {
@@ -663,7 +664,7 @@ void main() {
             },
           ),
         );
-        
+
         futures.add(
           locator.registerSingletonAsync<TestLogger>(
             () async {
@@ -672,10 +673,10 @@ void main() {
             },
           ),
         );
-        
+
         // Wait for all async initializations
         await Future.wait(futures);
-        
+
         // All services should be ready
         expect(locator.get<AsyncService>(), isA<AsyncService>());
         expect(locator.get<TestLogger>(), isA<TestLogger>());
@@ -698,7 +699,7 @@ class ConcreteService implements AbstractService {}
 
 class DisposableService {
   bool isDisposed = false;
-  
+
   void dispose() {
     isDisposed = true;
   }
@@ -706,7 +707,7 @@ class DisposableService {
 
 class AsyncService {
   AsyncService();
-  
+
   static Future<AsyncService> create() async {
     await Future<void>.delayed(const Duration(milliseconds: 10));
     return AsyncService();

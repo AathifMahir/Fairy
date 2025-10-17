@@ -27,7 +27,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^1.0.0
+  fairy: ^1.1.0
 ```
 
 ### Basic Example
@@ -685,21 +685,184 @@ class TodoListPage extends StatelessWidget {
 
 ## Advanced Features
 
-### ComputedProperty
+### ComputedProperty - Automatic Derived Values
 
-Derived properties that depend on other ObservableProperties:
+`ComputedProperty` is a game-changer for managing derived state. It automatically recomputes when dependencies change, eliminating manual synchronization and making your ViewModels dramatically cleaner.
 
+#### Why You'll Love It
+
+**Without ComputedProperty:**
 ```dart
-class MyViewModel extends ObservableObject {
+class UserViewModel extends ObservableObject {
   final firstName = ObservableProperty<String>('John');
   final lastName = ObservableProperty<String>('Doe');
   
+  String _fullName = 'John Doe';
+  String get fullName => _fullName;
+  
+  UserViewModel() {
+    // Manual listener setup - error-prone and verbose
+    firstName.propertyChanged(_updateFullName);
+    lastName.propertyChanged(_updateFullName);
+    _updateFullName();
+  }
+  
+  void _updateFullName() {
+    _fullName = '${firstName.value} ${lastName.value}';
+    onPropertyChanged(); // Easy to forget!
+  }
+  
+  // Manual cleanup required (and easy to forget!)
+}
+```
+
+**With ComputedProperty:**
+```dart
+class UserViewModel extends ObservableObject {
+  final firstName = ObservableProperty<String>('John');
+  final lastName = ObservableProperty<String>('Doe');
+  
+  // That's it! Auto-updates, auto-caches, auto-disposes 🎉
   late final fullName = ComputedProperty<String>(
     () => '${firstName.value} ${lastName.value}',
     [firstName, lastName],
   );
 }
 ```
+
+#### Real-World Examples
+
+**Shopping Cart with Chained Computations:**
+```dart
+class CartViewModel extends ObservableObject {
+  final items = ObservableProperty<List<Item>>([]);
+  final taxRate = ObservableProperty<double>(0.08);
+  final discountCode = ObservableProperty<String?>('');
+  
+  // Base calculation
+  late final subtotal = ComputedProperty<double>(
+    () => items.value.fold(0.0, (sum, item) => sum + item.price),
+    [items],
+  );
+  
+  // Depends on another computed property!
+  late final discount = ComputedProperty<double>(
+    () => discountCode.value == 'SAVE20' ? subtotal.value * 0.20 : 0.0,
+    [subtotal, discountCode],
+  );
+  
+  late final afterDiscount = ComputedProperty<double>(
+    () => subtotal.value - discount.value,
+    [subtotal, discount],
+  );
+  
+  late final tax = ComputedProperty<double>(
+    () => afterDiscount.value * taxRate.value,
+    [afterDiscount, taxRate],
+  );
+  
+  // Final total - automatically updates when ANYTHING changes!
+  late final total = ComputedProperty<double>(
+    () => afterDiscount.value + tax.value,
+    [afterDiscount, tax],
+  );
+}
+```
+
+**Form Validation (Perfect for canExecute):**
+```dart
+class LoginViewModel extends ObservableObject {
+  final email = ObservableProperty<String>('');
+  final password = ObservableProperty<String>('');
+  
+  late final isEmailValid = ComputedProperty<bool>(
+    () => email.value.contains('@') && email.value.length > 5,
+    [email],
+  );
+  
+  late final isPasswordValid = ComputedProperty<bool>(
+    () => password.value.length >= 8,
+    [password],
+  );
+  
+  late final canSubmit = ComputedProperty<bool>(
+    () => isEmailValid.value && isPasswordValid.value,
+    [isEmailValid, isPasswordValid],
+  );
+  
+  // Use computed property in command validation
+  late final loginCommand = AsyncRelayCommand(
+    _login,
+    canExecute: () => canSubmit.value,
+  );
+  
+  Future<void> _login() async {
+    // Login logic
+  }
+}
+```
+
+**Complex Business Logic:**
+```dart
+class ProfileViewModel extends ObservableObject {
+  final firstName = ObservableProperty<String>('');
+  final lastName = ObservableProperty<String>('');
+  final age = ObservableProperty<int>(0);
+  final memberSince = ObservableProperty<DateTime>(DateTime.now());
+  final isPremium = ObservableProperty<bool>(false);
+  
+  late final displayName = ComputedProperty<String>(
+    () => '${firstName.value} ${lastName.value}'.trim(),
+    [firstName, lastName],
+  );
+  
+  late final membershipYears = ComputedProperty<int>(
+    () => DateTime.now().year - memberSince.value.year,
+    [memberSince],
+  );
+  
+  late final badgeLevel = ComputedProperty<String>(
+    () {
+      if (isPremium.value) return 'Premium';
+      if (membershipYears.value >= 5) return 'Veteran';
+      if (membershipYears.value >= 1) return 'Member';
+      return 'Newbie';
+    },
+    [isPremium, membershipYears],
+  );
+  
+  late final profileSummary = ComputedProperty<String>(
+    () => '$displayName (${age.value}) - ${badgeLevel.value} Member',
+    [displayName, age, badgeLevel],
+  );
+}
+```
+
+#### Key Benefits
+
+✅ **Zero Maintenance** - No manual updates, listeners are managed automatically  
+✅ **Performance** - Smart caching, only recomputes when dependencies actually change  
+✅ **Composable** - Computed properties can depend on other computed properties  
+✅ **Type-Safe** - Strongly-typed with compile-time safety  
+✅ **No Memory Leaks** - Auto-disposal handles all cleanup  
+✅ **Clean Code** - Declarative dependencies eliminate boilerplate  
+✅ **Testable** - Pure functions make unit testing trivial
+
+#### How It Works
+
+1. **Setup**: Registers listeners on all dependencies during construction
+2. **Cache**: Computes and caches the initial value
+3. **React**: When any dependency changes, invalidates cache and recomputes
+4. **Notify**: Notifies its own listeners only if the computed value actually changed
+5. **Cleanup**: Auto-disposes all listeners when parent ViewModel is disposed
+
+#### Performance Note
+
+ComputedProperty is highly optimized:
+- Only recomputes when dependencies **actually notify** (not just on access)
+- Benefits from ObservableProperty's built-in equality checking
+- Cached values mean no redundant calculations
+- Efficient for complex dependency chains
 
 ### Deep Equality for Collections
 

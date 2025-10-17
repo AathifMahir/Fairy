@@ -21,7 +21,7 @@ typedef CanExecute = bool Function();
 ///
 ///   MyViewModel() {
 ///     userName = ObservableProperty<String>('');
-///     
+///
 ///     saveCommand = RelayCommand(
 ///       _save,
 ///       canExecute: () => userName.value.isNotEmpty,
@@ -34,7 +34,7 @@ typedef CanExecute = bool Function();
 ///   void _save() {
 ///     // Save logic here
 ///   }
-///   
+///
 ///   @override
 ///   void dispose() {
 ///     _disposer?.call();
@@ -43,7 +43,6 @@ typedef CanExecute = bool Function();
 /// }
 /// ```
 class RelayCommand extends ObservableNode {
-
   final VoidCallback _action;
   final CanExecute? _canExecute;
 
@@ -58,18 +57,18 @@ class RelayCommand extends ObservableNode {
   })  : _action = execute,
         _canExecute = canExecute;
 
-    // ========================================================================
-  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
   // ========================================================================
-  
+  // HIDDEN ObservableNode API (marked @protected for internal framework use)
+  // ========================================================================
+
   @override
   @protected
   void addListener(VoidCallback listener) => super.addListener(listener);
-  
+
   @override
   @protected
   void removeListener(VoidCallback listener) => super.removeListener(listener);
-  
+
   @override
   @protected
   // ignore: unnecessary_overrides
@@ -96,7 +95,6 @@ class RelayCommand extends ObservableNode {
   /// a property that affects validation is updated).
   void notifyCanExecuteChanged() => notifyListeners();
 
-
   /// Listens for changes to [canExecute].
   ///
   /// Returns a disposal function that removes the listener when called.
@@ -106,11 +104,11 @@ class RelayCommand extends ObservableNode {
   /// Example:
   /// ```dart
   /// final command = RelayCommand(() { /* ... */ });
-  /// 
+  ///
   /// final dispose = command.canExecuteChanged(() {
   ///   print('Can Execute changed!');
   /// });
-  /// 
+  ///
   /// // Later, clean up:
   /// dispose();
   /// ```
@@ -118,7 +116,6 @@ class RelayCommand extends ObservableNode {
     addListener(listener);
     return () => removeListener(listener);
   }
-
 }
 
 /// An asynchronous command for long-running operations.
@@ -139,7 +136,7 @@ class RelayCommand extends ObservableNode {
 ///
 ///   DataViewModel() {
 ///     data = ObservableProperty<List<Item>?>([]);
-///     
+///
 ///     fetchDataCommand = AsyncRelayCommand(
 ///       _fetchData,
 ///     );
@@ -163,7 +160,6 @@ class RelayCommand extends ObservableNode {
 /// )
 /// ```
 class AsyncRelayCommand extends ObservableNode {
-
   final Future<void> Function() _action;
   final CanExecute? _canExecute;
   bool _isRunning = false;
@@ -172,7 +168,7 @@ class AsyncRelayCommand extends ObservableNode {
   ///
   /// [execute] is the asynchronous method to execute when the command runs.
   /// [canExecute] is an optional predicate that determines if the action can run.
-  /// 
+  ///
   /// While the command is executing, [isRunning] is `true` and [canExecute]
   /// automatically returns `false` to prevent concurrent execution.
   AsyncRelayCommand(
@@ -181,25 +177,25 @@ class AsyncRelayCommand extends ObservableNode {
   })  : _action = execute,
         _canExecute = canExecute;
 
-    // ========================================================================
-  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
   // ========================================================================
-  
+  // HIDDEN ObservableNode API (marked @protected for internal framework use)
+  // ========================================================================
+
   @override
   @protected
   void addListener(VoidCallback listener) => super.addListener(listener);
-  
+
   @override
   @protected
   void removeListener(VoidCallback listener) => super.removeListener(listener);
-  
+
   @override
   @protected
   // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
 
   /// Whether the command is currently executing.
-  /// 
+  ///
   /// Automatically set to `true` when execution starts and `false` when it completes.
   /// While running, [canExecute] returns `false` to prevent concurrent execution.
   bool get isRunning => _isRunning;
@@ -216,10 +212,10 @@ class AsyncRelayCommand extends ObservableNode {
   /// Sets [isRunning] to `true` during execution and `false` when complete.
   Future<void> execute() async {
     if (!canExecute) return;
-    
+
     _isRunning = true;
     notifyListeners();
-    
+
     try {
       await _action();
     } finally {
@@ -233,7 +229,7 @@ class AsyncRelayCommand extends ObservableNode {
   /// Call this method when the conditions for the [canExecute] predicate change.
   void notifyCanExecuteChanged() => notifyListeners();
 
-    /// Listens for changes to [canExecute].
+  /// Listens for changes to [canExecute].
   ///
   /// Returns a disposal function that removes the listener when called.
   /// This provides a cleaner alternative to manually managing [addListener]
@@ -242,11 +238,11 @@ class AsyncRelayCommand extends ObservableNode {
   /// Example:
   /// ```dart
   /// final command = AsyncRelayCommand(() { /* ... */ });
-  /// 
+  ///
   /// final dispose = command.canExecuteChanged(() {
   ///   print('Can Execute changed!');
   /// });
-  /// 
+  ///
   /// // Later, clean up:
   /// dispose();
   /// ```
@@ -254,7 +250,6 @@ class AsyncRelayCommand extends ObservableNode {
     addListener(listener);
     return () => removeListener(listener);
   }
-
 }
 
 /// A command that accepts a typed parameter when executing.
@@ -271,7 +266,7 @@ class AsyncRelayCommand extends ObservableNode {
 ///
 ///   TodoViewModel() {
 ///     todos = ObservableProperty<List<Todo>>([]);
-///     
+///
 ///     deleteTodoCommand = RelayCommandWithParam<String>(
 ///       _deleteTodo,
 ///       canExecute: (id) => todos.value.any((t) => t.id == id),
@@ -284,7 +279,6 @@ class AsyncRelayCommand extends ObservableNode {
 /// }
 /// ```
 class RelayCommandWithParam<TParam> extends ObservableNode {
-
   final void Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
 
@@ -298,19 +292,18 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
   })  : _action = execute,
         _canExecute = canExecute;
 
-
-    // ========================================================================
+  // ========================================================================
   // HIDDEN ObservableNode API (marked @protected for internal framework use)
   // ========================================================================
-  
+
   @override
   @protected
   void addListener(VoidCallback listener) => super.addListener(listener);
-  
+
   @override
   @protected
   void removeListener(VoidCallback listener) => super.removeListener(listener);
-  
+
   @override
   @protected
   // ignore: unnecessary_overrides
@@ -320,7 +313,7 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
   ///
   /// Returns `true` if no [canExecute] predicate was provided, or if the
   /// predicate returns `true` for the given parameter.
-  /// 
+  ///
   /// Note: This is a method (not a getter), so automatic tracking is not applied.
   /// Subscribe to canExecuteChanged() for manual tracking if needed.
   bool canExecute(TParam param) => _canExecute?.call(param) ?? true;
@@ -339,7 +332,7 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
   /// Call this method when the conditions affecting [canExecute] change.
   void notifyCanExecuteChanged() => notifyListeners();
 
-    /// Listens for changes to [canExecute].
+  /// Listens for changes to [canExecute].
   ///
   /// Returns a disposal function that removes the listener when called.
   /// This provides a cleaner alternative to manually managing [addListener]
@@ -348,11 +341,11 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
   /// Example:
   /// ```dart
   /// final command = RelayCommandWithParam<String>(() { /* ... */ });
-  /// 
+  ///
   /// final dispose = command.canExecuteChanged(() {
   ///   print('Can Execute changed!');
   /// });
-  /// 
+  ///
   /// // Later, clean up:
   /// dispose();
   /// ```
@@ -360,7 +353,6 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
     addListener(listener);
     return () => removeListener(listener);
   }
-
 }
 
 /// An asynchronous command that accepts a typed parameter when executing.
@@ -403,7 +395,6 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
 /// )
 /// ```
 class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
-
   final Future<void> Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
   bool _isRunning = false;
@@ -412,7 +403,7 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   ///
   /// [execute] is an async function that receives a parameter of type [TParam].
   /// [canExecute] optionally validates whether the action can run with the given parameter.
-  /// 
+  ///
   /// While the command is executing, [isRunning] is `true` and [canExecute]
   /// automatically returns `false` to prevent concurrent execution.
   AsyncRelayCommandWithParam(
@@ -421,26 +412,25 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   })  : _action = execute,
         _canExecute = canExecute;
 
+  // ========================================================================
+  // HIDDEN ObservableNode API (marked @protected for internal framework use)
+  // ========================================================================
 
-  // ========================================================================
-  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
-  // ========================================================================
-  
   @override
   @protected
   void addListener(VoidCallback listener) => super.addListener(listener);
-  
+
   @override
   @protected
   void removeListener(VoidCallback listener) => super.removeListener(listener);
-  
+
   @override
   @protected
   // ignore: unnecessary_overrides
   void notifyListeners() => super.notifyListeners();
 
   /// Whether the command is currently executing.
-  /// 
+  ///
   /// Automatically set to `true` when execution starts and `false` when it completes.
   /// While running, [canExecute] returns `false` to prevent concurrent execution.
   bool get isRunning => _isRunning;
@@ -449,20 +439,21 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   ///
   /// Returns `false` if the command is currently running, or if the [canExecute]
   /// predicate returns `false` for the parameter.
-  /// 
+  ///
   /// Note: This method takes a parameter, so automatic tracking is not applied.
   /// For automatic dependency tracking, observe properties that affect canExecute.
-  bool canExecute(TParam param) => !_isRunning && (_canExecute?.call(param) ?? true);
+  bool canExecute(TParam param) =>
+      !_isRunning && (_canExecute?.call(param) ?? true);
 
   /// Executes the command's async action with the given [param] if [canExecute] is `true`.
-  /// 
+  ///
   /// Sets [isRunning] to `true` during execution and `false` when complete.
   Future<void> execute(TParam param) async {
     if (!canExecute(param)) return;
-    
+
     _isRunning = true;
     notifyListeners();
-    
+
     try {
       await _action(param);
     } finally {
@@ -474,8 +465,7 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   /// Notifies listeners that [canExecute] may have changed.
   void notifyCanExecuteChanged() => notifyListeners();
 
-
-    /// Listens for changes to [canExecute].
+  /// Listens for changes to [canExecute].
   ///
   /// Returns a disposal function that removes the listener when called.
   /// This provides a cleaner alternative to manually managing [addListener]
@@ -484,11 +474,11 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   /// Example:
   /// ```dart
   /// final command = AsyncRelayCommandWithParam<String>(() { /* ... */ });
-  /// 
+  ///
   /// final dispose = command.canExecuteChanged(() {
   ///   print('Can Execute changed!');
   /// });
-  /// 
+  ///
   /// // Later, clean up:
   /// dispose();
   /// ```
@@ -496,5 +486,4 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
     addListener(listener);
     return () => removeListener(listener);
   }
-
 }
