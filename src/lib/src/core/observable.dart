@@ -1,14 +1,15 @@
 import 'package:fairy/src/core/observable_node.dart';
 import 'package:fairy/src/internal/dependency_tracker.dart';
 import 'package:fairy/src/utils/equals.dart';
+import 'package:fairy/src/utils/lifecycle.dart';
 import 'package:flutter/foundation.dart';
 
 /// Base class for ViewModels that provides change notification capabilities.
 ///
-/// Extends [ChangeNotifier] to enable reactive updates when model state changes.
+/// Extends [ObservableNode] to enable reactive updates when model state changes.
 /// Use this as a base for all ViewModels in your application.
 ///
-/// The raw [ChangeNotifier] API is hidden to provide a cleaner MVVM-style interface:
+/// The raw [ObservableNode] API is hidden to provide a cleaner MVVM-style interface:
 /// - Use [onPropertyChanged] instead of [notifyListeners]
 /// - Use [propertyChanged] instead of [addListener]
 ///
@@ -24,10 +25,10 @@ import 'package:flutter/foundation.dart';
 ///   }
 /// }
 /// ```
-abstract class ObservableObject extends ObservableNode {
+abstract class ObservableObject extends ObservableNode with Disposable {
 
   // ========================================================================
-  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
+  // HIDDEN ObservableNode API (marked @protected for internal framework use)
   // ========================================================================
   
   @override
@@ -61,7 +62,10 @@ abstract class ObservableObject extends ObservableNode {
   /// }
   /// ```
   @protected
-  void onPropertyChanged() => notifyListeners();
+  void onPropertyChanged(){
+    throwIfDisposed();
+    notifyListeners();
+  }
 
   /// Listens to property changes on this ViewModel.
   ///
@@ -79,8 +83,9 @@ abstract class ObservableObject extends ObservableNode {
   /// dispose();
   /// ```
   VoidCallback propertyChanged(VoidCallback listener) {
-    super.addListener(listener);
-    return () => super.removeListener(listener);
+    throwIfDisposed();
+    addListener(listener);
+    return () => removeListener(listener);
   }
 
   /// Helper method to set a property with automatic change detection.
@@ -100,6 +105,7 @@ abstract class ObservableObject extends ObservableNode {
   /// ```
   @protected
   bool setProperty<T>(T oldValue, T newValue, void Function() assign) {
+    throwIfDisposed();
     if (oldValue != newValue) {
       assign();
       onPropertyChanged();
@@ -123,6 +129,7 @@ abstract class ObservableObject extends ObservableNode {
   /// ```
   @override
   void dispose() {
+    clearListeners();
     super.dispose();
   }
 }
@@ -219,7 +226,7 @@ class ObservableProperty<T> extends ObservableNode {
   }) : _deepEquals = deepEquality ? Equals.deepEquals<T>() : null;
 
   // ========================================================================
-  // HIDDEN ChangeNotifier API (internal use only)
+  // HIDDEN ObservableNode API (internal use only)
   // ========================================================================
   
   @override
@@ -345,7 +352,7 @@ class ComputedProperty<T> extends ObservableNode {
 
 
     // ========================================================================
-  // HIDDEN ChangeNotifier API (internal use only)
+  // HIDDEN ObservableNode API (internal use only)
   // ========================================================================
   
   @override
