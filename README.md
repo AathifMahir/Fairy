@@ -29,7 +29,7 @@ A lightweight MVVM framework for Flutter that provides strongly-typed, reactive 
 
 ```yaml
 dependencies:
-  fairy: ^1.1.0
+  fairy: ^1.1.1
 ```
 
 ## 🚀 Quick Start
@@ -63,8 +63,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: FairyScope(
-        viewModel: (_) => ProfileViewModel(),
-        child: ProfilePage(),
+        viewModel: (_) => CounterViewModel(),
+        child: CounterPage(),
       ),
     );
   }
