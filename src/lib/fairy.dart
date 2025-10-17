@@ -79,4 +79,4 @@ export 'src/ui/command_widget.dart' show Command, CommandWithParam;
 export 'src/ui/fairy_bridge.dart' show FairyBridge;
 // Utilities
 export 'src/utils/equals.dart' show Equals;
-export 'src/utils/lifecycle.dart' show Disposable, DisposeBag;
+export 'src/utils/lifecycle.dart' show Disposable, DisposableBag;
