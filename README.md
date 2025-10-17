@@ -125,12 +125,19 @@ That's it! No code generation, no complex setup. Just clean, reactive MVVM.
 
 ```dart
 class UserViewModel extends ObservableObject {
-  final name = ObservableProperty<String>('');
-  final age = ObservableProperty<int>(0);
+  final firstName = ObservableProperty<String>('John');
+  final lastName = ObservableProperty<String>('Doe');
+  final age = ObservableProperty<int>(30);
   
-  late final fullInfo = ComputedProperty<String>(
-    () => '${name.value}, age ${age.value}',
-    [name, age],
+  // ComputedProperty automatically updates when dependencies change!
+  late final fullName = ComputedProperty<String>(
+    () => '${firstName.value} ${lastName.value}',
+    [firstName, lastName],
+  );
+  
+  late final displayInfo = ComputedProperty<String>(
+    () => '$fullName, age ${age.value}',
+    [fullName, age], // Can depend on other computed properties!
   );
 }
 ```
