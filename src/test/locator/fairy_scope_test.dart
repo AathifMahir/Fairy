@@ -1110,6 +1110,74 @@ void main() {
           ),
         );
       });
+
+      testWidgets('should access VM from first scope in fourth nested scope',
+          (tester) async {
+        final firstScopeVm = TestViewModel();
+        final secondScopeVm = AnotherViewModel();
+        final thirdScopeVm = ThirdViewModel();
+
+        await tester.pumpWidget(
+          FairyScope(
+            // Scope 1 - Root
+            viewModel: (locator) => firstScopeVm,
+            child: FairyScope(
+              // Scope 2 - Level 1
+              viewModel: (locator) {
+                // Verify can access parent scope
+                final parent = locator.get<TestViewModel>();
+                expect(identical(parent, firstScopeVm), isTrue);
+                return secondScopeVm;
+              },
+              child: FairyScope(
+                // Scope 3 - Level 2
+                viewModel: (locator) {
+                  // Verify can access grandparent scope
+                  final grandparent = locator.get<TestViewModel>();
+                  expect(identical(grandparent, firstScopeVm), isTrue);
+                  // Verify can access parent scope
+                  final parent = locator.get<AnotherViewModel>();
+                  expect(identical(parent, secondScopeVm), isTrue);
+                  return thirdScopeVm;
+                },
+                child: FairyScope(
+                  // Scope 4 - Level 3 (deepest)
+                  viewModel: (locator) {
+                    // Access VM from first scope (3 levels up)
+                    final fromFirstScope = locator.get<TestViewModel>();
+                    expect(identical(fromFirstScope, firstScopeVm), isTrue);
+
+                    // Access VM from second scope (2 levels up)
+                    final fromSecondScope = locator.get<AnotherViewModel>();
+                    expect(identical(fromSecondScope, secondScopeVm), isTrue);
+
+                    // Access VM from third scope (1 level up)
+                    final fromThirdScope = locator.get<ThirdViewModel>();
+                    expect(identical(fromThirdScope, thirdScopeVm), isTrue);
+
+                    // Create VM that depends on ancestor from first scope
+                    return ComplexViewModel(fromFirstScope,
+                        ViewModelWithDependencies(TestService(), AnotherService()));
+                  },
+                  child: Builder(
+                    builder: (context) {
+                      final data = FairyScope.of(context)!;
+                      final complex = data.get<ComplexViewModel>();
+
+                      // Verify the complex VM has reference to first scope VM
+                      expect(identical(complex.vm1, firstScopeVm), isTrue);
+                      expect(complex.vm1, isA<TestViewModel>());
+                      expect(complex.vm2, isA<ViewModelWithDependencies>());
+
+                      return const SizedBox();
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      });
     });
   });
 }
