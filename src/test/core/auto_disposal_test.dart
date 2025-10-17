@@ -247,6 +247,7 @@ class _TestViewModelWithComputed extends ObservableObject {
       () => source.value.toUpperCase(),
       dependencies: <ObservableNode>[source],
       onDisposed: onComputedDisposed,
+      parent: this,
     );
   }
 }
@@ -346,7 +347,8 @@ class _TrackableComputedProperty extends ComputedProperty<String> {
     String Function() compute, {
     required List<ObservableNode> dependencies,
     required this.onDisposed,
-  }) : super(compute, dependencies);
+    required ObservableObject parent,
+  }) : super(compute, dependencies, parent);
 
   @override
   void dispose() {
