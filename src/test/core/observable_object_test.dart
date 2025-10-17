@@ -283,25 +283,26 @@ void main() {
         dispose();
         viewModel.dispose();
 
-        // With ObservableNode, dispose just clears listeners - no exception
-        // Notifying after disposal is safe (but listeners are cleared)
-        viewModel.testNotify();
-        expect(notificationCount, equals(1)); // Still 1, not incremented
+        // With disposal checks, notifying after disposal throws
+        expect(
+          () => viewModel.testNotify(),
+          throwsA(isA<StateError>()),
+        );
+        expect(notificationCount, equals(1)); // Still 1, didn't get notified
       });
 
       test('should allow multiple disposals safely', () {
         viewModel.dispose();
-        // ObservableNode allows multiple disposals (just clears listeners)
+        // Multiple disposals are safe (idempotent)
         expect(() => viewModel.dispose(), returnsNormally);
       });
 
-      test('should allow adding listeners after disposal', () {
+      test('should throw when adding listeners after disposal', () {
         viewModel.dispose();
-        // ObservableNode allows adding listeners after disposal
-        // (GC handles cleanup, disposal is just convenience)
+        // ObservableObject throws when operations are attempted after disposal
         expect(
           () => viewModel.propertyChanged(() {}),
-          returnsNormally,
+          throwsA(isA<StateError>()),
         );
       });
     });
