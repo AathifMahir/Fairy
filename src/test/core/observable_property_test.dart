@@ -36,7 +36,7 @@ void main() {
       test('should notify listeners when value changes', () {
         final prop = ObservableProperty<int>(0);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() {
           notificationCount++;
         });
@@ -53,7 +53,7 @@ void main() {
       test('should NOT notify listeners when value is the same', () {
         final prop = ObservableProperty<int>(5);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() {
           notificationCount++;
         });
@@ -89,7 +89,7 @@ void main() {
       test('should work with null values', () {
         final prop = ObservableProperty<String?>('initial');
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() => notificationCount++);
 
         // non-null to null
@@ -113,7 +113,7 @@ void main() {
     group('update() method', () {
       test('should update value using updater function', () {
         final prop = ObservableProperty<int>(0);
-        
+
         prop.update((current) => current + 1);
         expect(prop.value, equals(1));
 
@@ -126,7 +126,7 @@ void main() {
       test('should notify listeners when value changes via update', () {
         final prop = ObservableProperty<int>(10);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() {
           notificationCount++;
         });
@@ -141,7 +141,7 @@ void main() {
       test('should NOT notify if updater returns same value', () {
         final prop = ObservableProperty<int>(10);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() {
           notificationCount++;
         });
@@ -155,7 +155,7 @@ void main() {
 
       test('should work with complex types', () {
         final prop = ObservableProperty<String>('hello');
-        
+
         prop.update((current) => '$current world');
         expect(prop.value, equals('hello world'));
 
@@ -168,7 +168,7 @@ void main() {
       test('should provide current value to updater', () {
         final prop = ObservableProperty<int>(5);
         var providedValue = 0;
-        
+
         prop.update((current) {
           providedValue = current;
           return current + 1;
@@ -183,7 +183,7 @@ void main() {
       test('should work with nullable types', () {
         final prop = ObservableProperty<int?>(null);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() => notificationCount++);
 
         // null to non-null
@@ -204,7 +204,7 @@ void main() {
       test('should support multiple listeners', () {
         final prop = ObservableProperty<int>(0);
         final values = <int>[];
-        
+
         prop.propertyChanged(() => values.add(prop.value));
         prop.propertyChanged(() => values.add(prop.value * 2));
         prop.propertyChanged(() => values.add(prop.value * 3));
@@ -219,7 +219,7 @@ void main() {
       test('should not notify removed listeners', () {
         final prop = ObservableProperty<String>('initial');
         var notificationCount = 0;
-        
+
         void listener() {
           notificationCount++;
         }
@@ -240,7 +240,7 @@ void main() {
         var listener1Called = false;
         var listener2Called = false;
         late void Function() disposeListener1;
-        
+
         void listener1() {
           listener1Called = true;
         }
@@ -284,7 +284,7 @@ void main() {
 
       test('should work with custom types', () {
         final prop = ObservableProperty<User>(User('Alice', 30));
-        
+
         expect(prop.value.name, equals('Alice'));
         expect(prop.value.age, equals(30));
 
@@ -317,7 +317,7 @@ void main() {
       test('should use default equality for primitives', () {
         final prop = ObservableProperty<int>(5);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() => notificationCount++);
 
         prop.value = 5;
@@ -329,13 +329,15 @@ void main() {
         prop.dispose();
       });
 
-      test('should use reference equality for objects without custom equals', () {
+      test('should use reference equality for objects without custom equals',
+          () {
         final user1 = UserWithoutEquals('Alice', 30);
-        final user2 = UserWithoutEquals('Alice', 30); // Same values, different object
-        
+        final user2 =
+            UserWithoutEquals('Alice', 30); // Same values, different object
+
         final prop = ObservableProperty<UserWithoutEquals>(user1);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() => notificationCount++);
 
         // Same reference
@@ -344,7 +346,8 @@ void main() {
 
         // Different reference (even with same values)
         prop.value = user2;
-        expect(notificationCount, equals(1)); // Notifies because reference differs
+        expect(
+            notificationCount, equals(1)); // Notifies because reference differs
 
         prop.dispose();
       });
@@ -352,10 +355,10 @@ void main() {
       test('should use custom equality for objects with equals override', () {
         final user1 = User('Alice', 30);
         final user2 = User('Alice', 30); // Same values, different object
-        
+
         final prop = ObservableProperty<User>(user1);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() => notificationCount++);
 
         // Different object but equal values
@@ -374,7 +377,7 @@ void main() {
       test('should not notify after disposal', () {
         final prop = ObservableProperty<int>(0);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() => notificationCount++);
 
         prop.value = 5;
@@ -413,7 +416,7 @@ void main() {
         final prop = ObservableProperty<int>(0);
         var notificationCount = 0;
         final capturedValues = <int>[];
-        
+
         prop.propertyChanged(() {
           notificationCount++;
           capturedValues.add(prop.value);
@@ -433,7 +436,7 @@ void main() {
       test('should handle alternating update methods', () {
         final prop = ObservableProperty<int>(0);
         var notificationCount = 0;
-        
+
         prop.propertyChanged(() => notificationCount++);
 
         prop.value = 1;

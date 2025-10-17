@@ -8,7 +8,7 @@ abstract class ObservableNode {
   bool get hasListeners => _listeners.isNotEmpty;
 
   /// Register a listener
-  /// 
+  ///
   /// Unlike some implementations, this allows the same listener to be
   /// registered multiple times, matching Flutter's ChangeNotifier behavior.
   /// Each registration will result in a separate call to the listener when
@@ -18,7 +18,7 @@ abstract class ObservableNode {
   }
 
   /// Unregister a listener
-  /// 
+  ///
   /// If the same listener was registered multiple times, this removes only
   /// the first occurrence, matching Flutter's ChangeNotifier behavior.
   void removeListener(VoidListener listener) {

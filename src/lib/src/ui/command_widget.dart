@@ -24,18 +24,18 @@ import '../locator/fairy_resolver.dart';
 ///
 ///   MyViewModel() {
 ///     userName = ObservableProperty<String>('', parent: this);
-///     
+///
 ///     saveCommand = RelayCommand(
 ///       execute: _save,
 ///       canExecute: () => userName.value.isNotEmpty,
 ///       parent: this,
 ///     );
-///     
+///
 ///     _disposer = userName.propertyChanged(() => saveCommand.notifyCanExecuteChanged());
 ///   }
 ///
 ///   void _save() { /* ... */ }
-///   
+///
 ///   @override
 ///   void dispose() {
 ///     _disposer?.call();
@@ -84,9 +84,10 @@ import '../locator/fairy_resolver.dart';
 /// )
 /// ```
 class Command<TViewModel extends ObservableObject> extends StatefulWidget {
-
   const Command({
-    required this.command, required this.builder, super.key,
+    required this.command,
+    required this.builder,
+    super.key,
   });
 
   /// Creates a command binding for parameterized commands.
@@ -112,11 +113,14 @@ class Command<TViewModel extends ObservableObject> extends StatefulWidget {
   ///   },
   /// )
   /// ```
-  static CommandWithParam<TViewModel, TParam> param<TViewModel extends ObservableObject, TParam>({
+  static CommandWithParam<TViewModel, TParam>
+      param<TViewModel extends ObservableObject, TParam>({
     Key? key,
     required dynamic Function(TViewModel vm) command,
     required TParam Function() parameter,
-    required Widget Function(BuildContext context, VoidCallback execute, bool canExecute, bool isRunning) builder,
+    required Widget Function(BuildContext context, VoidCallback execute,
+            bool canExecute, bool isRunning)
+        builder,
   }) {
     return CommandWithParam<TViewModel, TParam>(
       key: key,
@@ -168,7 +172,7 @@ class _CommandState<TViewModel extends ObservableObject>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     if (!_initialized) {
       // Resolve ViewModel
       _viewModel = Fairy.of<TViewModel>(context);
@@ -179,7 +183,7 @@ class _CommandState<TViewModel extends ObservableObject>
       // Subscribe to command changes (canExecute changes)
       _listener = () => setState(() {});
       _commandInstance.addListener(_listener);
-      
+
       _initialized = true;
     }
   }
@@ -274,24 +278,24 @@ class _CommandState<TViewModel extends ObservableObject>
 /// ```
 class CommandWithParam<TViewModel extends ObservableObject, TParam>
     extends StatefulWidget {
-
   const CommandWithParam({
     super.key,
     required this.command,
     required this.parameter,
     required this.builder,
   });
+
   /// Selector function that extracts the parameterized command.
   final dynamic Function(TViewModel vm) command;
 
   /// Function that returns the parameter to pass to the command.
-  /// 
+  ///
   /// This is evaluated when checking [canExecute] and when executing,
   /// allowing for reactive parameter values.
   final TParam Function() parameter;
 
   /// Builder function that constructs the UI.
-  /// 
+  ///
   /// Parameters:
   /// - [context]: BuildContext
   /// - [execute]: Callback to execute the command with the parameter
@@ -325,7 +329,7 @@ class _CommandWithParamState<TViewModel extends ObservableObject, TParam>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     if (!_initialized) {
       _viewModel = Fairy.of<TViewModel>(context);
       _commandInstance = widget.command(_viewModel);

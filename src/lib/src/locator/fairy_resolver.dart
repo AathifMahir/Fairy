@@ -104,5 +104,3 @@ class Fairy {
     return null;
   }
 }
-
-

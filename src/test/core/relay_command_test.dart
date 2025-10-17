@@ -8,37 +8,37 @@ void main() {
       test('should create command with action only', () {
         var executed = false;
         final command = RelayCommand(() => executed = true);
-        
+
         expect(command.canExecute, isTrue);
-        
+
         command.execute();
         expect(executed, isTrue);
-        
+
         command.dispose();
       });
 
       test('should create command with action and canExecute', () {
         var executed = false;
         var canRun = true;
-        
+
         final command = RelayCommand(
           () => executed = true,
           canExecute: () => canRun,
         );
-        
+
         expect(command.canExecute, isTrue);
-        
+
         command.execute();
         expect(executed, isTrue);
-        
+
         command.dispose();
       });
 
       test('should default canExecute to true when not provided', () {
         final command = RelayCommand(() {});
-        
+
         expect(command.canExecute, isTrue);
-        
+
         command.dispose();
       });
     });
@@ -47,13 +47,13 @@ void main() {
       test('should execute action when canExecute is true', () {
         var executeCount = 0;
         final command = RelayCommand(() => executeCount++);
-        
+
         command.execute();
         expect(executeCount, equals(1));
-        
+
         command.execute();
         expect(executeCount, equals(2));
-        
+
         command.dispose();
       });
 
@@ -63,44 +63,44 @@ void main() {
           () => executeCount++,
           canExecute: () => false,
         );
-        
+
         command.execute();
         expect(executeCount, equals(0));
-        
+
         command.dispose();
       });
 
       test('should respect canExecute predicate', () {
         var executeCount = 0;
         var canRun = true;
-        
+
         final command = RelayCommand(
           () => executeCount++,
           canExecute: () => canRun,
         );
-        
+
         // Can run
         command.execute();
         expect(executeCount, equals(1));
-        
+
         // Cannot run
         canRun = false;
         command.execute();
         expect(executeCount, equals(1)); // Still 1
-        
+
         // Can run again
         canRun = true;
         command.execute();
         expect(executeCount, equals(2));
-        
+
         command.dispose();
       });
 
       test('should handle exceptions in action', () {
         final command = RelayCommand(() => throw Exception('Test error'));
-        
+
         expect(() => command.execute(), throwsException);
-        
+
         command.dispose();
       });
     });
@@ -108,9 +108,9 @@ void main() {
     group('canExecute', () {
       test('should return true when no predicate provided', () {
         final command = RelayCommand(() {});
-        
+
         expect(command.canExecute, isTrue);
-        
+
         command.dispose();
       });
 
@@ -120,15 +120,15 @@ void main() {
           () {},
           canExecute: () => canRun,
         );
-        
+
         expect(command.canExecute, isTrue);
-        
+
         canRun = false;
         expect(command.canExecute, isFalse);
-        
+
         canRun = true;
         expect(command.canExecute, isTrue);
-        
+
         command.dispose();
       });
 
@@ -141,13 +141,13 @@ void main() {
             return true;
           },
         );
-        
+
         command.canExecute;
         expect(callCount, equals(1));
-        
+
         command.canExecute;
         expect(callCount, equals(2));
-        
+
         command.dispose();
       });
     });
@@ -156,15 +156,15 @@ void main() {
       test('should notify listeners when refresh is called', () {
         var notificationCount = 0;
         final command = RelayCommand(() {});
-        
+
         command.canExecuteChanged(() => notificationCount++);
-        
+
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
-        
+
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(2));
-        
+
         command.dispose();
       });
 
@@ -172,40 +172,40 @@ void main() {
         var listener1Count = 0;
         var listener2Count = 0;
         final command = RelayCommand(() {});
-        
+
         command.canExecuteChanged(() => listener1Count++);
         command.canExecuteChanged(() => listener2Count++);
-        
+
         command.notifyCanExecuteChanged();
-        
+
         expect(listener1Count, equals(1));
         expect(listener2Count, equals(1));
-        
+
         command.dispose();
       });
 
       test('should be used to update canExecute state in UI', () {
         var isValid = false;
         var canExecuteChecks = <bool>[];
-        
+
         final command = RelayCommand(
           () {},
           canExecute: () => isValid,
         );
-        
+
         command.canExecuteChanged(() {
           canExecuteChecks.add(command.canExecute);
         });
-        
+
         // Initially false
         expect(command.canExecute, isFalse);
-        
+
         // Change condition and refresh
         isValid = true;
         command.notifyCanExecuteChanged(); // UI should check canExecute now
-        
+
         expect(canExecuteChecks.last, isTrue);
-        
+
         command.dispose();
       });
     });
@@ -214,34 +214,34 @@ void main() {
       test('should support multiple listeners', () {
         final command = RelayCommand(() {});
         final callOrder = <int>[];
-        
+
         command.canExecuteChanged(() => callOrder.add(1));
         command.canExecuteChanged(() => callOrder.add(2));
         command.canExecuteChanged(() => callOrder.add(3));
-        
+
         command.notifyCanExecuteChanged();
-        
+
         expect(callOrder, equals([1, 2, 3]));
-        
+
         command.dispose();
       });
 
       test('should not notify removed listeners', () {
         var notificationCount = 0;
         final command = RelayCommand(() {});
-        
+
         void listener() {
           notificationCount++;
         }
-        
+
         final disposer = command.canExecuteChanged(listener);
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
-        
+
         disposer();
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1)); // Still 1
-        
+
         command.dispose();
       });
     });
@@ -250,13 +250,13 @@ void main() {
       test('should not notify after disposal', () {
         final command = RelayCommand(() {});
         var notificationCount = 0;
-        
+
         command.canExecuteChanged(() => notificationCount++);
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
-        
+
         command.dispose();
-        
+
         // ObservableNode allows notifying after disposal (listeners cleared)
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1)); // Still 1, not incremented
@@ -265,7 +265,7 @@ void main() {
       test('should allow adding listeners after disposal', () {
         final command = RelayCommand(() {});
         command.dispose();
-        
+
         // ObservableNode allows adding listeners after disposal
         expect(() => command.canExecuteChanged(() {}), returnsNormally);
       });
@@ -274,38 +274,38 @@ void main() {
     group('integration scenarios', () {
       test('should work in ViewModel scenario with validation', () {
         final viewModel = TestViewModel();
-        
+
         viewModel.saveCommand.canExecuteChanged(() {});
-        
+
         // Initially cannot save (empty username)
         expect(viewModel.saveCommand.canExecute, isFalse);
         viewModel.saveCommand.execute();
         expect(viewModel.saveCount, equals(0));
-        
+
         // Set username and refresh command
         viewModel.userName.value = 'Alice';
         viewModel.saveCommand.notifyCanExecuteChanged();
-        
+
         // Now can save
         expect(viewModel.saveCommand.canExecute, isTrue);
         viewModel.saveCommand.execute();
         expect(viewModel.saveCount, equals(1));
-        
+
         viewModel.dispose();
       });
 
       test('should handle multiple rapid refreshes', () {
         var notificationCount = 0;
         final command = RelayCommand(() {});
-        
+
         command.canExecuteChanged(() => notificationCount++);
-        
+
         for (var i = 0; i < 100; i++) {
           command.notifyCanExecuteChanged();
         }
-        
+
         expect(notificationCount, equals(100));
-        
+
         command.dispose();
       });
     });
@@ -318,36 +318,36 @@ void main() {
         final command = AsyncRelayCommand(() async {
           executed = true;
         });
-        
+
         expect(command.canExecute, isTrue);
-        
+
         await command.execute();
         expect(executed, isTrue);
-        
+
         command.dispose();
       });
 
       test('should create async command with action and canExecute', () async {
         var executed = false;
         var canRun = true;
-        
+
         final command = AsyncRelayCommand(
           () async => executed = true,
           canExecute: () => canRun,
         );
-        
+
         expect(command.canExecute, isTrue);
         await command.execute();
         expect(executed, isTrue);
-        
+
         command.dispose();
       });
 
       test('should default canExecute to true when not provided', () {
         final command = AsyncRelayCommand(() async {});
-        
+
         expect(command.canExecute, isTrue);
-        
+
         command.dispose();
       });
     });
@@ -359,13 +359,13 @@ void main() {
           await Future<void>.delayed(const Duration(milliseconds: 10));
           executeCount++;
         });
-        
+
         await command.execute();
         expect(executeCount, equals(1));
-        
+
         await command.execute();
         expect(executeCount, equals(2));
-        
+
         command.dispose();
       });
 
@@ -375,10 +375,10 @@ void main() {
           () async => executeCount++,
           canExecute: () => false,
         );
-        
+
         await command.execute();
         expect(executeCount, equals(0));
-        
+
         command.dispose();
       });
 
@@ -386,41 +386,45 @@ void main() {
         final command = AsyncRelayCommand(() async {
           throw Exception('Test error');
         });
-        
+
         expect(command.canExecute, isTrue);
-        
+
         try {
           await command.execute();
         } catch (_) {
           // Expected
         }
-        
+
         // canExecute should still work after exception
         expect(command.canExecute, isTrue);
-        
+
         command.dispose();
       });
     });
 
     group('concurrent execution', () {
-      test('should prevent concurrent executions (automatic re-entry prevention)', () async {
+      test(
+          'should prevent concurrent executions (automatic re-entry prevention)',
+          () async {
         var executionCount = 0;
         final command = AsyncRelayCommand(() async {
           executionCount++;
           await Future<void>.delayed(const Duration(milliseconds: 50));
         });
-        
+
         // Try to start multiple concurrent executions
         final future1 = command.execute();
-        final future2 = command.execute(); // Should be ignored (isRunning = true)
-        final future3 = command.execute(); // Should be ignored (isRunning = true)
-        
+        final future2 =
+            command.execute(); // Should be ignored (isRunning = true)
+        final future3 =
+            command.execute(); // Should be ignored (isRunning = true)
+
         await Future.wait([future1, future2, future3]);
-        
+
         // Only the first execution should run due to automatic re-entry prevention
         expect(executionCount, equals(1));
         expect(command.isRunning, isFalse); // Should be false after completion
-        
+
         command.dispose();
       });
 
@@ -430,16 +434,16 @@ void main() {
           executionCount++;
           await Future<void>.delayed(const Duration(milliseconds: 10));
         });
-        
+
         await command.execute();
         expect(executionCount, equals(1));
-        
+
         await command.execute();
         expect(executionCount, equals(2));
-        
+
         await command.execute();
         expect(executionCount, equals(3));
-        
+
         command.dispose();
       });
     });
@@ -448,15 +452,15 @@ void main() {
       test('should notify listeners when refresh is called', () {
         var notificationCount = 0;
         final command = AsyncRelayCommand(() async {});
-        
+
         command.canExecuteChanged(() => notificationCount++);
-        
+
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
-        
+
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(2));
-        
+
         command.dispose();
       });
 
@@ -466,14 +470,14 @@ void main() {
           () async {},
           canExecute: () => isValid,
         );
-        
+
         expect(command.canExecute, isFalse);
-        
+
         isValid = true;
         command.notifyCanExecuteChanged();
-        
+
         expect(command.canExecute, isTrue);
-        
+
         command.dispose();
       });
     });
@@ -482,13 +486,13 @@ void main() {
       test('should not notify after disposal', () {
         final command = AsyncRelayCommand(() async {});
         var notificationCount = 0;
-        
+
         command.canExecuteChanged(() => notificationCount++);
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1));
-        
+
         command.dispose();
-        
+
         // ObservableNode allows notifying after disposal (listeners cleared)
         command.notifyCanExecuteChanged();
         expect(notificationCount, equals(1)); // Still 1, not incremented
@@ -498,13 +502,13 @@ void main() {
     group('integration scenarios', () {
       test('should work in ViewModel data fetching scenario', () async {
         final viewModel = AsyncTestViewModel();
-        
+
         expect(viewModel.data.value, isEmpty);
-        
+
         await viewModel.fetchCommand.execute();
-        
+
         expect(viewModel.data.value, equals(['item1', 'item2', 'item3']));
-        
+
         viewModel.dispose();
       });
 
@@ -514,20 +518,20 @@ void main() {
           executionCount++;
           await Future<void>.delayed(const Duration(milliseconds: 20));
         });
-        
+
         // Fire multiple executions rapidly
         final futures = <Future<void>>[];
         for (var i = 0; i < 10; i++) {
           futures.add(command.execute());
         }
-        
+
         await Future.wait(futures);
-        
+
         // Only the first execution should run due to automatic re-entry prevention
         // All subsequent calls are ignored while isRunning is true
         expect(executionCount, equals(1));
         expect(command.isRunning, isFalse);
-        
+
         command.dispose();
       });
     });

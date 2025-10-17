@@ -7,7 +7,8 @@ import 'package:flutter/widgets.dart';
 class FairyScopeBridge extends InheritedWidget {
   final FairyScopeData scopeData;
 
-  const FairyScopeBridge({super.key, 
+  const FairyScopeBridge({
+    super.key,
     required this.scopeData,
     required super.child,
   });

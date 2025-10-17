@@ -10,54 +10,50 @@ import 'pages/todo_list_page.dart';
 class CounterViewModel extends ObservableObject {
   // Reactive property for counter value (auto-disposed with parent)
   late final ObservableProperty<int> counter;
-  
+
   // Commands with canExecute logic (auto-disposed with parent)
   // Note: For parameterized commands, use RelayCommandWithParam<T>
   // and bind with Command.param<TViewModel, TParam> in UI
   late final RelayCommand incrementCommand;
   late final RelayCommand decrementCommand;
   late final RelayCommand resetCommand;
-  
+
   // Store disposer for cleanup
   VoidCallback? _counterDisposer;
-  
+
   CounterViewModel() {
     counter = ObservableProperty<int>(0);
-    
-    incrementCommand = RelayCommand(
-      _increment,
-    );
-    
+
+    incrementCommand = RelayCommand(_increment);
+
     // Decrement only enabled when counter > 0
     decrementCommand = RelayCommand(
       _decrement,
       canExecute: () => counter.value > 0,
     );
-    
-    resetCommand = RelayCommand(
-       _reset,
-    );
-    
+
+    resetCommand = RelayCommand(_reset);
+
     // When counter changes, refresh commands that depend on its value
     _counterDisposer = counter.propertyChanged(() {
       decrementCommand.notifyCanExecuteChanged();
     });
   }
-  
+
   void _increment() {
     counter.value++;
   }
-  
+
   void _decrement() {
     if (counter.value > 0) {
       counter.value--;
     }
   }
-  
+
   void _reset() {
     counter.value = 0;
   }
-  
+
   @override
   void dispose() {
     _counterDisposer?.call();
@@ -121,7 +117,9 @@ class ExamplesHomePage extends StatelessWidget {
             child: ListTile(
               leading: const Icon(Icons.checklist, size: 36),
               title: const Text('Todo List'),
-              subtitle: const Text('Complex data handling with lists and filtering'),
+              subtitle: const Text(
+                'Complex data handling with lists and filtering',
+              ),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.push(
@@ -192,7 +190,7 @@ class CounterPage extends StatelessWidget {
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 20),
-            
+
             // Bind widget: Two-way data binding with counter property
             // Updates automatically when counter changes
             Bind<CounterViewModel, int>(
@@ -204,9 +202,9 @@ class CounterPage extends StatelessWidget {
                 );
               },
             ),
-            
+
             const SizedBox(height: 40),
-            
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -221,9 +219,9 @@ class CounterPage extends StatelessWidget {
                     );
                   },
                 ),
-                
+
                 const SizedBox(width: 20),
-                
+
                 // Command widget: Increment button
                 Command<CounterViewModel>(
                   command: (vm) => vm.incrementCommand,
@@ -237,9 +235,9 @@ class CounterPage extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Command widget: Reset button
             Command<CounterViewModel>(
               command: (vm) => vm.resetCommand,
@@ -261,6 +259,3 @@ class CounterPage extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -49,9 +49,12 @@ void main() {
         final vm2 = FairyLocator.instance.get<_TestViewModel>();
         expect(vm2.isDisposed, isFalse);
         expect(identical(vm1, vm2), isFalse);
-      }, skip: 'Transient registrations create new instances each time, so disposal check not needed');
+      },
+          skip:
+              'Transient registrations create new instances each time, so disposal check not needed');
 
-      test('should return fresh instance from lazy singleton on first access', () {
+      test('should return fresh instance from lazy singleton on first access',
+          () {
         FairyLocator.instance.registerLazySingleton(() => _TestViewModel());
 
         // Get instance (creates and caches)
@@ -233,7 +236,8 @@ void main() {
         scopeData.registerDynamic(vm, owned: true);
 
         // Both should be accessible
-        expect(() => FairyLocator.instance.get<_TestViewModel>(), returnsNormally);
+        expect(
+            () => FairyLocator.instance.get<_TestViewModel>(), returnsNormally);
         expect(() => scopeData.get<_TestViewModel>(), returnsNormally);
 
         // Dispose service
@@ -263,7 +267,8 @@ void main() {
         final parent = _ParentViewModel();
 
         scopeData.registerDynamic(parent, owned: true);
-        scopeData.registerDynamic(parent.child, owned: false); // Child not owned by scope
+        scopeData.registerDynamic(parent.child,
+            owned: false); // Child not owned by scope
 
         expect(parent.isDisposed, isFalse);
         expect(parent.child.isDisposed, isFalse);
@@ -272,11 +277,14 @@ void main() {
         scopeData.dispose();
 
         expect(parent.isDisposed, isTrue); // Disposed by scope
-        expect(parent.child.isDisposed, isTrue); // Disposed by parent's dispose()
+        expect(
+            parent.child.isDisposed, isTrue); // Disposed by parent's dispose()
 
         // Both should throw now
-        expect(() => scopeData.get<_ParentViewModel>(), throwsA(isA<StateError>()));
-        expect(() => scopeData.get<_ChildViewModel>(), throwsA(isA<StateError>()));
+        expect(() => scopeData.get<_ParentViewModel>(),
+            throwsA(isA<StateError>()));
+        expect(
+            () => scopeData.get<_ChildViewModel>(), throwsA(isA<StateError>()));
       });
     });
   });

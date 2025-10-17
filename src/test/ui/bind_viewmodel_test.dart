@@ -10,7 +10,7 @@ void main() {
     group('basic functionality', () {
       testWidgets('should render initial value', (tester) async {
         final vm = TestViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -25,9 +25,10 @@ void main() {
         expect(find.text('Initial'), findsOneWidget);
       });
 
-      testWidgets('should rebuild when accessed property changes', (tester) async {
+      testWidgets('should rebuild when accessed property changes',
+          (tester) async {
         final vm = TestViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -48,10 +49,11 @@ void main() {
         expect(find.text('Initial'), findsNothing);
       });
 
-      testWidgets('should NOT rebuild when unaccessed property changes', (tester) async {
+      testWidgets('should NOT rebuild when unaccessed property changes',
+          (tester) async {
         final vm = TestViewModel();
         var buildCount = 0;
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -76,9 +78,10 @@ void main() {
         expect(buildCount, equals(1));
       });
 
-      testWidgets('should rebuild when ViewModel calls onPropertyChanged', (tester) async {
+      testWidgets('should rebuild when ViewModel calls onPropertyChanged',
+          (tester) async {
         final vm = TestViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -103,13 +106,14 @@ void main() {
     group('multiple properties', () {
       testWidgets('should track multiple properties', (tester) async {
         final vm = TestViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
               child: Bind.viewModel<TestViewModel>(
-                builder: (context, vm) => Text('${vm.name.value}-${vm.age.value}'),
+                builder: (context, vm) =>
+                    Text('${vm.name.value}-${vm.age.value}'),
               ),
             ),
           ),
@@ -126,10 +130,11 @@ void main() {
         expect(find.text('John-25'), findsOneWidget);
       });
 
-      testWidgets('should rebuild when any accessed property changes', (tester) async {
+      testWidgets('should rebuild when any accessed property changes',
+          (tester) async {
         final vm = TestViewModel();
         var buildCount = 0;
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -157,9 +162,10 @@ void main() {
     });
 
     group('conditional access', () {
-      testWidgets('should track conditionally accessed properties', (tester) async {
+      testWidgets('should track conditionally accessed properties',
+          (tester) async {
         final vm = TestViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -189,10 +195,11 @@ void main() {
         expect(find.text('Adult'), findsOneWidget);
       });
 
-      testWidgets('should update subscriptions when accessed properties change', (tester) async {
+      testWidgets('should update subscriptions when accessed properties change',
+          (tester) async {
         final vm = TestViewModel();
         var buildCount = 0;
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -236,13 +243,14 @@ void main() {
     group('command tracking', () {
       testWidgets('should track command canExecute', (tester) async {
         final vm = TestViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
               viewModel: (_) => vm,
               child: Bind.viewModel<TestViewModel>(
-                builder: (context, vm) => Text('${vm.incrementCommand.canExecute}'),
+                builder: (context, vm) =>
+                    Text('${vm.incrementCommand.canExecute}'),
               ),
             ),
           ),
@@ -256,14 +264,13 @@ void main() {
 
         expect(find.text('false'), findsOneWidget);
       });
-
     });
 
     group('batching', () {
       testWidgets('should batch rapid changes', (tester) async {
         final vm = TestViewModel();
         var buildCount = 0;
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -295,10 +302,11 @@ void main() {
         expect(find.text('5'), findsOneWidget);
       });
 
-      testWidgets('should batch changes from multiple properties', (tester) async {
+      testWidgets('should batch changes from multiple properties',
+          (tester) async {
         final vm = TestViewModel();
         var buildCount = 0;
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -330,9 +338,10 @@ void main() {
     });
 
     group('multiple widgets', () {
-      testWidgets('should allow multiple widgets to observe same property', (tester) async {
+      testWidgets('should allow multiple widgets to observe same property',
+          (tester) async {
         final vm = TestViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -361,11 +370,12 @@ void main() {
         expect(find.text('Widget2: Updated'), findsOneWidget);
       });
 
-      testWidgets('should track different properties per widget', (tester) async {
+      testWidgets('should track different properties per widget',
+          (tester) async {
         final vm = TestViewModel();
         var widget1Builds = 0;
         var widget2Builds = 0;
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -411,21 +421,21 @@ void main() {
       testWidgets('should handle exceptions during build', (tester) async {
         final vm = TestViewModel();
         var shouldThrow = false;
-        
+
         Widget buildApp() => MaterialApp(
-          home: FairyScope(
-            viewModel: (_) => vm,
-            child: Bind.viewModel<TestViewModel>(
-              builder: (context, vm) {
-                final name = vm.name.value;
-                if (shouldThrow) {
-                  throw Exception('Test exception');
-                }
-                return Text(name);
-              },
-            ),
-          ),
-        );
+              home: FairyScope(
+                viewModel: (_) => vm,
+                child: Bind.viewModel<TestViewModel>(
+                  builder: (context, vm) {
+                    final name = vm.name.value;
+                    if (shouldThrow) {
+                      throw Exception('Test exception');
+                    }
+                    return Text(name);
+                  },
+                ),
+              ),
+            );
 
         await tester.pumpWidget(buildApp());
         expect(find.text('Initial'), findsOneWidget);
@@ -433,7 +443,7 @@ void main() {
         // Trigger exception
         shouldThrow = true;
         vm.name.value = 'Trigger';
-        
+
         await tester.pumpAndSettle();
         expect(tester.takeException(), isException);
 
@@ -441,13 +451,14 @@ void main() {
         shouldThrow = false;
         vm.name.value = 'Recovered';
         await tester.pumpWidget(buildApp());
-        
+
         expect(find.text('Recovered'), findsOneWidget);
       });
 
-      testWidgets('should track properties accessed before exception', (tester) async {
+      testWidgets('should track properties accessed before exception',
+          (tester) async {
         final vm = TestViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -477,7 +488,7 @@ void main() {
     group('computed properties', () {
       testWidgets('should track computed properties', (tester) async {
         final vm = ComputedViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -501,7 +512,7 @@ void main() {
     group('disposal', () {
       testWidgets('should clean up subscriptions on dispose', (tester) async {
         final vm = TestViewModel();
-        
+
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
@@ -528,7 +539,7 @@ void main() {
     testWidgets('should observe two ViewModels', (tester) async {
       final vm1 = FirstViewModel();
       final vm2 = SecondViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -537,8 +548,8 @@ void main() {
               (_) => vm2,
             ],
             child: Bind.viewModel2<FirstViewModel, SecondViewModel>(
-              builder: (context, vm1, vm2) => 
-                Text('${vm1.name.value}-${vm2.name.value}'),
+              builder: (context, vm1, vm2) =>
+                  Text('${vm1.name.value}-${vm2.name.value}'),
             ),
           ),
         ),
@@ -559,7 +570,7 @@ void main() {
       final vm1 = FirstViewModel();
       final vm2 = SecondViewModel();
       var buildCount = 0;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -588,10 +599,11 @@ void main() {
       expect(buildCount, equals(3));
     });
 
-    testWidgets('should handle regular field changes in both VMs', (tester) async {
+    testWidgets('should handle regular field changes in both VMs',
+        (tester) async {
       final vm1 = FirstViewModel();
       final vm2 = SecondViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -600,8 +612,8 @@ void main() {
               (_) => vm2,
             ],
             child: Bind.viewModel2<FirstViewModel, SecondViewModel>(
-              builder: (context, vm1, vm2) => 
-                Text('${vm1.regularField}-${vm2.regularField}'),
+              builder: (context, vm1, vm2) =>
+                  Text('${vm1.regularField}-${vm2.regularField}'),
             ),
           ),
         ),
@@ -624,7 +636,7 @@ void main() {
       final vm1 = FirstViewModel();
       final vm2 = SecondViewModel();
       final vm3 = ThirdViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -633,9 +645,10 @@ void main() {
               (_) => vm2,
               (_) => vm3,
             ],
-            child: Bind.viewModel3<FirstViewModel, SecondViewModel, ThirdViewModel>(
-              builder: (context, vm1, vm2, vm3) => 
-                Text('${vm1.name.value}-${vm2.name.value}-${vm3.name.value}'),
+            child: Bind.viewModel3<FirstViewModel, SecondViewModel,
+                ThirdViewModel>(
+              builder: (context, vm1, vm2, vm3) =>
+                  Text('${vm1.name.value}-${vm2.name.value}-${vm3.name.value}'),
             ),
           ),
         ),
@@ -656,12 +669,13 @@ void main() {
       expect(find.text('A-B-C'), findsOneWidget);
     });
 
-    testWidgets('should track selective properties from each VM', (tester) async {
+    testWidgets('should track selective properties from each VM',
+        (tester) async {
       final vm1 = FirstViewModel();
       final vm2 = SecondViewModel();
       final vm3 = ThirdViewModel();
       var buildCount = 0;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -670,7 +684,8 @@ void main() {
               (_) => vm2,
               (_) => vm3,
             ],
-            child: Bind.viewModel3<FirstViewModel, SecondViewModel, ThirdViewModel>(
+            child: Bind.viewModel3<FirstViewModel, SecondViewModel,
+                ThirdViewModel>(
               builder: (context, vm1, vm2, vm3) {
                 buildCount++;
                 // Only access name from vm1, age from vm2, nothing from vm3
@@ -712,7 +727,7 @@ void main() {
     testWidgets('should handle 100 rapid updates efficiently', (tester) async {
       final vm = TestViewModel();
       var buildCount = 0;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -753,24 +768,24 @@ class TestViewModel extends ObservableObject {
   late final ObservableProperty<bool> canIncrement;
   late final RelayCommand incrementCommand;
   late final AsyncRelayCommand asyncCommand;
-  
+
   String regularField = 'regular';
 
   TestViewModel() {
     name = ObservableProperty<String>('Initial');
     age = ObservableProperty<int>(0);
     canIncrement = ObservableProperty<bool>(true);
-    
+
     incrementCommand = RelayCommand(
       () => age.value++,
       canExecute: () => canIncrement.value,
     );
-    
+
     asyncCommand = AsyncRelayCommand(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
   }
-  
+
   void updateRegularField(String value) {
     regularField = value;
     onPropertyChanged();

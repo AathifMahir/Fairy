@@ -34,7 +34,7 @@
 /// )
 ///
 /// // 3. Bind in UI with just 2 widgets
-/// 
+///
 /// // Data binding
 /// Bind<CounterViewModel, int>(
 ///   selector: (vm) => vm.count.value,

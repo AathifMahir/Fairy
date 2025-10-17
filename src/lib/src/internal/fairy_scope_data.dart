@@ -11,7 +11,8 @@ import 'package:flutter/foundation.dart';
 @internal
 class FairyScopeData {
   final Map<Type, ObservableObject> registry = {};
-  final List<Type> _ownedTypes = []; // Changed from Set to List to maintain order
+  final List<Type> _ownedTypes =
+      []; // Changed from Set to List to maintain order
 
   /// Registers a ViewModel instance of type [T].
   ///
@@ -65,7 +66,7 @@ class FairyScopeData {
     if (instance == null) {
       throw StateError('Type $T is not registered in this scope');
     }
-    
+
     if (instance.isDisposed) {
       throw StateError(
         'ViewModel of type $T has been disposed and cannot be accessed.\n'

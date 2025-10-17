@@ -35,7 +35,6 @@ mixin Disposable {
   void dispose() {
     _isDisposed = true;
   }
-
 }
 
 /// Helper for managing multiple disposables as a group.
@@ -72,7 +71,7 @@ class DisposableBag {
     for (final disposable in _disposables) {
       try {
         disposable();
-      // ignore: avoid_catches_without_on_clauses
+        // ignore: avoid_catches_without_on_clauses
       } catch (e) {
         // Log error but continue disposing other resources
         debugPrint('Error disposing resource: $e');

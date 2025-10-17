@@ -1,4 +1,3 @@
-
 /// Utility class providing deep equality checks for collections.
 ///
 /// Supports recursive deep equality for nested collections including

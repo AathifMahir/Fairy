@@ -6,9 +6,10 @@ import 'package:fairy/src/ui/bind_widget.dart';
 
 void main() {
   group('Bind widget - Two-Way Binding', () {
-    testWidgets('should detect ObservableProperty and enable two-way binding', (tester) async {
+    testWidgets('should detect ObservableProperty and enable two-way binding',
+        (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -27,10 +28,12 @@ void main() {
       expect(find.text('Initial'), findsOneWidget);
     });
 
-    testWidgets('should provide non-null update callback for ObservableProperty', (tester) async {
+    testWidgets(
+        'should provide non-null update callback for ObservableProperty',
+        (tester) async {
       final vm = TestViewModel();
       void Function(String)? capturedUpdate;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -49,9 +52,10 @@ void main() {
       expect(capturedUpdate, isNotNull);
     });
 
-    testWidgets('should update UI when ObservableProperty changes', (tester) async {
+    testWidgets('should update UI when ObservableProperty changes',
+        (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -79,7 +83,7 @@ void main() {
     testWidgets('should allow updating value via callback', (tester) async {
       final vm = TestViewModel();
       void Function(String)? updateCallback;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -105,9 +109,10 @@ void main() {
       expect(find.text('Changed'), findsOneWidget);
     });
 
-    testWidgets('should work with TextField using update callback', (tester) async {
+    testWidgets('should work with TextField using update callback',
+        (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -139,7 +144,7 @@ void main() {
 
     testWidgets('should work with int ObservableProperty', (tester) async {
       final vm = CounterViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -173,7 +178,7 @@ void main() {
 
     testWidgets('should work with nullable ObservableProperty', (tester) async {
       final vm = NullableViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -205,9 +210,10 @@ void main() {
       expect(vm.optionalName.value, equals('Set'));
     });
 
-    testWidgets('should update when property changes multiple times', (tester) async {
+    testWidgets('should update when property changes multiple times',
+        (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -231,7 +237,7 @@ void main() {
 
     testWidgets('should handle rapid updates correctly', (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -260,7 +266,7 @@ void main() {
 
     testWidgets('should clean up listener on dispose', (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -290,9 +296,10 @@ void main() {
       expect(() => vm.name.value = 'After Dispose', returnsNormally);
     });
 
-    testWidgets('should work with multiple Bind widgets on same property', (tester) async {
+    testWidgets('should work with multiple Bind widgets on same property',
+        (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -329,7 +336,7 @@ void main() {
 
     testWidgets('should work with bool ObservableProperty', (tester) async {
       final vm = BoolViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -357,9 +364,10 @@ void main() {
       expect(vm.isEnabled.value, isTrue);
     });
 
-    testWidgets('should work with custom object ObservableProperty', (tester) async {
+    testWidgets('should work with custom object ObservableProperty',
+        (tester) async {
       final vm = CustomObjectViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -391,10 +399,11 @@ void main() {
       expect(vm.user.value.name, equals('Bob'));
     });
 
-    testWidgets('should handle selector returning different property instance', (tester) async {
+    testWidgets('should handle selector returning different property instance',
+        (tester) async {
       final vm = TestViewModel();
       var useFirstProperty = true;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -404,13 +413,15 @@ void main() {
                 return Column(
                   children: [
                     Bind<TestViewModel, String>(
-                      selector: (vm) => useFirstProperty ? vm.name : vm.description,
+                      selector: (vm) =>
+                          useFirstProperty ? vm.name : vm.description,
                       builder: (context, value, update) {
                         return Text(value);
                       },
                     ),
                     ElevatedButton(
-                      onPressed: () => setState(() => useFirstProperty = !useFirstProperty),
+                      onPressed: () =>
+                          setState(() => useFirstProperty = !useFirstProperty),
                       child: const Text('Toggle'),
                     ),
                   ],
@@ -429,10 +440,11 @@ void main() {
       expect(find.text('Description'), findsOneWidget);
     });
 
-    testWidgets('should not rebuild when unrelated property changes', (tester) async {
+    testWidgets('should not rebuild when unrelated property changes',
+        (tester) async {
       final vm = TestViewModel();
       var buildCount = 0;
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -482,7 +494,7 @@ class BoolViewModel extends ObservableObject {
 class User {
   final String name;
   final int age;
-  
+
   User(this.name, this.age);
 }
 

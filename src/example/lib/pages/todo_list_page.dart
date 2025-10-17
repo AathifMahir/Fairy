@@ -38,7 +38,9 @@ class TodoListPage extends StatelessWidget {
                 builder: (context, showOnlyActive, update) {
                   return IconButton(
                     icon: Icon(
-                      showOnlyActive ? Icons.filter_alt : Icons.filter_alt_outlined,
+                      showOnlyActive
+                          ? Icons.filter_alt
+                          : Icons.filter_alt_outlined,
                     ),
                     onPressed: execute,
                     tooltip: showOnlyActive ? 'Show All' : 'Show Active Only',
@@ -94,7 +96,7 @@ class TodoListPage extends StatelessWidget {
               },
             ),
           ),
-          
+
           // Search and Filter Section
           Padding(
             padding: const EdgeInsets.all(16),
@@ -113,11 +115,11 @@ class TodoListPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         suffixIcon: value.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () => update?.call(''),
-                            )
-                          : null,
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () => update?.call(''),
+                              )
+                            : null,
                       ),
                     );
                   },
@@ -141,22 +143,37 @@ class TodoListPage extends StatelessWidget {
                         FilterChip(
                           label: const Text('High'),
                           selected: selectedPriority == TodoPriority.high,
-                          onSelected: (_) => vm.setPriorityFilter(TodoPriority.high),
-                          avatar: const Icon(Icons.circle, color: Colors.red, size: 12),
+                          onSelected: (_) =>
+                              vm.setPriorityFilter(TodoPriority.high),
+                          avatar: const Icon(
+                            Icons.circle,
+                            color: Colors.red,
+                            size: 12,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         FilterChip(
                           label: const Text('Medium'),
                           selected: selectedPriority == TodoPriority.medium,
-                          onSelected: (_) => vm.setPriorityFilter(TodoPriority.medium),
-                          avatar: const Icon(Icons.circle, color: Colors.orange, size: 12),
+                          onSelected: (_) =>
+                              vm.setPriorityFilter(TodoPriority.medium),
+                          avatar: const Icon(
+                            Icons.circle,
+                            color: Colors.orange,
+                            size: 12,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         FilterChip(
                           label: const Text('Low'),
                           selected: selectedPriority == TodoPriority.low,
-                          onSelected: (_) => vm.setPriorityFilter(TodoPriority.low),
-                          avatar: const Icon(Icons.circle, color: Colors.green, size: 12),
+                          onSelected: (_) =>
+                              vm.setPriorityFilter(TodoPriority.low),
+                          avatar: const Icon(
+                            Icons.circle,
+                            color: Colors.green,
+                            size: 12,
+                          ),
                         ),
                       ],
                     );
@@ -165,7 +182,7 @@ class TodoListPage extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Todo List
           Expanded(
             child: Bind<TodoListViewModel, List<Todo>>(
@@ -193,7 +210,7 @@ class TodoListPage extends StatelessWidget {
                     ),
                   );
                 }
-                
+
                 return ListView.builder(
                   itemCount: todos.length,
                   itemBuilder: (context, index) {
@@ -212,16 +229,14 @@ class TodoListPage extends StatelessWidget {
       ),
     );
   }
-  
+
   void _showAddTodoDialog(BuildContext context) {
     showDialog(
       context: context,
       // Bridge parent context to overlay using FairyBridge widget
       // This allows Command and Bind widgets to work inside dialogs!
-      builder: (dialogContext) => FairyBridge(
-        context: context,
-        child: const _AddTodoDialog(),
-      ),
+      builder: (dialogContext) =>
+          FairyBridge(context: context, child: const _AddTodoDialog()),
     );
   }
 }
@@ -319,7 +334,8 @@ class _AddTodoDialog extends StatelessWidget {
               builder: (context, value, _) {
                 return Command.param<TodoListViewModel, String>(
                   command: (vm) => vm.addTodoCommand,
-                  parameter: () => value.text, // Use the current value from ValueListenableBuilder
+                  parameter: () => value
+                      .text, // Use the current value from ValueListenableBuilder
                   builder: (context, execute, canExecute, isRunning) {
                     return FilledButton(
                       onPressed: canExecute
@@ -350,7 +366,7 @@ class _StatCard extends StatelessWidget {
   final int count;
   final IconData icon;
   final Color color;
-  
+
   const _StatCard({
     required this.label,
     required this.count,
@@ -371,10 +387,7 @@ class _StatCard extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }
@@ -382,13 +395,13 @@ class _StatCard extends StatelessWidget {
 
 class _TodoItem extends StatelessWidget {
   final Todo todo;
-  
+
   const _TodoItem({required this.todo});
 
   @override
   Widget build(BuildContext context) {
     final vm = Fairy.of<TodoListViewModel>(context);
-    
+
     return Dismissible(
       key: Key(todo.id),
       background: Container(
@@ -418,16 +431,18 @@ class _TodoItem extends StatelessWidget {
             ),
           ),
           subtitle: todo.description.isNotEmpty
-            ? Text(
-                todo.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  decoration: todo.isCompleted ? TextDecoration.lineThrough : null,
-                  color: todo.isCompleted ? Colors.grey : null,
-                ),
-              )
-            : null,
+              ? Text(
+                  todo.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    decoration: todo.isCompleted
+                        ? TextDecoration.lineThrough
+                        : null,
+                    color: todo.isCompleted ? Colors.grey : null,
+                  ),
+                )
+              : null,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -442,7 +457,9 @@ class _TodoItem extends StatelessWidget {
               const SizedBox(width: 8),
               IconButton(
                 icon: Icon(
-                  todo.isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
+                  todo.isCompleted
+                      ? Icons.check_box
+                      : Icons.check_box_outline_blank,
                 ),
                 onPressed: () => vm.toggleTodoCommand.execute(todo.id),
               ),

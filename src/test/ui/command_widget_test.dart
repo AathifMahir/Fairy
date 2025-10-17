@@ -7,29 +7,29 @@ class TestViewModel extends ObservableObject {
   final canSave = ObservableProperty<bool>(false);
   late final RelayCommand saveCommand;
   int saveCount = 0;
-  
+
   TestViewModel() {
     saveCommand = RelayCommand(
       _save,
       canExecute: () => canSave.value,
     );
   }
-  
+
   void _save() {
     saveCount++;
   }
-  
+
   // canSave auto-disposed by super.dispose()
 }
 
 class AsyncTestViewModel extends ObservableObject {
   late final AsyncRelayCommand fetchCommand;
   int fetchCount = 0;
-  
+
   AsyncTestViewModel() {
     fetchCommand = AsyncRelayCommand(_fetch);
   }
-  
+
   Future<void> _fetch() async {
     await Future<void>.delayed(const Duration(milliseconds: 100));
     fetchCount++;
@@ -40,18 +40,18 @@ class ParamViewModel extends ObservableObject {
   final canProcess = ObservableProperty<bool>(true);
   late final RelayCommandWithParam<String> processCommand;
   String? lastProcessed;
-  
+
   ParamViewModel() {
     processCommand = RelayCommandWithParam<String>(
       _process,
       canExecute: (param) => canProcess.value, // Takes parameter
     );
   }
-  
+
   void _process(String value) {
     lastProcessed = value;
   }
-  
+
   // canProcess auto-disposed by super.dispose()
 }
 
@@ -60,7 +60,7 @@ void main() {
     testWidgets('should provide execute callback', (tester) async {
       final vm = TestViewModel();
       vm.canSave.value = true; // Enable command
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -90,7 +90,7 @@ void main() {
 
     testWidgets('should reflect canExecute state', (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -112,12 +112,14 @@ void main() {
 
       // Initially disabled
       expect(find.text('Disabled'), findsOneWidget);
-      expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNull);
+      expect(
+          tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+          isNull);
     });
 
     testWidgets('should update when canExecute changes', (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -145,12 +147,14 @@ void main() {
       await tester.pump();
 
       expect(find.text('Enabled'), findsOneWidget);
-      expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNotNull);
+      expect(
+          tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+          isNotNull);
     });
 
     testWidgets('should work with AsyncRelayCommand', (tester) async {
       final vm = AsyncTestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -184,7 +188,7 @@ void main() {
 
     testWidgets('should disable button during async execution', (tester) async {
       final vm = AsyncTestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -195,7 +199,9 @@ void main() {
                 builder: (context, execute, canExecute, isRunning) {
                   return ElevatedButton(
                     onPressed: canExecute ? execute : null,
-                    child: isRunning ? const Text('Loading...') : const Text('Fetch'),
+                    child: isRunning
+                        ? const Text('Loading...')
+                        : const Text('Fetch'),
                   );
                 },
               ),
@@ -213,7 +219,9 @@ void main() {
       await tester.pump();
 
       // Button is now disabled during execution (automatic via isRunning)
-      expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNull);
+      expect(
+          tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+          isNull);
       expect(find.text('Loading...'), findsOneWidget);
 
       await tester.pumpAndSettle();
@@ -221,13 +229,15 @@ void main() {
       // Command executed and button re-enabled
       expect(vm.fetchCount, equals(1));
       expect(find.text('Fetch'), findsOneWidget);
-      expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNotNull);
+      expect(
+          tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+          isNotNull);
     });
 
     testWidgets('should work with parameterized commands', (tester) async {
       final vm = ParamViewModel();
       const testData = 'Test Data';
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -256,9 +266,10 @@ void main() {
       expect(vm.lastProcessed, equals(testData));
     });
 
-    testWidgets('should handle multiple Command widgets on same command', (tester) async {
+    testWidgets('should handle multiple Command widgets on same command',
+        (tester) async {
       final vm = TestViewModel();
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -308,14 +319,14 @@ void main() {
 
     testWidgets('should clean up listener on dispose', (tester) async {
       final vm = TestViewModel();
-      
+
       // Register globally so FairyScope doesn't dispose it
       FairyLocator.instance.registerSingleton<TestViewModel>(vm);
       addTearDown(() {
         FairyLocator.instance.unregister<TestViewModel>();
         vm.dispose();
       });
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

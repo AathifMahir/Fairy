@@ -38,7 +38,7 @@ class FairyScopeLocatorImpl implements FairyScopeLocator {
     List<FairyScopeData> parentScopes,
   ) {
     final flattened = <Type, WeakReference<ObservableObject>>{};
-    
+
     // Iterate from farthest to nearest (reversed order)
     // This ensures nearest parent wins in case of duplicate types
     for (final parentData in parentScopes.reversed) {
@@ -46,7 +46,7 @@ class FairyScopeLocatorImpl implements FairyScopeLocator {
         flattened[entry.key] = WeakReference<ObservableObject>(entry.value);
       }
     }
-    
+
     return flattened;
   }
 
@@ -85,7 +85,7 @@ class FairyScopeLocatorImpl implements FairyScopeLocator {
     }
 
     // HYBRID APPROACH for optimal performance:
-    
+
     // 1. Always check current scope directly (O(1))
     //    This supports future lazy creation and sequential dependencies
     final currentResult = _currentScopeData.registry[T];

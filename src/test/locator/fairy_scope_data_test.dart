@@ -22,7 +22,7 @@ void main() {
         scopeData.register(vm, owned: true);
 
         expect(scopeData.contains<_TestViewModel>(), isTrue);
-        
+
         // Dispose scope should dispose owned VM
         scopeData.dispose();
         expect(vm.isDisposed, isTrue);
@@ -35,7 +35,7 @@ void main() {
         scopeData.register(vm, owned: false);
 
         expect(scopeData.contains<_TestViewModel>(), isTrue);
-        
+
         // Dispose scope should NOT dispose non-owned VM
         scopeData.dispose();
         expect(vm.isDisposed, isFalse);
@@ -259,7 +259,7 @@ void main() {
         final vm = _TestViewModel();
 
         scopeData.register(vm, owned: true);
-        
+
         // Manually dispose VM before scope disposal
         vm.dispose();
 

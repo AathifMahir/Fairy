@@ -3,7 +3,7 @@ import 'package:fairy/src/utils/lifecycle.dart';
 /// A global dependency injection container for app-wide services and ViewModels.
 ///
 /// [FairyLocator] is a singleton that provides service location capabilities
-/// throughout your application. It supports singleton, lazy singleton, async 
+/// throughout your application. It supports singleton, lazy singleton, async
 /// singleton, and transient registrations.
 ///
 /// **Usage Guidelines:**
@@ -145,10 +145,10 @@ class FairyLocator {
   /// await Fairy.instance.registerLazySingletonAsync<ApiClient>(
   ///   () async => await ApiClient.connect(),
   /// );
-  /// 
+  ///
   /// // Will throw! Instance not initialized
   /// // final api = Fairy.instance.get<ApiClient>();
-  /// 
+  ///
   /// // Better: use eager async
   /// await Fairy.instance.registerSingletonAsync<ApiClient>(
   ///   () async => await ApiClient.connect(),
@@ -160,7 +160,7 @@ class FairyLocator {
     if (_singletons.containsKey(T) || _factories.containsKey(T)) {
       throw StateError('Type $T is already registered');
     }
-    
+
     // Store a sync factory that throws, requiring explicit async initialization
     _factories[T] = () {
       throw StateError(
@@ -220,7 +220,7 @@ class FairyLocator {
           '  FairyLocator.instance.unregister<$T>();',
         );
       }
-      
+
       return instance;
     }
 
@@ -250,7 +250,8 @@ class FairyLocator {
   ///   // Service is registered
   /// }
   /// ```
-  bool contains<T extends Object>() => _singletons.containsKey(T) || _factories.containsKey(T);
+  bool contains<T extends Object>() =>
+      _singletons.containsKey(T) || _factories.containsKey(T);
 
   /// Unregisters the type [T] from the locator.
   ///
