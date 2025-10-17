@@ -27,7 +27,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^1.1.0
+  fairy: ^1.1.1
 ```
 
 ### Basic Example
@@ -63,8 +63,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: FairyScope(
-        viewModel: (_) => ProfileViewModel(),
-        child: ProfilePage(),
+        viewModel: (_) => CounterViewModel(),
+        child: CounterPage(),
       ),
     );
   }
@@ -146,22 +146,44 @@ Type-safe properties that notify listeners when their value changes:
 class MyViewModel extends ObservableObject {
   final counter = ObservableProperty<int>(0);
   
-  void someMethod() {
-    // Modify value
-    counter.value = 42;
-    
-    // Listen to changes (returns disposer function)
-    final dispose = counter.propertyChanged(() {
-      print('Counter changed: ${counter.value}');
-    });
-    
-    // Later: remove listener
-    dispose();  // ⚠️ Always call this to avoid memory leaks!
+  void increment() {
+    // Just modify the value - that's it! 
+    // ObservableProperty automatically notifies listeners (like Bind widgets)
+    counter.value++;
+  }
+  
+  void reset() {
+    counter.value = 0;  // Automatic notification on change
   }
 }
 ```
 
-> **⚠️ Memory Leak Warning:** Always capture and call the disposer returned by `propertyChanged()`. Failing to do so will cause memory leaks as the listener remains registered indefinitely. See [Best Practices](#best-practices) section for details.
+**Optional: Manual Change Subscription**
+
+You can manually subscribe to changes if needed (e.g., for logging, analytics, or side effects):
+
+```dart
+class MyViewModel extends ObservableObject {
+  final counter = ObservableProperty<int>(0);
+  late final VoidCallback disposePropertyChanges;
+  
+  MyViewModel() {
+    // Optional: Subscribe to changes for side effects
+    disposePropertyChanges = counter.propertyChanged(() {
+      print('Counter changed: ${counter.value}');
+      // Maybe log analytics, trigger side effects, etc.
+    });
+  }
+  
+  @override
+  void dispose() {
+    disposePropertyChanges();  // ⚠️ Always call to avoid memory leaks!
+    super.dispose();  // Auto-disposes counter
+  }
+}
+```
+
+> **⚠️ Memory Leak Warning:** Always capture and call the disposer returned by `propertyChanged()`. Failing to do so will cause memory leaks as the listener remains registered indefinitely. For UI binding, use `Bind` widgets which handle lifecycle automatically.
 
 ### 3. Commands - Action Encapsulation
 
@@ -177,23 +199,23 @@ class MyViewModel extends ObservableObject {
     canExecute: () => selectedItem.value != null,
   );
   
-  late final VoidCallback _disposer;
+  late final VoidCallback disposePropertyChanges;
   
   MyViewModel() {
-    // Refresh command when dependencies change
-    _disposer = selectedItem.propertyChanged(() {
+    // Refresh command's canExecute when selectedItem changes
+    disposePropertyChanges = selectedItem.propertyChanged(() {
       deleteCommand.notifyCanExecuteChanged();
     });
   }
   
   @override
   void dispose() {
-    _disposer();
-    super.dispose();  // Auto-disposes properties and commands
+    disposePropertyChanges();
+    super.dispose();  // Auto-disposes selectedItem, saveCommand, deleteCommand
   }
   
   void _save() {
-    // Save logic
+    // Save logic - Command handles execution automatically
   }
   
   void _delete() {
@@ -201,6 +223,50 @@ class MyViewModel extends ObservableObject {
   }
 }
 ```
+
+**Optional: Manual Command Change Subscription**
+
+Commands support manual subscription to `canExecute` state changes for advanced scenarios (e.g., analytics, debugging):
+
+```dart
+class MyViewModel extends ObservableObject {
+  final userName = ObservableProperty<String>('');
+  
+  late final saveCommand = RelayCommand(
+    _save,
+    canExecute: () => userName.value.isNotEmpty,
+  );
+  
+  late final VoidCallback disposePropertyChanges;
+  late final VoidCallback disposeCommandChanges;
+  
+  MyViewModel() {
+    // Keep command's canExecute in sync with userName
+    disposePropertyChanges = userName.propertyChanged(() {
+      saveCommand.notifyCanExecuteChanged();
+    });
+    
+    // Optional: Subscribe to canExecute changes for side effects
+    disposeCommandChanges = saveCommand.canExecuteChanged(() {
+      print('Save enabled: ${saveCommand.canExecute}');
+      // Maybe update analytics, show hints, etc.
+    });
+  }
+  
+  void _save() {
+    // Save logic
+  }
+  
+  @override
+  void dispose() {
+    disposePropertyChanges();
+    disposeCommandChanges();
+    super.dispose();  // Auto-disposes userName and saveCommand
+  }
+}
+```
+
+> **⚠️ Memory Leak Warning:** Always capture disposers returned by `propertyChanged()` and `canExecuteChanged()`. Failing to call them will cause memory leaks. For UI binding, use `Command` widget which handles lifecycle automatically.
 
 #### Async Commands
 
@@ -256,42 +322,6 @@ Command.param<TodoViewModel, String>(
   },
 )
 ```
-
-#### Listening to Command Changes
-
-Commands support listening to `canExecute` state changes, similar to how properties work:
-
-```dart
-class MyViewModel extends ObservableObject {
-  final userName = ObservableProperty<String>('');
-  
-  late final saveCommand = RelayCommand(
-    _save,
-    canExecute: () => userName.value.isNotEmpty,
-  );
-  
-  VoidCallback? _commandDisposer;
-  
-  MyViewModel() {
-    // Listen to canExecute changes
-    _commandDisposer = saveCommand.canExecuteChanged(() {
-      print('Save command canExecute changed: ${saveCommand.canExecute}');
-    });
-  }
-  
-  void _save() {
-    // Save logic
-  }
-  
-  @override
-  void dispose() {
-    _commandDisposer?.call();
-    super.dispose();  // Auto-disposes userName and saveCommand
-  }
-}
-```
-
-> **⚠️ Memory Leak Warning:** Always capture the disposer returned by `canExecuteChanged()`. Failing to call it will cause memory leaks. For UI binding, use the `Command` widget which handles this automatically.
 
 ### 4. Data Binding with `Bind`
 
@@ -700,10 +730,13 @@ class UserViewModel extends ObservableObject {
   String _fullName = 'John Doe';
   String get fullName => _fullName;
   
+  late final VoidCallback disposeFirstNameChanges;
+  late final VoidCallback disposeLastNameChanges;
+  
   UserViewModel() {
     // Manual listener setup - error-prone and verbose
-    firstName.propertyChanged(_updateFullName);
-    lastName.propertyChanged(_updateFullName);
+    disposeFirstNameChanges = firstName.propertyChanged(_updateFullName);
+    disposeLastNameChanges = lastName.propertyChanged(_updateFullName);
     _updateFullName();
   }
   
@@ -712,7 +745,12 @@ class UserViewModel extends ObservableObject {
     onPropertyChanged(); // Easy to forget!
   }
   
-  // Manual cleanup required (and easy to forget!)
+  @override
+  void dispose() {
+    disposeFirstNameChanges();
+    disposeLastNameChanges();
+    super.dispose();  // Manual cleanup required (and easy to forget!)
+  }
 }
 ```
 
@@ -726,6 +764,7 @@ class UserViewModel extends ObservableObject {
   late final fullName = ComputedProperty<String>(
     () => '${firstName.value} ${lastName.value}',
     [firstName, lastName],
+    this, // Required parent for automatic disposal
   );
 }
 ```
@@ -743,28 +782,33 @@ class CartViewModel extends ObservableObject {
   late final subtotal = ComputedProperty<double>(
     () => items.value.fold(0.0, (sum, item) => sum + item.price),
     [items],
+    this,
   );
   
   // Depends on another computed property!
   late final discount = ComputedProperty<double>(
     () => discountCode.value == 'SAVE20' ? subtotal.value * 0.20 : 0.0,
     [subtotal, discountCode],
+    this,
   );
   
   late final afterDiscount = ComputedProperty<double>(
     () => subtotal.value - discount.value,
     [subtotal, discount],
+    this,
   );
   
   late final tax = ComputedProperty<double>(
     () => afterDiscount.value * taxRate.value,
     [afterDiscount, taxRate],
+    this,
   );
   
   // Final total - automatically updates when ANYTHING changes!
   late final total = ComputedProperty<double>(
     () => afterDiscount.value + tax.value,
     [afterDiscount, tax],
+    this,
   );
 }
 ```
@@ -778,16 +822,19 @@ class LoginViewModel extends ObservableObject {
   late final isEmailValid = ComputedProperty<bool>(
     () => email.value.contains('@') && email.value.length > 5,
     [email],
+    this,
   );
   
   late final isPasswordValid = ComputedProperty<bool>(
     () => password.value.length >= 8,
     [password],
+    this,
   );
   
   late final canSubmit = ComputedProperty<bool>(
     () => isEmailValid.value && isPasswordValid.value,
     [isEmailValid, isPasswordValid],
+    this,
   );
   
   // Use computed property in command validation
@@ -814,11 +861,13 @@ class ProfileViewModel extends ObservableObject {
   late final displayName = ComputedProperty<String>(
     () => '${firstName.value} ${lastName.value}'.trim(),
     [firstName, lastName],
+    this
   );
   
   late final membershipYears = ComputedProperty<int>(
     () => DateTime.now().year - memberSince.value.year,
     [memberSince],
+    this
   );
   
   late final badgeLevel = ComputedProperty<String>(
@@ -829,11 +878,13 @@ class ProfileViewModel extends ObservableObject {
       return 'Newbie';
     },
     [isPremium, membershipYears],
+    this
   );
   
   late final profileSummary = ComputedProperty<String>(
     () => '$displayName (${age.value}) - ${badgeLevel.value} Member',
     [displayName, age, badgeLevel],
+    this
   );
 }
 ```
@@ -1066,11 +1117,11 @@ class MyViewModel extends ObservableObject {
     canExecute: () => selectedItem.value != null,
   );
   
-  VoidCallback? _selectedItemDisposer;
+  VoidCallback? disposePropertyChanges;
   
   MyViewModel() {
     // When canExecute depends on other state
-    _selectedItemDisposer = selectedItem.propertyChanged(() {
+    disposePropertyChanges = selectedItem.propertyChanged(() {
       deleteCommand.notifyCanExecuteChanged();
       editCommand.notifyCanExecuteChanged();
     });
@@ -1081,7 +1132,7 @@ class MyViewModel extends ObservableObject {
   
   @override
   void dispose() {
-    _selectedItemDisposer?.call();
+    disposePropertyChanges?.call();
     super.dispose();  // selectedItem and commands auto-disposed
   }
 }
@@ -1103,8 +1154,8 @@ command.canExecuteChanged(() {
 
 // ✅ CORRECT: Capture and call disposers
 class _MyWidgetState extends State<MyWidget> {
-  late VoidCallback _disposePropertyListener;
-  late VoidCallback _disposeCommandListener;
+  late VoidCallback disposePropertyChanges;
+  late VoidCallback disposeCommandChanges;
   
   @override
   void initState() {
@@ -1112,19 +1163,19 @@ class _MyWidgetState extends State<MyWidget> {
     final vm = Fairy.of<MyViewModel>(context);
     
     // Store the disposers
-    _disposePropertyListener = vm.counter.propertyChanged(() {
+    disposePropertyChanges = vm.counter.propertyChanged(() {
       setState(() {});
     });
     
-    _disposeCommandListener = vm.saveCommand.canExecuteChanged(() {
+    disposeCommandChanges = vm.saveCommand.canExecuteChanged(() {
       setState(() {});
     });
   }
   
   @override
   void dispose() {
-    _disposePropertyListener(); // Clean up listeners
-    _disposeCommandListener();
+    disposePropertyChanges(); // Clean up listeners
+    disposeCommandChanges();
     super.dispose();
   }
 }
