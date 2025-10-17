@@ -305,39 +305,91 @@ class ObservableProperty<T> extends ObservableNode {
   }
 }
 
-/// A read-only property that automatically recomputes when dependencies change.
+/// A read-only, reactive property that automatically recomputes when dependencies change.
 ///
-/// [ComputedProperty] is useful for derived values that depend on other
-/// observable properties. It caches the computed result and only recalculates
-/// when one of its dependencies notifies listeners.
+/// [ComputedProperty] eliminates manual synchronization by automatically deriving values
+/// from other observable properties. It's cached, efficient, and makes ViewModels cleaner.
 ///
-/// Example:
+/// **Key Benefits:**
+/// - Zero maintenance - no manual listener setup or cleanup
+/// - Automatic caching - only recomputes when dependencies actually change
+/// - Composable - can depend on other computed properties
+/// - Type-safe with compile-time safety
+/// - Auto-disposal prevents memory leaks
+///
+/// **Basic Usage:**
 /// ```dart
-/// class ShoppingCartViewModel extends ObservableObject {
-///   late final ObservableProperty<List<Item>> items;
-///   late final ComputedProperty<double> totalPrice;
-///
-///   ShoppingCartViewModel() {
-///     items = ObservableProperty<List<Item>>([], parent: this);
-///     
-///     totalPrice = ComputedProperty<double>(
-///       () => items.value.fold(0.0, (sum, item) => sum + item.price),
-///       [items],
-///       parent: this,
-///     );
-///   }
-///
-///   // Properties and computed properties auto-disposed by super.dispose()
+/// class UserViewModel extends ObservableObject {
+///   final firstName = ObservableProperty<String>('John');
+///   final lastName = ObservableProperty<String>('Doe');
+///   
+///   // Automatically updates when firstName or lastName changes
+///   late final fullName = ComputedProperty<String>(
+///     () => '${firstName.value} ${lastName.value}',
+///     [firstName, lastName],
+///   );
 /// }
 /// ```
+///
+/// **Chained Computations (Shopping Cart):**
+/// ```dart
+/// late final subtotal = ComputedProperty<double>(
+///   () => items.value.fold(0.0, (sum, item) => sum + item.price),
+///   [items],
+/// );
+/// 
+/// late final tax = ComputedProperty<double>(
+///   () => subtotal.value * taxRate.value,
+///   [subtotal, taxRate], // Depends on another computed property
+/// );
+/// 
+/// late final total = ComputedProperty<double>(
+///   () => subtotal.value + tax.value,
+///   [subtotal, tax],
+/// );
+/// ```
+///
+/// **Form Validation:**
+/// ```dart
+/// late final isEmailValid = ComputedProperty<bool>(
+///   () => email.value.contains('@') && email.value.length > 5,
+///   [email],
+/// );
+/// 
+/// late final canSubmit = ComputedProperty<bool>(
+///   () => isEmailValid.value && isPasswordValid.value,
+///   [isEmailValid, isPasswordValid],
+/// );
+/// 
+/// late final submitCommand = RelayCommand(
+///   _submit,
+///   canExecute: () => canSubmit.value,
+/// );
+/// ```
+///
+/// **How It Works:**
+/// 1. Registers listeners on all dependencies during construction
+/// 2. Caches the computed value
+/// 3. Recomputes when any dependency notifies
+/// 4. Notifies own listeners only if value actually changed
+/// 5. Auto-disposes all listeners with parent ViewModel
+///
+/// See the [README](https://pub.dev/packages/fairy#computedproperty) for more examples.
 class ComputedProperty<T> extends ObservableNode {
 
   /// Creates a computed property with a computation function and dependencies.
   ///
-  /// The [compute] function is called to calculate the value.
-  /// The [dependencies] list contains all [ObservableNode] objects that this
-  /// computed property depends on. When any dependency notifies, the cached
-  /// value is invalidated and recalculated.
+  /// The [_compute] function calculates the derived value and should only depend on
+  /// the provided [_dependencies]. When any dependency changes, the value is automatically
+  /// recomputed. Always use `late final` for automatic disposal.
+  ///
+  /// Example:
+  /// ```dart
+  /// late final fullName = ComputedProperty<String>(
+  ///   () => '${firstName.value} ${lastName.value}',
+  ///   [firstName, lastName],
+  /// );
+  /// ```
   ComputedProperty(this._compute, this._dependencies) {
     for (final dep in _dependencies) {
       dep.addListener(_onDependencyChanged);
