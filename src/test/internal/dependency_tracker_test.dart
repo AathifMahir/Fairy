@@ -94,24 +94,18 @@ void main() {
       });
 
       test('should track computed property dependencies', () {
-        final firstName = ObservableProperty<String>('John');
-        final lastName = ObservableProperty<String>('Doe');
-        final fullName = ComputedProperty<String>(
-          () => '${firstName.value} ${lastName.value}',
-          [firstName, lastName],
-        );
+        final vm = _TestViewModel();
 
         final (_, accessed) = DependencyTracker.track(() {
-          return fullName.value;
+          return vm.fullName.value;
         });
 
-        // Should track fullName access, not transitively track firstName/lastName
-        expect(accessed, contains(fullName));
-        expect(accessed.length, equals(1));
+        // Should track fullName access (which internally tracks firstName and lastName)
+        expect(accessed, contains(vm.fullName));
+        // Tracks: fullName, firstName, lastName (3 total)
+        expect(accessed.length, equals(3));
 
-        firstName.dispose();
-        lastName.dispose();
-        fullName.dispose();
+        vm.dispose();
       });
 
       test('should return function result', () {
@@ -578,4 +572,14 @@ void main() {
       });
     });
   });
+}
+
+class _TestViewModel extends ObservableObject {
+  final firstName = ObservableProperty<String>('John');
+  final lastName = ObservableProperty<String>('Doe');
+  late final fullName = ComputedProperty<String>(
+    () => '${firstName.value} ${lastName.value}',
+    [firstName, lastName],
+    this,
+  );
 }
