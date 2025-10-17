@@ -34,25 +34,6 @@ void main() {
         );
       });
 
-      test('should return fresh instance from transient (not disposed)', () {
-        FairyLocator.instance.registerTransient(() => _TestViewModel());
-
-        // Get instance
-        final vm1 = FairyLocator.instance.get<_TestViewModel>();
-        expect(vm1.isDisposed, isFalse);
-
-        // Dispose it
-        vm1.dispose();
-        expect(vm1.isDisposed, isTrue);
-
-        // Get another instance - should be fresh, not disposed
-        final vm2 = FairyLocator.instance.get<_TestViewModel>();
-        expect(vm2.isDisposed, isFalse);
-        expect(identical(vm1, vm2), isFalse);
-      },
-          skip:
-              'Transient registrations create new instances each time, so disposal check not needed');
-
       test('should return fresh instance from lazy singleton on first access',
           () {
         FairyLocator.instance.registerLazySingleton(() => _TestViewModel());
