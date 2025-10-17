@@ -29,7 +29,7 @@ A lightweight MVVM framework for Flutter that provides strongly-typed, reactive 
 
 ```yaml
 dependencies:
-  fairy: ^1.0.0
+  fairy: ^1.1.0
 ```
 
 ## 🚀 Quick Start

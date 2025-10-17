@@ -27,7 +27,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^1.0.0
+  fairy: ^1.1.0
 ```
 
 ### Basic Example
