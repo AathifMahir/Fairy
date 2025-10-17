@@ -1156,8 +1156,10 @@ void main() {
                     expect(identical(fromThirdScope, thirdScopeVm), isTrue);
 
                     // Create VM that depends on ancestor from first scope
-                    return ComplexViewModel(fromFirstScope,
-                        ViewModelWithDependencies(TestService(), AnotherService()));
+                    return ComplexViewModel(
+                        fromFirstScope,
+                        ViewModelWithDependencies(
+                            TestService(), AnotherService()));
                   },
                   child: Builder(
                     builder: (context) {
