@@ -1,3 +1,107 @@
+## 1.1.0
+
+**Lifecycle & Disposal Management Release** - Enhanced disposal safety, improved error handling, and better documentation.
+
+This release focuses on robustness and developer experience with comprehensive improvements to lifecycle management across the framework. All components now provide clearer disposal semantics and better error messages.
+
+### 🔄 Lifecycle & Disposal Improvements
+
+#### Enhanced Disposal Safety
+- **ObservableObject** now properly extends `ObservableNode` with improved lifecycle management
+  - Clearer separation between internal API and public MVVM-style API
+  - `clearListeners()` method added to `ObservableNode` for manual listener cleanup
+  - Better disposal state tracking prevents operations on disposed objects
+  - Enhanced error messages when attempting to use disposed ViewModels
+
+#### FairyLocator Disposal Checks
+- **Disposed ViewModel Detection**: `FairyLocator.get<T>()` now checks if ViewModels are disposed before returning
+  - Throws informative `StateError` with guidance when accessing disposed ViewModels
+  - Provides clear troubleshooting steps in error message
+  - Recommends unregistering ViewModels after manual disposal
+  - Helps catch lifecycle bugs early in development
+
+Example error message:
+```dart
+StateError: ViewModel of type MyViewModel has been disposed and cannot be accessed.
+This usually happens when:
+1. ViewModel was manually disposed but not unregistered
+2. App is shutting down
+Consider unregistering disposed ViewModels:
+  vm.dispose();
+  FairyLocator.instance.unregister<MyViewModel>();
+```
+
+#### FairyScope Error Handling
+- **Improved ViewModel Registration**: Enhanced error handling in `FairyScopeData`
+  - Better tracking of owned ViewModels using List-based storage
+  - Clearer error messages when ViewModel registration fails
+  - Improved retrieval logic with better null safety
+  - More robust disposal of scoped ViewModels
+
+#### Disposable Mixin Refinement
+- **Consolidated Disposal Logic**: Streamlined `Disposable` mixin implementation
+  - Simplified state management with single `_isDisposed` flag
+  - `throwIfDisposed()` provides consistent disposal checks
+  - Better documentation with corrected class names in examples
+  - Cleaner code with reduced redundancy
+
+### 📚 Documentation Enhancements
+
+#### ComputedProperty Documentation
+- **Comprehensive Documentation**: Dramatically improved docs showing real-world value
+  - "Why You'll Love It" section with before/after comparison
+  - Real-world examples: Shopping cart, form validation, business logic
+  - Key benefits highlighted with clear use cases
+  - Performance notes explaining caching and optimization
+  - Shows how ComputedProperty eliminates manual synchronization headaches
+
+#### Code Comments
+- **Slimmed Down**: Reduced verbose code comments while maintaining clarity
+  - Follows Dart documentation standards
+  - Focuses on essential information with concise examples
+  - Links to comprehensive README for detailed examples
+  - Better balance between inline docs and external documentation
+
+### 🧪 Testing
+
+- **436 tests** passing (up from 401)
+- Added **35+ new disposal and lifecycle tests**:
+  - FairyScopeData registration, retrieval, and disposal tests
+  - FairyLocator disposal check tests
+  - ObservableObject disposal state validation
+  - Enhanced error handling tests
+  - Comprehensive lifecycle edge case coverage
+
+### 🔧 API Improvements
+
+#### ObservableNode
+- Added `clearListeners()` method for explicit listener cleanup
+- Better error reporting during listener notification
+- Consistent API across all observable types
+
+#### Error Messages
+- More informative error messages across the framework
+- Actionable guidance in StateError exceptions
+- Better troubleshooting information for common issues
+
+### 📦 Breaking Changes
+
+None - This is a backward-compatible enhancement release.
+
+### 🎯 Migration Guide
+
+No migration needed. All changes are internal improvements and additions that enhance existing functionality without breaking existing code.
+
+### 💡 Developer Experience
+
+This release significantly improves the debugging experience:
+- Disposed ViewModels are caught early with clear error messages
+- Better lifecycle tracking helps prevent memory leaks
+- Improved documentation makes ComputedProperty's value crystal clear
+- More comprehensive tests ensure reliability
+
+---
+
 ## 1.0.0 🎉
 
 **Stable Release** - A lightweight MVVM framework for Flutter with strongly-typed, reactive data binding.
