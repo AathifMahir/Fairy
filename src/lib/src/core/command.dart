@@ -59,7 +59,7 @@ class RelayCommand extends ObservableNode {
         _canExecute = canExecute;
 
     // ========================================================================
-  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
+  // HIDDEN ObservableNode API (marked @protected for internal framework use)
   // ========================================================================
   
   @override
@@ -182,7 +182,7 @@ class AsyncRelayCommand extends ObservableNode {
         _canExecute = canExecute;
 
     // ========================================================================
-  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
+  // HIDDEN ObservableNode API (marked @protected for internal framework use)
   // ========================================================================
   
   @override
@@ -423,7 +423,7 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
 
 
   // ========================================================================
-  // HIDDEN ChangeNotifier API (marked @protected for internal framework use)
+  // HIDDEN ObservableNode API (marked @protected for internal framework use)
   // ========================================================================
   
   @override
