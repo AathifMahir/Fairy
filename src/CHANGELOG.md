@@ -1,3 +1,39 @@
+## 1.1.2
+
+**Documentation & Testing Release** - Enhanced documentation clarity and comprehensive deep nesting test coverage.
+
+This release focuses on improving developer experience through clearer documentation and ensuring robust FairyScope behavior with deep widget tree hierarchies.
+
+### 📚 Documentation Improvements
+
+#### Enhanced Code Examples
+- **Disposer naming convention** updated across all examples
+  - Renamed from `_disposeListener`, `_disposePropertyListener` to clearer names
+  - `disposePropertyChanges` for property change subscriptions
+  - `disposeCommandChanges` for command canExecute subscriptions
+  - More self-documenting and consistent across the codebase
+
+#### Fixed "Without ComputedProperty" Example
+- Added proper disposer captures to the manual implementation example
+- Shows complete lifecycle management including dispose() override
+- Makes the comparison with ComputedProperty even more compelling (28 lines vs 10 lines)
+
+### 🧪 Testing Enhancements
+
+#### Deep Nesting Test Coverage
+- **Added 4-level FairyScope nesting test** to ensure robust hierarchical dependency resolution
+  - Tests ViewModel access from first scope in fourth nested scope (3 levels up)
+  - Verifies all intermediate scope traversals work correctly
+  - Validates identity preservation across deep scope hierarchies
+  - **443 tests passing** (up from 442)
+
+### 📦 Version Bump
+
+- Updated version to **1.1.2** across all package files
+- No breaking changes - fully backward compatible
+
+---
+
 ## 1.1.1
 
 **Memory Leak Prevention Release** - Critical fix for ComputedProperty memory leaks with required parent parameter.
