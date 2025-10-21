@@ -27,7 +27,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^1.1.1
+  fairy: ^1.1.2
 ```
 
 ### Basic Example
@@ -354,7 +354,7 @@ Bind<UserViewModel, String>(
 
 #### Auto-Binding with `Bind.viewModel`
 
-For multiple properties, use `Bind.viewModel` which automatically tracks accessed properties and bind them:
+For multiple properties, use `Bind.viewModel` which automatically tracks accessed properties and binds them. Fairy also provides `Bind.viewModel2`, `Bind.viewModel3`, and `Bind.viewModel4` for tracking 2-4 specific ViewModels when you need explicit multi-ViewModel binding:
 
 ```dart
 class UserViewModel extends ObservableObject {
@@ -378,13 +378,14 @@ Bind.viewModel<UserViewModel>(
 )
 ```
 
-**When to use `Bind.viewModel`:**
+**When to use `Bind.viewModel` (and its variants):**
 - Multiple related properties displayed together
 - Complex UI with many data points
 - Rapid prototyping and development
 - When convenience outweighs micro-optimization
+- Use `Bind.viewModel2/3/4` when you need to track specific multiple ViewModels explicitly
 
-**Performance Note:** Explicit selectors are ~5-10% faster
+**Performance Note:** Explicit selectors are ~5-10% faster. The `viewModel2/3/4` variants provide compile-time type safety when tracking multiple ViewModels.
 
 ### 5. Command Binding with `Command`
 
@@ -848,47 +849,6 @@ class LoginViewModel extends ObservableObject {
   }
 }
 ```
-
-**Complex Business Logic:**
-```dart
-class ProfileViewModel extends ObservableObject {
-  final firstName = ObservableProperty<String>('');
-  final lastName = ObservableProperty<String>('');
-  final age = ObservableProperty<int>(0);
-  final memberSince = ObservableProperty<DateTime>(DateTime.now());
-  final isPremium = ObservableProperty<bool>(false);
-  
-  late final displayName = ComputedProperty<String>(
-    () => '${firstName.value} ${lastName.value}'.trim(),
-    [firstName, lastName],
-    this
-  );
-  
-  late final membershipYears = ComputedProperty<int>(
-    () => DateTime.now().year - memberSince.value.year,
-    [memberSince],
-    this
-  );
-  
-  late final badgeLevel = ComputedProperty<String>(
-    () {
-      if (isPremium.value) return 'Premium';
-      if (membershipYears.value >= 5) return 'Veteran';
-      if (membershipYears.value >= 1) return 'Member';
-      return 'Newbie';
-    },
-    [isPremium, membershipYears],
-    this
-  );
-  
-  late final profileSummary = ComputedProperty<String>(
-    () => '$displayName (${age.value}) - ${badgeLevel.value} Member',
-    [displayName, age, badgeLevel],
-    this
-  );
-}
-```
-
 #### Key Benefits
 
 ✅ **Zero Maintenance** - No manual updates, listeners are managed automatically  
@@ -898,14 +858,6 @@ class ProfileViewModel extends ObservableObject {
 ✅ **No Memory Leaks** - Auto-disposal handles all cleanup  
 ✅ **Clean Code** - Declarative dependencies eliminate boilerplate  
 ✅ **Testable** - Pure functions make unit testing trivial
-
-#### How It Works
-
-1. **Setup**: Registers listeners on all dependencies during construction
-2. **Cache**: Computes and caches the initial value
-3. **React**: When any dependency changes, invalidates cache and recomputes
-4. **Notify**: Notifies its own listeners only if the computed value actually changed
-5. **Cleanup**: Auto-disposes all listeners when parent ViewModel is disposed
 
 #### Performance Note
 
