@@ -5,7 +5,7 @@
 ## Package Identity
 
 - **Name**: fairy
-- **Version**: 1.0.0
+- **Version**: 1.1.2
 - **Type**: Flutter state management library
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **License**: BSD-3-Clause
@@ -64,17 +64,22 @@ dispose(); // Clean up listener
 **Important:** Always capture and call the disposer to prevent memory leaks.
 
 #### ComputedProperty<T>
-Derived property that automatically updates when dependencies change.
+Derived property that automatically updates when dependencies change. **Requires parent parameter for automatic disposal.**
 
 ```dart
-final firstName = ObservableProperty<String>('John');
-final lastName = ObservableProperty<String>('Doe');
+class UserViewModel extends ObservableObject {
+  final firstName = ObservableProperty<String>('John');
+  final lastName = ObservableProperty<String>('Doe');
 
-late final fullName = ComputedProperty<String>(
-  () => '${firstName.value} ${lastName.value}',
-  [firstName, lastName],
-);
+  late final fullName = ComputedProperty<String>(
+    () => '${firstName.value} ${lastName.value}',
+    [firstName, lastName],
+    this, // Required parent for automatic disposal
+  );
+}
 ```
+
+**CRITICAL:** The parent parameter is **required and positional** (not optional) to prevent memory leaks from circular references.
 
 ### Commands
 
@@ -661,7 +666,7 @@ disposer();
 - **Avoid one-way binding**: Prefer returning `ObservableProperty` over raw values
 
 ### 2. Command Dependencies
-When `canExecute` depends on other properties, refresh the command:
+When `canExecute` depends on other properties, refresh the command. **Always use descriptive disposer names:**
 
 ```dart
 class MyViewModel extends ObservableObject {
@@ -671,17 +676,17 @@ class MyViewModel extends ObservableObject {
     canExecute: () => selectedItem.value != null,
   );
   
-  late final VoidCallback _disposer;
+  late final VoidCallback disposePropertyChanges;
   
   MyViewModel() {
-    _disposer = selectedItem.propertyChanged(() {
+    disposePropertyChanges = selectedItem.propertyChanged(() {
       deleteCommand.notifyCanExecuteChanged();
     });
   }
   
   @override
   void dispose() {
-    _disposer();
+    disposePropertyChanges();
     super.dispose();
   }
 }
@@ -734,7 +739,7 @@ void main() {
 ```
 
 ### 5. Testing
-ViewModels are easily testable:
+ViewModels are easily testable. Fairy has **443 tests passing** covering all core functionality:
 
 ```dart
 test('increment updates counter', () {
@@ -744,7 +749,7 @@ test('increment updates counter', () {
   vm.incrementCommand.execute();
   expect(vm.counter.value, 1);
   
-  vm.dispose();
+  vm.dispose(); // Clean up
 });
 ```
 
@@ -841,9 +846,15 @@ class DataViewModel extends ObservableObject {
 By default, `ObservableProperty` uses **recursive deep equality** for `List`, `Map`, and `Set` types, comparing contents instead of references - even for deeply nested collections! This works automatically without any configuration.
 
 ```dart
-// Simple collections
-final tags = ObservableProperty<List<String>>(['flutter', 'dart']);
-tags.value = ['flutter', 'dart'];  // ✅ No rebuild (same contents)
+class TodoViewModel extends ObservableObject {
+  // Deep equality enabled by default
+  final tags = ObservableProperty<List<String>>(['flutter', 'dart']);
+  
+  void updateTags() {
+    tags.value = ['flutter', 'dart'];  // ✅ No rebuild (same contents)
+    tags.value = ['flutter', 'web'];   // Rebuilds (different contents)
+  }
+}
 
 // Nested collections work automatically!
 final matrix = ObservableProperty<List<List<int>>>([[1, 2], [3, 4]]);
@@ -1051,17 +1062,27 @@ lib/
 
 - ViewModels are pure Dart classes - easy to unit test
 - Use `FairyScope` in widget tests for integration testing
-- All 387 unit tests pass in the package (includes 43 deep equality tests)
-- Test coverage includes all core functionality including:
-  - Deep equality for collections (simple and deeply nested)
-  - Recursive deep equality for arbitrary nesting depth
-  - Mixed nested structures (List<Map<String, List<int>>>)
-  - Sets with nested collections
-  - Custom types with and without equality overrides
+- **443 comprehensive tests passing** covering all core functionality:
+  - ComputedProperty (with required parent)
+  - All command types (sync, async, parameterized)
+  - Auto-disposal and memory management
+  - Dependency injection (scoped and global)
+  - Widget binding and lifecycle (Bind, Command, FairyBridge)
+  - Deep nesting scenarios (4-level FairyScope hierarchy)
+  - Deep equality for collections (43 tests for recursive equality)
+  - Complex scenarios (nested scopes, inter-VM dependencies)
+
+## Version History
+
+- **v1.1.2** (Current) - Documentation & testing improvements, 443 tests passing
+- **v1.1.1** - Required parent parameter for ComputedProperty (memory leak fix)
+- **v1.1.0** - Enhanced disposal safety and error handling
+- **v1.0.0** - Stable release with all core features
 
 ## Links
 
 - GitHub: https://github.com/AathifMahir/Fairy
-- Documentation: See README.md
+- Documentation: See README.md in src/ directory
 - Example: See example/ directory
 - Benchmarks: See benchmark/ directory
+- Issue Tracker: https://github.com/AathifMahir/Fairy/issues
