@@ -159,16 +159,21 @@ class _BindViewModelState<TViewModel extends ObservableObject>
 
     Widget built;
     Set<ObservableNode> accessed;
+    dynamic session; // _TrackingSession? but we can't access the type
 
     try {
-      // Track dependencies during build
-      (built, accessed) = DependencyTracker.track(() {
-        // ✅ Always report ViewModel access at the start
-        // This ensures we catch regular field changes via onPropertyChanged()
-        DependencyTracker.reportAccess(vm);
+      // Track dependencies during build with context wrapping enabled
+      // This allows lazy builders (ListView.builder, etc.) to report accesses
+      (built, accessed, session) = DependencyTracker.track(
+        () {
+          // ✅ Always report ViewModel access at the start
+          // This ensures we catch regular field changes via onPropertyChanged()
+          DependencyTracker.reportAccess(vm);
 
-        return widget.builder(context, vm);
-      });
+          return widget.builder(context, vm);
+        },
+        wrapWithContext: true,
+      );
     } catch (error) {
       // ✅ CRITICAL: Capture partial tracking on exception
       // This ensures subscriptions are reconciled even if build fails
@@ -182,6 +187,24 @@ class _BindViewModelState<TViewModel extends ObservableObject>
 
     // Reconcile subscriptions after successful build
     _reconcileSubscriptions(accessed);
+
+    // Schedule a post-frame callback to check for deferred accesses
+    // This handles lazy builder callbacks (like ListView.builder's itemBuilder)
+    // that execute after the synchronous build completes
+    if (session != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        
+        // Check if any new properties were accessed during deferred callbacks
+        // The session's Set is mutable and shared, so we can check for growth
+        final currentAccessed = (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
+        final newAccesses = currentAccessed.difference(_currentNodes);
+        if (newAccesses.isNotEmpty) {
+          // Reconcile with the new accesses
+          _reconcileSubscriptions(_currentNodes.union(newAccesses));
+        }
+      });
+    }
 
     return built;
   }
@@ -310,15 +333,19 @@ class _BindViewModel2State<TViewModel1 extends ObservableObject,
 
     Widget built;
     Set<ObservableNode> accessed;
+    dynamic session; // _TrackingSession? but we can't access the type
 
     try {
-      (built, accessed) = DependencyTracker.track(() {
-        // ✅ Always report ViewModels access
-        DependencyTracker.reportAccess(vm1);
-        DependencyTracker.reportAccess(vm2);
+      (built, accessed, session) = DependencyTracker.track(
+        () {
+          // ✅ Always report ViewModels access
+          DependencyTracker.reportAccess(vm1);
+          DependencyTracker.reportAccess(vm2);
 
-        return widget.builder(context, vm1, vm2);
-      });
+          return widget.builder(context, vm1, vm2);
+        },
+        wrapWithContext: true,
+      );
     } catch (error) {
       accessed = DependencyTracker.captureAccessed();
       _reconcileSubscriptions(accessed);
@@ -326,6 +353,21 @@ class _BindViewModel2State<TViewModel1 extends ObservableObject,
     }
 
     _reconcileSubscriptions(accessed);
+
+    // Schedule a post-frame callback to check for deferred accesses
+    // This handles lazy builder callbacks (like ListView.builder's itemBuilder)
+    if (session != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        
+        final currentAccessed = (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
+        final newAccesses = currentAccessed.difference(_currentNodes);
+        if (newAccesses.isNotEmpty) {
+          _reconcileSubscriptions(_currentNodes.union(newAccesses));
+        }
+      });
+    }
+
     return built;
   }
 
@@ -439,16 +481,20 @@ class _BindViewModel3State<
 
     Widget built;
     Set<ObservableNode> accessed;
+    dynamic session; // _TrackingSession? but we can't access the type
 
     try {
-      (built, accessed) = DependencyTracker.track(() {
-        // ✅ Always report ViewModels access
-        DependencyTracker.reportAccess(vm1);
-        DependencyTracker.reportAccess(vm2);
-        DependencyTracker.reportAccess(vm3);
+      (built, accessed, session) = DependencyTracker.track(
+        () {
+          // ✅ Always report ViewModels access
+          DependencyTracker.reportAccess(vm1);
+          DependencyTracker.reportAccess(vm2);
+          DependencyTracker.reportAccess(vm3);
 
-        return widget.builder(context, vm1, vm2, vm3);
-      });
+          return widget.builder(context, vm1, vm2, vm3);
+        },
+        wrapWithContext: true,
+      );
     } catch (error) {
       accessed = DependencyTracker.captureAccessed();
       _reconcileSubscriptions(accessed);
@@ -456,6 +502,21 @@ class _BindViewModel3State<
     }
 
     _reconcileSubscriptions(accessed);
+
+    // Schedule a post-frame callback to check for deferred accesses
+    // This handles lazy builder callbacks (like ListView.builder's itemBuilder)
+    if (session != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        
+        final currentAccessed = (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
+        final newAccesses = currentAccessed.difference(_currentNodes);
+        if (newAccesses.isNotEmpty) {
+          _reconcileSubscriptions(_currentNodes.union(newAccesses));
+        }
+      });
+    }
+
     return built;
   }
 
@@ -576,17 +637,21 @@ class _BindViewModel4State<
 
     Widget built;
     Set<ObservableNode> accessed;
+    dynamic session; // _TrackingSession? but we can't access the type
 
     try {
-      (built, accessed) = DependencyTracker.track(() {
-        // ✅ Always report ViewModels access
-        DependencyTracker.reportAccess(vm1);
-        DependencyTracker.reportAccess(vm2);
-        DependencyTracker.reportAccess(vm3);
-        DependencyTracker.reportAccess(vm4);
+      (built, accessed, session) = DependencyTracker.track(
+        () {
+          // ✅ Always report ViewModels access
+          DependencyTracker.reportAccess(vm1);
+          DependencyTracker.reportAccess(vm2);
+          DependencyTracker.reportAccess(vm3);
+          DependencyTracker.reportAccess(vm4);
 
-        return widget.builder(context, vm1, vm2, vm3, vm4);
-      });
+          return widget.builder(context, vm1, vm2, vm3, vm4);
+        },
+        wrapWithContext: true,
+      );
     } catch (error) {
       accessed = DependencyTracker.captureAccessed();
       _reconcileSubscriptions(accessed);
@@ -594,6 +659,21 @@ class _BindViewModel4State<
     }
 
     _reconcileSubscriptions(accessed);
+
+    // Schedule a post-frame callback to check for deferred accesses
+    // This handles lazy builder callbacks (like ListView.builder's itemBuilder)
+    if (session != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        
+        final currentAccessed = (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
+        final newAccesses = currentAccessed.difference(_currentNodes);
+        if (newAccesses.isNotEmpty) {
+          _reconcileSubscriptions(_currentNodes.union(newAccesses));
+        }
+      });
+    }
+
     return built;
   }
 
