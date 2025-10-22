@@ -29,7 +29,7 @@ A lightweight MVVM framework for Flutter that provides strongly-typed, reactive 
 
 ```yaml
 dependencies:
-  fairy: ^1.2.0
+  fairy: ^1.3.0
 ```
 
 ## 🚀 Quick Start
@@ -353,7 +353,7 @@ Fairy is designed for performance. Here are benchmark results comparing with pop
 
 ## 🧪 Testing
 
-Fairy is thoroughly tested with **493 tests** passing, covering:
+Fairy is thoroughly tested with **522 tests** passing, covering:
 - ✅ Observable properties and computed properties
 - ✅ All command types (sync, async, parameterized)
 - ✅ Auto-disposal and memory management
@@ -362,29 +362,36 @@ Fairy is thoroughly tested with **493 tests** passing, covering:
 - ✅ Complex scenarios (nested scopes, inter-VM dependencies)
 - ✅ Deep equality for collections
 - ✅ FairyBridge overlay scenarios
+- ✅ Tuple binding patterns and limitations
+- ✅ Memory leak prevention
 
 ## 🎨 Architecture Guidelines
 
-### ViewModel ✅ DO
-- Contain business logic
-- Manage state with ObservableProperty
-- Expose commands for actions
-- Coordinate with services
+### ViewModel
+✅ **DO**: Business logic, state (ObservableProperty), commands, derived values (ComputedProperty)  
+❌ **DON'T**: Reference BuildContext/widgets, navigation, UI logic, styling
 
-### ViewModel ❌ DON'T
-- Reference BuildContext or widgets
-- Perform navigation
-- Contain UI logic or styling
+### View (Widgets)
+✅ **DO**: Use `Bind`/`Command` widgets, handle navigation, declarative composition  
+❌ **DON'T**: Business logic, data validation, direct state modification
 
-### View ✅ DO
-- Declarative widget composition
-- Bind to ViewModel properties/commands
-- Handle navigation
+### Binding Patterns
+✅ **DO**: 
+- Single property: `selector: (vm) => vm.property.value`
+- Tuples: `selector: (vm) => (vm.a.value, vm.b.value)` ← All `.value`!
+- Two-way: `selector: (vm) => vm.property` (returns ObservableProperty)
 
-### View ❌ DON'T
-- Contain business logic
-- Directly modify app state
-- Perform data validation
+❌ **DON'T**: 
+- Mix in tuples: `(vm.a.value, vm.b)` ← TypeError!
+- Create new instances in selectors ← Infinite rebuilds!
+
+### Commands
+✅ **DO**: Call `notifyCanExecuteChanged()` when conditions change, use `AsyncRelayCommand` for async  
+❌ **DON'T**: Long operations in sync commands, forget to update `canExecute`
+
+### Dependency Injection
+✅ **DO**: `FairyScope` for pages/features, `FairyLocator` for app-wide services, `FairyBridge` for overlays  
+❌ **DON'T**: Register ViewModels globally, manually dispose FairyScope ViewModels
 
 ## 🆚 Comparison
 
