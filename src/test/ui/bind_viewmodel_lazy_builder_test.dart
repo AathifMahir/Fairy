@@ -1030,8 +1030,6 @@ class LargeListViewModel extends ObservableObject {
   final items = ObservableProperty<List<String>>([]);
 }
 
-
-
 class SecondViewModel extends ObservableObject {
   final counter = ObservableProperty<int>(0);
   final name = ObservableProperty<String>('Default');

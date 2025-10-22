@@ -194,10 +194,11 @@ class _BindViewModelState<TViewModel extends ObservableObject>
     if (session != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        
+
         // Check if any new properties were accessed during deferred callbacks
         // The session's Set is mutable and shared, so we can check for growth
-        final currentAccessed = (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
+        final currentAccessed =
+            (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
         final newAccesses = currentAccessed.difference(_currentNodes);
         if (newAccesses.isNotEmpty) {
           // Reconcile with the new accesses
@@ -359,8 +360,9 @@ class _BindViewModel2State<TViewModel1 extends ObservableObject,
     if (session != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        
-        final currentAccessed = (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
+
+        final currentAccessed =
+            (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
         final newAccesses = currentAccessed.difference(_currentNodes);
         if (newAccesses.isNotEmpty) {
           _reconcileSubscriptions(_currentNodes.union(newAccesses));
@@ -508,8 +510,9 @@ class _BindViewModel3State<
     if (session != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        
-        final currentAccessed = (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
+
+        final currentAccessed =
+            (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
         final newAccesses = currentAccessed.difference(_currentNodes);
         if (newAccesses.isNotEmpty) {
           _reconcileSubscriptions(_currentNodes.union(newAccesses));
@@ -665,8 +668,9 @@ class _BindViewModel4State<
     if (session != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        
-        final currentAccessed = (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
+
+        final currentAccessed =
+            (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
         final newAccesses = currentAccessed.difference(_currentNodes);
         if (newAccesses.isNotEmpty) {
           _reconcileSubscriptions(_currentNodes.union(newAccesses));

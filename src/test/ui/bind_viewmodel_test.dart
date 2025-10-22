@@ -887,7 +887,8 @@ void main() {
 
       expect(outerRebuilds, equals(3)); // Rebuilds because child rebuilds
       expect(innerRebuilds1, equals(3)); // Rebuilds because parent rebuilds
-      expect(innerRebuilds2, equals(3)); // Rebuilds because it subscribes to age
+      expect(
+          innerRebuilds2, equals(3)); // Rebuilds because it subscribes to age
     });
 
     testWidgets(

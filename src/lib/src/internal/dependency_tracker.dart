@@ -54,7 +54,8 @@ class DependencyTracker {
   ///
   /// When [wrapWithContext] is true, wraps result with InheritedWidget
   /// to enable lazy builder callbacks to report accesses.
-  static (T result, Set<ObservableNode> accessed, _TrackingSession? session) track<T>(
+  static (T result, Set<ObservableNode> accessed, _TrackingSession? session)
+      track<T>(
     T Function() fn, {
     bool wrapWithContext = false,
   }) {
@@ -102,7 +103,7 @@ class DependencyTracker {
 /// Stack-isolated - nested builds don't interfere.
 class _TrackingSession {
   final Set<ObservableNode> _accessed = {};
-  
+
   /// Snapshot of accessed nodes for deferred access comparison.
   Set<ObservableNode> getAccessedSnapshot() => Set.from(_accessed);
 }
