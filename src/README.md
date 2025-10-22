@@ -27,7 +27,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^1.1.2
+  fairy: ^1.2.0
 ```
 
 ### Basic Example
@@ -1231,7 +1231,7 @@ See the [example](../example) directory for a complete counter app demonstrating
 
 ## Testing
 
-Fairy is thoroughly tested with **401 tests** passing, covering all core functionality including observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, and overlay scenarios.
+Fairy is thoroughly tested with **493 tests** passing, covering all core functionality including observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, and overlay scenarios.
 
 Fairy is designed for testability:
 

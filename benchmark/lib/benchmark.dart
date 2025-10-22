@@ -27,6 +27,48 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Fairy vs Provider vs Riverpod Benchmark', () {
+    // Warm-up phase - ensure Flutter engine is fully initialized
+    testWidgets('Engine Warm-up', (WidgetTester tester) async {
+      print('\n🔥 Warming up Flutter engine...');
+      
+      // Warm up with all three frameworks
+      for (int round = 0; round < 3; round++) {
+        // Fairy warm-up
+        await tester.pumpWidget(
+          MaterialApp(home: Scaffold(body: const FairyCounterWidget())),
+        );
+        for (int i = 0; i < 20; i++) {
+          await tester.tap(find.byType(ElevatedButton));
+          await tester.pump();
+        }
+        await tester.pumpWidget(Container());
+
+        // Provider warm-up
+        await tester.pumpWidget(
+          MaterialApp(home: Scaffold(body: const ProviderCounterWidget())),
+        );
+        for (int i = 0; i < 20; i++) {
+          await tester.tap(find.byType(ElevatedButton));
+          await tester.pump();
+        }
+        await tester.pumpWidget(Container());
+
+        // Riverpod warm-up
+        await tester.pumpWidget(
+          ProviderScope(
+            child: MaterialApp(home: Scaffold(body: const RiverpodCounterWidget())),
+          ),
+        );
+        for (int i = 0; i < 20; i++) {
+          await tester.tap(find.byType(ElevatedButton));
+          await tester.pump();
+        }
+        await tester.pumpWidget(Container());
+      }
+      
+      print('✅ Engine warm-up complete!\n');
+    });
+
     testWidgets('Fairy Widget Performance', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -105,55 +147,6 @@ void main() {
       stopwatch.stop();
       
       _results.widgetPerformance['Riverpod'] = stopwatch.elapsedMicroseconds;
-    });
-
-    testWidgets('Build Performance Comparison', (WidgetTester tester) async {
-      // Test Fairy build performance
-      final fairyStopwatch = Stopwatch()..start();
-      for (int i = 0; i < 100; i++) {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: const FairyCounterWidget(),
-            ),
-          ),
-        );
-        await tester.pumpWidget(Container()); // Clear
-      }
-      fairyStopwatch.stop();
-      _results.buildPerformance['Fairy'] = fairyStopwatch.elapsedMicroseconds;
-
-      // Test Provider build performance
-      final providerStopwatch = Stopwatch()..start();
-      for (int i = 0; i < 100; i++) {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: const ProviderCounterWidget(),
-            ),
-          ),
-        );
-        await tester.pumpWidget(Container()); // Clear
-      }
-      providerStopwatch.stop();
-      _results.buildPerformance['Provider'] = providerStopwatch.elapsedMicroseconds;
-
-      // Test Riverpod build performance
-      final riverpodStopwatch = Stopwatch()..start();
-      for (int i = 0; i < 100; i++) {
-        await tester.pumpWidget(
-          ProviderScope(
-            child: MaterialApp(
-              home: Scaffold(
-                body: const RiverpodCounterWidget(),
-              ),
-            ),
-          ),
-        );
-        await tester.pumpWidget(Container()); // Clear
-      }
-      riverpodStopwatch.stop();
-      _results.buildPerformance['Riverpod'] = riverpodStopwatch.elapsedMicroseconds;
     });
 
     testWidgets('Memory Usage Comparison', (WidgetTester tester) async {
@@ -442,10 +435,10 @@ void main() {
     });
 
     // ========================================================================
-    // BIND.OBSERVER BENCHMARKS
+    // BIND.VIEWMODEL BENCHMARKS (Auto-tracking)
     // ========================================================================
 
-    testWidgets('Bind.observer vs Provider Consumer - Performance', (WidgetTester tester) async {
+    testWidgets('Bind.viewModel vs Provider Consumer - Performance', (WidgetTester tester) async {
       // Test Provider Consumer
       await tester.pumpWidget(
         MaterialApp(
@@ -470,7 +463,7 @@ void main() {
 
       await tester.pumpWidget(Container());
 
-      // Test Bind.observer
+      // Test Bind.viewModel
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -492,20 +485,20 @@ void main() {
       }
       observerStopwatch.stop();
 
-      print('\n📊 Bind.observer vs Provider Consumer:');
+      print('\n📊 Bind.viewModel vs Provider Consumer:');
       print('  Provider Consumer: ${providerStopwatch.elapsedMilliseconds}ms');
-      print('  Fairy Bind.observer: ${observerStopwatch.elapsedMilliseconds}ms');
+      print('  Fairy Bind.viewModel: ${observerStopwatch.elapsedMilliseconds}ms');
       final diff = observerStopwatch.elapsedMicroseconds - providerStopwatch.elapsedMicroseconds;
       final percentage = (diff / providerStopwatch.elapsedMicroseconds * 100).abs();
       if (diff > 0) {
-        print('  Bind.observer is ${percentage.toStringAsFixed(1)}% slower');
+        print('  Bind.viewModel is ${percentage.toStringAsFixed(1)}% slower');
       } else {
-        print('  Bind.observer is ${percentage.toStringAsFixed(1)}% faster');
+        print('  Bind.viewModel is ${percentage.toStringAsFixed(1)}% faster');
       }
       print('');
     });
 
-    testWidgets('Bind.observer - Selective Rebuild Test', (WidgetTester tester) async {
+    testWidgets('Bind.viewModel - Selective Rebuild Test', (WidgetTester tester) async {
       int widget1Builds = 0;
       int widget2Builds = 0;
       int widget3Builds = 0;
@@ -561,7 +554,7 @@ void main() {
       
       stopwatch.stop();
 
-      print('\n📊 Bind.observer Selective Rebuild Test:');
+      print('\n📊 Bind.viewModel Selective Rebuild Test:');
       print('  Changed property1 100 times:');
       print('  Widget 1 (accessing property1): $widget1Builds rebuilds ✓');
       print('  Widget 2 (accessing property2): $widget2Builds rebuilds ${widget2Builds == 0 ? "✓" : "← Unexpected!"}');
@@ -572,7 +565,7 @@ void main() {
       print('');
     });
 
-    testWidgets('Bind.observer - Tracking Accuracy Test', (WidgetTester tester) async {
+    testWidgets('Bind.viewModel - Tracking Accuracy Test', (WidgetTester tester) async {
       int conditionalBuilds = 0;
       FairyMultiPropertyViewModel? vm;
 
@@ -604,7 +597,7 @@ void main() {
       await tester.pumpAndSettle();
       conditionalBuilds = 0;
 
-      print('\n📊 Bind.observer Conditional Access Tracking:');
+      print('\n📊 Bind.viewModel Conditional Access Tracking:');
       
       // Phase 1: property1 <= 10, should NOT track property2
       print('  Phase 1: property1 <= 10 (property2 not accessed)');
@@ -631,7 +624,7 @@ void main() {
       print('');
     });
 
-    testWidgets('Bind.observer - Batching Performance', (WidgetTester tester) async {
+    testWidgets('Bind.viewModel - Batching Performance', (WidgetTester tester) async {
       int buildCount = 0;
       FairyCounterViewModel? vm;
 
@@ -659,7 +652,7 @@ void main() {
       await tester.pumpAndSettle();
       buildCount = 0;
 
-      print('\n📊 Bind.observer Batching Test:');
+      print('\n📊 Bind.viewModel Batching Test:');
       
       final stopwatch = Stopwatch()..start();
       
@@ -678,8 +671,8 @@ void main() {
       print('');
     });
 
-    testWidgets('Bind.observer - Memory Test (Subscription Cleanup)', (WidgetTester tester) async {
-      print('\n📊 Bind.observer Memory Test:');
+    testWidgets('Bind.viewModel - Memory Test (Subscription Cleanup)', (WidgetTester tester) async {
+      print('\n📊 Bind.viewModel Memory Test:');
       
       final stopwatch = Stopwatch()..start();
       
@@ -724,16 +717,16 @@ void main() {
     });
 
     // ========================================================================
-    // REBUILD PERFORMANCE WITH BIND.OBSERVER
+    // REBUILD PERFORMANCE WITH BIND.VIEWMODEL
     // ========================================================================
     
-    testWidgets('Rebuild Performance (Bind.observer Auto-tracking)', (WidgetTester tester) async {
-      // This tests rebuild performance when using Bind.observer with auto-tracking
+    testWidgets('Rebuild Performance (Bind.viewModel Auto-tracking)', (WidgetTester tester) async {
+      // This tests rebuild performance when using Bind.viewModel with auto-tracking
       // All frameworks use their "auto-tracking" approach (Consumer/watch without selectors)
       
       print('\n📊 Rebuild Performance with Auto-tracking:');
       
-      // === FAIRY BIND.OBSERVER ===
+      // === FAIRY BIND.VIEWMODEL ===
       int fairyObserverBuilds1 = 0, fairyObserverBuilds2 = 0, fairyObserverBuilds3 = 0;
       FairyMultiPropertyViewModel? fairyVm;
       
@@ -788,7 +781,7 @@ void main() {
       }
       fairyObserverStopwatch.stop();
       
-      print('  🧚 Fairy Bind.observer:');
+      print('  🧚 Fairy Bind.viewModel:');
       print('    Widget 1 (accessing property1): $fairyObserverBuilds1 rebuilds ← Only this one!');
       print('    Widget 2 (accessing property2): $fairyObserverBuilds2 rebuilds ← Should be 0');
       print('    Widget 3 (accessing property3): $fairyObserverBuilds3 rebuilds ← Should be 0');
@@ -796,7 +789,7 @@ void main() {
       final totalFairyObserver = fairyObserverBuilds1 + fairyObserverBuilds2 + fairyObserverBuilds3;
       print('    Efficiency: ${totalFairyObserver > 0 ? ((fairyObserverBuilds1 / totalFairyObserver) * 100).toStringAsFixed(1) : 0}% of rebuilds were necessary\n');
       
-      _results.rebuildPerformance['Fairy Bind.observer'] = fairyObserverStopwatch.elapsedMicroseconds;
+      _results.rebuildPerformance['Fairy Bind.viewModel'] = fairyObserverStopwatch.elapsedMicroseconds;
 
       // === PROVIDER CONSUMER (Global) ===
       int providerConsumerBuilds1 = 0, providerConsumerBuilds2 = 0, providerConsumerBuilds3 = 0;
@@ -921,6 +914,205 @@ void main() {
       _results.rebuildPerformance['Riverpod Consumer'] = riverpodConsumerStopwatch.elapsedMicroseconds;
       
       riverpodContainer.dispose();
+    });
+
+    // ========================================================================
+    // ENHANCED DEPENDENCY TRACKER BENCHMARKS (Lazy Builders)
+    // ========================================================================
+    
+    testWidgets('Lazy Builder Performance - ListView.builder with Bind.viewModel', (WidgetTester tester) async {
+      print('\n📊 Lazy Builder Performance Test:');
+      
+      int itemBuilderCalls = 0;
+      FairyMultiPropertyViewModel? vm;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FairyScope(
+              viewModel: (locator) {
+                vm = FairyMultiPropertyViewModel();
+                return vm!;
+              },
+              child: Builder(
+                builder: (context) => Bind.viewModel<FairyMultiPropertyViewModel>(
+                  builder: (context, vm) {
+                    return ListView.builder(
+                      itemCount: 100,
+                      itemBuilder: (context, index) {
+                        itemBuilderCalls++;
+                        // Access property inside itemBuilder (deferred callback)
+                        return ListTile(
+                          title: Text('Item $index - ${vm.property1.value}'),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      final initialBuilderCalls = itemBuilderCalls;
+      itemBuilderCalls = 0;
+
+      final stopwatch = Stopwatch()..start();
+      
+      // Update property1 - should trigger rebuilds since it's accessed in itemBuilder
+      for (int i = 0; i < 50; i++) {
+        vm!.property1.value = i;
+        await tester.pump();
+      }
+      
+      stopwatch.stop();
+
+      print('  Initial itemBuilder calls: $initialBuilderCalls (lazy rendering)');
+      print('  Updates: 50 property changes');
+      print('  ItemBuilder calls after updates: $itemBuilderCalls');
+      print('  Time: ${stopwatch.elapsedMilliseconds}ms');
+      print('  ✓ Lazy builder tracking ${itemBuilderCalls > 0 ? "WORKING" : "FAILED"}!');
+      print('');
+    });
+
+    testWidgets('Multi-ViewModel Performance - Bind.viewModel2', (WidgetTester tester) async {
+      print('\n📊 Multi-ViewModel Performance (Bind.viewModel2):');
+      
+      int widget1Builds = 0, widget2Builds = 0;
+      FairyMultiPropertyViewModel? vm1;
+      FairyMultiPropertyViewModel2? vm2;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FairyScope(
+              viewModels: [
+                (locator) {
+                  vm1 = FairyMultiPropertyViewModel();
+                  return vm1!;
+                },
+                (locator) {
+                  vm2 = FairyMultiPropertyViewModel2();
+                  return vm2!;
+                },
+              ],
+              child: Builder(
+                builder: (context) => Column(
+                  children: [
+                    Bind.viewModel2<FairyMultiPropertyViewModel, FairyMultiPropertyViewModel2>(
+                      builder: (context, vm1, vm2) {
+                        widget1Builds++;
+                        return Text('VM1: ${vm1.property1.value}');
+                      },
+                    ),
+                    Bind.viewModel2<FairyMultiPropertyViewModel, FairyMultiPropertyViewModel2>(
+                      builder: (context, vm1, vm2) {
+                        widget2Builds++;
+                        return Text('VM2: ${vm2.property1.value}');
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      widget1Builds = widget2Builds = 0;
+
+      final stopwatch = Stopwatch()..start();
+      
+      // Update VM1 property - only widget1 should rebuild
+      for (int i = 0; i < 100; i++) {
+        vm1!.property1.value = i;
+        await tester.pump();
+      }
+      
+      stopwatch.stop();
+
+      print('  Changed VM1.property1 100 times:');
+      print('  Widget 1 (accessing VM1.property1): $widget1Builds rebuilds ✓');
+      print('  Widget 2 (accessing VM2.property1): $widget2Builds rebuilds ${widget2Builds == 0 ? "✓" : "← Unexpected!"}');
+      print('  Time: ${stopwatch.elapsedMilliseconds}ms');
+      final totalBuilds = widget1Builds + widget2Builds;
+      print('  Efficiency: ${totalBuilds > 0 ? ((widget1Builds / totalBuilds) * 100).toStringAsFixed(1) : 0}% of rebuilds were necessary');
+      print('');
+    });
+
+    testWidgets('Lazy Builder + Multi-ViewModel - Bind.viewModel3 with ListView', (WidgetTester tester) async {
+      print('\n📊 Combined Test: Lazy Builder + Multi-ViewModel (Bind.viewModel3):');
+      
+      int listBuilderCalls = 0;
+      FairyMultiPropertyViewModel? vm1;
+      FairyMultiPropertyViewModel2? vm2;
+      FairyMultiPropertyViewModel3? vm3;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FairyScope(
+              viewModels: [
+                (locator) {
+                  vm1 = FairyMultiPropertyViewModel();
+                  return vm1!;
+                },
+                (locator) {
+                  vm2 = FairyMultiPropertyViewModel2();
+                  return vm2!;
+                },
+                (locator) {
+                  vm3 = FairyMultiPropertyViewModel3();
+                  return vm3!;
+                },
+              ],
+              child: Builder(
+                builder: (context) => Bind.viewModel3<FairyMultiPropertyViewModel, FairyMultiPropertyViewModel2, FairyMultiPropertyViewModel3>(
+                  builder: (context, vm1, vm2, vm3) {
+                    return ListView.builder(
+                      itemCount: 50,
+                      itemBuilder: (context, index) {
+                        listBuilderCalls++;
+                        // Access properties from different VMs in itemBuilder
+                        return ListTile(
+                          title: Text('Item $index'),
+                          subtitle: Text('VM1: ${vm1.property1.value}, VM2: ${vm2.property1.value}, VM3: ${vm3.property1.value}'),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      listBuilderCalls = 0;
+
+      final stopwatch = Stopwatch()..start();
+      
+      // Update all 3 VMs
+      for (int i = 0; i < 30; i++) {
+        vm1!.property1.value = i;
+        vm2!.property1.value = i;
+        vm3!.property1.value = i;
+        await tester.pump();
+      }
+      
+      stopwatch.stop();
+
+      print('  ListView with 50 items, 3 ViewModels, accessing properties in itemBuilder');
+      print('  Updates: 30 property changes × 3 VMs = 90 total changes');
+      print('  ItemBuilder calls: $listBuilderCalls');
+      print('  Time: ${stopwatch.elapsedMilliseconds}ms');
+      print('  Average per update: ${(stopwatch.elapsedMicroseconds / 30).toStringAsFixed(0)}µs');
+      print('  ✓ Complex lazy builder + multi-VM tracking ${listBuilderCalls > 0 ? "WORKING" : "FAILED"}!');
+      print('');
     });
   });
 

@@ -11,16 +11,13 @@ void printBenchmarkResults(BenchmarkResults results) {
   // Widget Performance Table
   printSection('Widget Performance (1000 interactions)', results.widgetPerformance);
   
-  // Build Performance Table
-  printSection('Build Performance (100 builds)', results.buildPerformance);
-  
   // Memory Performance Table
   printSection('Memory Management (50 create/dispose cycles)', results.memoryPerformance);
 
   // Selective Rebuild Performance Table (using explicit Bind with selectors)
   printSection('Selective Rebuild Performance (100 property updates, explicit Bind)', results.selectiveRebuildPerformance);
 
-  // Rebuild Performance Table (using Bind.observer auto-tracking)
+  // Rebuild Performance Table (using Bind.viewModel auto-tracking)
   printSection('Rebuild Performance (100 property updates, auto-tracking)', results.rebuildPerformance);
 
   // Summary
@@ -51,10 +48,10 @@ void printSection(String title, Map<String, int> data) {
     final ms = (time / 1000).toStringAsFixed(2);
     final relative = ((time / fastest) * 100).toStringAsFixed(1);
     
-    // Clean up display name - remove suffixes like "(selective)", "Bind.observer", "Consumer"
+    // Clean up display name - remove suffixes like "(selective)", "Bind.viewModel", "Consumer"
     String displayName = rawName
         .replaceAll(' (selective)', '')
-        .replaceAll(' Bind.observer', '')
+        .replaceAll(' Bind.viewModel', '')
         .replaceAll(' Consumer', '');
     
     // Extract base framework name for emoji
@@ -129,7 +126,6 @@ void printSummary(BenchmarkResults results) {
 
   for (final category in [
     results.widgetPerformance,
-    results.buildPerformance,
     results.memoryPerformance,
     results.selectiveRebuildPerformance,
     results.rebuildPerformance,

@@ -5,7 +5,7 @@
 ## Package Identity
 
 - **Name**: fairy
-- **Version**: 1.1.2
+- **Version**: 1.2.0
 - **Type**: Flutter state management library
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **License**: BSD-3-Clause
