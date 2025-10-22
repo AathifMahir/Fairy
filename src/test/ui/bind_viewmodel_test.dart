@@ -4,6 +4,7 @@ import 'package:fairy/src/core/observable.dart';
 import 'package:fairy/src/core/command.dart';
 import 'package:fairy/src/locator/fairy_scope.dart';
 import 'package:fairy/src/ui/bind_widget.dart';
+import 'package:fairy/src/internal/dependency_tracker.dart';
 
 void main() {
   group('BindObserver', () {
@@ -754,6 +755,334 @@ void main() {
       // Should batch into single rebuild
       expect(buildCount, equals(2));
       expect(find.text('99'), findsOneWidget);
+    });
+  });
+
+  // ==========================================================================
+  // Nested Bind widgets behavior tests
+  // ==========================================================================
+
+  group('Nested Bind widgets', () {
+    testWidgets(
+        'Bind with explicit selector inside Bind.viewModel should not create duplicate listeners',
+        (tester) async {
+      final vm = TestViewModel();
+      int outerRebuilds = 0;
+      int innerRebuilds = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FairyScope(
+            viewModel: (_) => vm,
+            child: Bind.viewModel<TestViewModel>(
+              builder: (context, vm) {
+                outerRebuilds++;
+                return Column(
+                  children: [
+                    Text('Outer: ${vm.name.value}'),
+                    // Nested Bind with explicit selector
+                    Bind<TestViewModel, String>(
+                      selector: (vm) => vm.name,
+                      builder: (context, value, update) {
+                        innerRebuilds++;
+                        return Text('Inner: $value');
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      // Initial build
+      expect(outerRebuilds, equals(1));
+      expect(innerRebuilds, equals(1));
+      expect(find.text('Outer: Initial'), findsOneWidget);
+      expect(find.text('Inner: Initial'), findsOneWidget);
+
+      // Change the property
+      vm.name.value = 'Changed';
+      await tester.pump();
+
+      // Both should rebuild once
+      // Outer: subscribes via DependencyTracker
+      // Inner: subscribes via propertyChanged directly
+      expect(outerRebuilds, equals(2));
+      expect(innerRebuilds, equals(2));
+      expect(find.text('Outer: Changed'), findsOneWidget);
+      expect(find.text('Inner: Changed'), findsOneWidget);
+
+      // Verify no extra rebuilds on second change
+      vm.name.value = 'Changed Again';
+      await tester.pump();
+
+      expect(outerRebuilds, equals(3));
+      expect(innerRebuilds, equals(3));
+    });
+
+    testWidgets(
+        'Multiple nested Bind widgets should each maintain independent subscriptions',
+        (tester) async {
+      final vm = TestViewModel();
+      int outerRebuilds = 0;
+      int innerRebuilds1 = 0;
+      int innerRebuilds2 = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FairyScope(
+            viewModel: (_) => vm,
+            child: Bind.viewModel<TestViewModel>(
+              builder: (context, vm) {
+                outerRebuilds++;
+                return Column(
+                  children: [
+                    Text('Outer'),
+                    // First nested Bind
+                    Bind<TestViewModel, String>(
+                      selector: (vm) => vm.name,
+                      builder: (context, value, update) {
+                        innerRebuilds1++;
+                        return Text('Inner1: $value');
+                      },
+                    ),
+                    // Second nested Bind on different property
+                    Bind<TestViewModel, int>(
+                      selector: (vm) => vm.age,
+                      builder: (context, value, update) {
+                        innerRebuilds2++;
+                        return Text('Inner2: $value');
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      // Initial build
+      expect(outerRebuilds, equals(1));
+      expect(innerRebuilds1, equals(1));
+      expect(innerRebuilds2, equals(1));
+
+      // Change only name - outer tracks name, so it rebuilds
+      // When outer rebuilds, it rebuilds inner1 as well (parent rebuild)
+      // inner2 doesn't subscribe to name, but gets rebuilt due to parent
+      vm.name.value = 'New Name';
+      await tester.pump();
+
+      expect(outerRebuilds, equals(2));
+      expect(innerRebuilds1, equals(2));
+      expect(innerRebuilds2,
+          equals(2)); // Rebuilds because parent (outer) rebuilds
+
+      // Change only age - outer doesn't track age directly
+      // But inner2 subscribes to age, triggers rebuild, which rebuilds parent
+      vm.age.value = 25;
+      await tester.pump();
+
+      expect(outerRebuilds, equals(3)); // Rebuilds because child rebuilds
+      expect(innerRebuilds1, equals(3)); // Rebuilds because parent rebuilds
+      expect(innerRebuilds2, equals(3)); // Rebuilds because it subscribes to age
+    });
+
+    testWidgets(
+        'Nested Bind.viewModel inside Bind.viewModel should track independently',
+        (tester) async {
+      final vm = TestViewModel();
+      int outerRebuilds = 0;
+      int innerRebuilds = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FairyScope(
+            viewModel: (_) => vm,
+            child: Bind.viewModel<TestViewModel>(
+              builder: (context, vm) {
+                outerRebuilds++;
+                return Column(
+                  children: [
+                    Text('Outer: ${vm.name.value}'),
+                    // Nested Bind.viewModel (auto-tracking)
+                    Bind.viewModel<TestViewModel>(
+                      builder: (context, vm) {
+                        innerRebuilds++;
+                        // Access different property
+                        return Text('Inner: ${vm.age.value}');
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      // Initial build
+      expect(outerRebuilds, equals(1));
+      expect(innerRebuilds, equals(1));
+
+      // Change name - outer tracks name, so it rebuilds
+      // When outer rebuilds, inner also rebuilds (parent rebuild)
+      vm.name.value = 'Changed';
+      await tester.pump();
+
+      expect(outerRebuilds, equals(2));
+      expect(innerRebuilds, equals(2)); // Rebuilds because parent rebuilds
+
+      // Change age - inner tracks age, so it rebuilds
+      // Outer doesn't track age directly, so it doesn't rebuild
+      vm.age.value = 30;
+      await tester.pump();
+
+      expect(outerRebuilds, equals(2)); // Doesn't rebuild - doesn't track age
+      expect(innerRebuilds, equals(3)); // Rebuilds because it tracks age
+    });
+
+    testWidgets('Deeply nested Bind widgets should not cause memory leaks',
+        (tester) async {
+      final vm = TestViewModel();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FairyScope(
+            viewModel: (_) => vm,
+            child: Bind.viewModel<TestViewModel>(
+              builder: (context, vm) {
+                return Bind.viewModel<TestViewModel>(
+                  builder: (context, vm) {
+                    return Bind<TestViewModel, String>(
+                      selector: (vm) => vm.name,
+                      builder: (context, value, update) {
+                        return Text('Deeply nested: $value');
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Deeply nested: Initial'), findsOneWidget);
+
+      // Change property multiple times
+      for (int i = 0; i < 10; i++) {
+        vm.name.value = 'Value $i';
+        await tester.pump();
+        expect(find.text('Deeply nested: Value $i'), findsOneWidget);
+      }
+
+      // Dispose widget tree
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      // Verify no tracking sessions leaked
+      expect(DependencyTracker.isTracking, isFalse);
+    });
+
+    testWidgets(
+        'Bind with selector should not be affected by outer Bind.viewModel tracking',
+        (tester) async {
+      final vm = TestViewModel();
+      final accessedInOuter = <String>[];
+      final accessedInInner = <String>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FairyScope(
+            viewModel: (_) => vm,
+            child: Bind.viewModel<TestViewModel>(
+              builder: (context, vm) {
+                // Track what gets accessed in outer builder
+                accessedInOuter.clear();
+                final name = vm.name.value;
+                accessedInOuter.add('name');
+
+                return Column(
+                  children: [
+                    Text('Outer: $name'),
+                    // Inner Bind with explicit selector
+                    Bind<TestViewModel, int>(
+                      selector: (vm) {
+                        // This should NOT be inside tracking session
+                        accessedInInner.clear();
+                        accessedInInner.add('age');
+                        return vm.age;
+                      },
+                      builder: (context, value, update) {
+                        return Text('Inner: $value');
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      // Verify initial access patterns
+      expect(accessedInOuter, equals(['name']));
+      expect(accessedInInner, equals(['age']));
+
+      // Change name - outer should rebuild, selector called again
+      vm.name.value = 'New';
+      await tester.pump();
+
+      expect(accessedInOuter, equals(['name']));
+      // Selector is re-evaluated when outer rebuilds
+      expect(accessedInInner, equals(['age']));
+    });
+
+    testWidgets('Changing property once should not cause multiple rebuilds',
+        (tester) async {
+      final vm = TestViewModel();
+      int outerRebuilds = 0;
+      int innerRebuilds = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FairyScope(
+            viewModel: (_) => vm,
+            child: Bind.viewModel<TestViewModel>(
+              builder: (context, vm) {
+                outerRebuilds++;
+                return Bind<TestViewModel, String>(
+                  selector: (vm) => vm.name,
+                  builder: (context, value, update) {
+                    innerRebuilds++;
+                    return Text(value);
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(outerRebuilds, equals(1));
+      expect(innerRebuilds, equals(1));
+
+      // Single property change
+      vm.name.value = 'Once';
+      await tester.pump();
+
+      // Should rebuild exactly once each (not multiple times)
+      expect(outerRebuilds, equals(2));
+      expect(innerRebuilds, equals(2));
+
+      // Another single change
+      vm.name.value = 'Twice';
+      await tester.pump();
+
+      expect(outerRebuilds, equals(3));
+      expect(innerRebuilds, equals(3));
     });
   });
 }
