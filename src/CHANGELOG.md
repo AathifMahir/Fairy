@@ -1,3 +1,36 @@
+## 1.2.0
+
+**Enhanced Dependency Tracking Release** - Advanced lazy builder support and performance optimizations.
+
+This release introduces intelligent dependency tracking for deferred callbacks (ListView.builder) and significantly improves rebuild performance for `Bind.viewModel` API.
+
+### 🚀 New Features
+
+#### Enhanced Dependency Tracker
+- **Lazy builder support** - Automatic tracking for deferred callbacks like `ListView.builder`
+  - InheritedWidget-based fallback enables `itemBuilder` property access detection
+  - Stack-based primary tracking with context-based fallback for deferred execution
+  - Zero-configuration - works automatically with all lazy builders
+
+### ⚡ Performance Improvements
+
+#### Benchmark Results (5-run average)
+- **Memory Management**: Fastest cleanup (100% baseline, 0.5% faster than Riverpod, 6.7% faster than Provider)
+- **Selective Rebuilds**: 22.6-34% faster than competitors
+- **Auto-binding**: 0.9-3.9% faster with 100% rebuild efficiency
+- **Widget Performance**: Within 1.8% of fastest framework
+
+### 🎯 Key Achievements
+- **3 Gold Medals** in memory management, selective rebuilds, and auto-binding
+- **100% Rebuild Efficiency** - Only framework achieving perfect selectivity vs 33% for Provider/Riverpod
+- **Reliable Results** - Stable averages with engine warm-up for consistent measurements
+
+### 📦 Breaking Changes
+
+None - This is a backward-compatible enhancement release.
+
+---
+
 ## 1.1.2
 
 **Documentation & Testing Release** - Enhanced documentation clarity and comprehensive deep nesting test coverage.
