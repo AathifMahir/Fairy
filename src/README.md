@@ -1231,7 +1231,7 @@ See the [example](../example) directory for a complete counter app demonstrating
 
 ## Testing
 
-Fairy is thoroughly tested with **493 tests** passing, covering all core functionality including observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, and overlay scenarios.
+Fairy is thoroughly tested with **522 tests** passing, covering all core functionality including observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, and overlay scenarios.
 
 Fairy is designed for testability:
 

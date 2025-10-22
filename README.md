@@ -353,7 +353,7 @@ Fairy is designed for performance. Here are benchmark results comparing with pop
 
 ## 🧪 Testing
 
-Fairy is thoroughly tested with **493 tests** passing, covering:
+Fairy is thoroughly tested with **522 tests** passing, covering:
 - ✅ Observable properties and computed properties
 - ✅ All command types (sync, async, parameterized)
 - ✅ Auto-disposal and memory management
