@@ -301,8 +301,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
       _accessedNodesDisposers = [];
       for (final node in accessedNodes) {
         node.addListener(_listener!);
-        _accessedNodesDisposers!
-            .add(() => node.removeListener(_listener!));
+        _accessedNodesDisposers!.add(() => node.removeListener(_listener!));
       }
     }
   }
@@ -314,7 +313,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
     // If selector changed, rebind
     if (oldWidget.selector != widget.selector) {
       _removeListener();
-      
+
       // Re-evaluate with tracking
       final (result, accessedNodes, _) =
           DependencyTracker.track(() => widget.selector(_viewModel));
@@ -340,8 +339,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
           _accessedNodesDisposers = [];
           for (final node in accessedNodes) {
             node.addListener(_listener!);
-            _accessedNodesDisposers!
-                .add(() => node.removeListener(_listener!));
+            _accessedNodesDisposers!.add(() => node.removeListener(_listener!));
           }
         }
       }
@@ -357,7 +355,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
   void _removeListener() {
     _listenerDisposer?.call();
     _listenerDisposer = null;
-    
+
     // Dispose all accessed node listeners for one-way binding
     if (_accessedNodesDisposers != null) {
       for (final disposer in _accessedNodesDisposers!) {
@@ -365,7 +363,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
       }
       _accessedNodesDisposers = null;
     }
-    
+
     _listener = null;
   }
 

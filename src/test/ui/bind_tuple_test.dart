@@ -45,7 +45,7 @@ void main() {
       await tester.pump();
       expect(find.text('42 - Hello'), findsOneWidget);
 
-      // Test: Second property change  
+      // Test: Second property change
       vm.message.value = 'Updated';
       await tester.pump();
       expect(find.text('42 - Updated'), findsOneWidget);
@@ -135,7 +135,8 @@ void main() {
       expect(buildCount, 2);
     });
 
-    testWidgets('tuple with computed expressions should track source properties',
+    testWidgets(
+        'tuple with computed expressions should track source properties',
         (tester) async {
       final vm = TupleTestViewModel();
 
@@ -145,8 +146,8 @@ void main() {
             viewModel: (_) => vm,
             child: Bind<TupleTestViewModel, (int, String)>(
               selector: (vm) => (
-                vm.counter.value * 2,  // Computed from counter
-                vm.message.value.toUpperCase(),  // Computed from message
+                vm.counter.value * 2, // Computed from counter
+                vm.message.value.toUpperCase(), // Computed from message
               ),
               builder: (context, tuple, update) {
                 final (doubled, upper) = tuple;
@@ -170,8 +171,7 @@ void main() {
       expect(find.text('10 - WORLD'), findsOneWidget);
     });
 
-    testWidgets('nested tuple access should work',
-        (tester) async {
+    testWidgets('nested tuple access should work', (tester) async {
       final vm = TupleTestViewModel();
 
       await tester.pumpWidget(
@@ -290,7 +290,8 @@ void main() {
   });
 
   group('Bind widget - Two-Way Binding (Without .value)', () {
-    testWidgets('should support two-way binding when returning ObservableProperty directly',
+    testWidgets(
+        'should support two-way binding when returning ObservableProperty directly',
         (tester) async {
       final vm = TupleTestViewModel();
 
@@ -470,7 +471,7 @@ void main() {
       );
 
       expect(find.text('One-way: 0'), findsOneWidget);
-      
+
       // Change via ViewModel - should update UI
       vm.counter.value = 5;
       await tester.pump();
@@ -479,14 +480,15 @@ void main() {
   });
 
   group('Bind widget - Tuple WITHOUT .value (Verifying Limitation)', () {
-    testWidgets('LIMITATION: tuple with ObservableProperty instances throws type error',
+    testWidgets(
+        'LIMITATION: tuple with ObservableProperty instances throws type error',
         (tester) async {
       final vm = TupleTestViewModel();
 
       // This test verifies that tuples do NOT support returning ObservableProperty instances
       // The selector returns (ObservableProperty<int>, ObservableProperty<String>)
       // but Bind expects (int, String), causing a type cast error
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -508,13 +510,14 @@ void main() {
       expect(tester.takeException(), isA<TypeError>());
     });
 
-    testWidgets('LIMITATION: mixed tuple (one .value, one ObservableProperty) throws type error',
+    testWidgets(
+        'LIMITATION: mixed tuple (one .value, one ObservableProperty) throws type error',
         (tester) async {
       final vm = TupleTestViewModel();
 
       // This verifies mixed access also doesn't work
       // Returns (int, ObservableProperty<String>) but expects (int, String)
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -539,7 +542,7 @@ void main() {
       final vm = TupleTestViewModel();
 
       // Returns (ObservableProperty<int>, String) but expects (int, String)
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
@@ -559,7 +562,8 @@ void main() {
       expect(tester.takeException(), isA<TypeError>());
     });
 
-    testWidgets('LIMITATION: three-item tuple with ObservableProperty throws type error',
+    testWidgets(
+        'LIMITATION: three-item tuple with ObservableProperty throws type error',
         (tester) async {
       final vm = TupleTestViewModel();
 
@@ -584,18 +588,18 @@ void main() {
 
     test('DOCUMENTATION: Why tuples without .value do not work', () {
       // This test documents the technical reason for the limitation
-      
+
       // When Bind<VM, TValue> processes the selector result:
       // 1. It checks if result is ObservableProperty<T> (for two-way binding)
       // 2. Otherwise, it casts: `_selected as TValue`
-      // 
+      //
       // For tuples:
       // - selector: (vm) => (vm.counter, vm.message)
       //   Returns: (ObservableProperty<int>, ObservableProperty<String>)
       //   Cast to: (int, String)
       //   Result: TypeError! ❌
       //
-      // - selector: (vm) => (vm.counter.value, vm.message.value)  
+      // - selector: (vm) => (vm.counter.value, vm.message.value)
       //   Returns: (int, String)
       //   Cast to: (int, String)
       //   Result: Success! ✅
@@ -608,7 +612,7 @@ void main() {
       // - Recursive unwrapping of tuple contents
       // - Complex type casting logic
       // - Performance overhead
-      
+
       expect(true, isTrue); // Documentation test
     });
   });
@@ -616,25 +620,25 @@ void main() {
   group('Bind widget - Tuple Limitations (Quick Reference)', () {
     test('README: Tuples do NOT support mixed ObservableProperty/value', () {
       // Quick reference for valid and invalid patterns:
-      
+
       // ❌ INVALID: Cannot return tuple of ObservableProperty instances
       // Bind<VM, (int, String)>(
       //   selector: (vm) => (vm.counter, vm.message),  // ERROR!
       //   ...
       // )
-      
+
       // ❌ INVALID: Cannot mix .value with ObservableProperty in tuple
       // Bind<VM, (int, String)>(
       //   selector: (vm) => (vm.counter.value, vm.message),  // ERROR!
       //   ...
       // )
-      
+
       // ✅ VALID: Must access .value for ALL properties in tuple
       // Bind<VM, (int, String)>(
       //   selector: (vm) => (vm.counter.value, vm.message.value),  // ✅
       //   ...
       // )
-      
+
       expect(true, isTrue); // Documentation test
     });
   });

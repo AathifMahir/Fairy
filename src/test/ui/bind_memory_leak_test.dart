@@ -17,7 +17,8 @@ class TestViewModel extends ObservableObject {
 
 void main() {
   group('Bind widget - Memory Leak Prevention', () {
-    testWidgets('one-way binding should clean up listeners when widget is disposed',
+    testWidgets(
+        'one-way binding should clean up listeners when widget is disposed',
         (tester) async {
       final vm = TestViewModel();
 
@@ -54,7 +55,8 @@ void main() {
       expect(() => vm.counter.value = 100, returnsNormally);
     });
 
-    testWidgets('one-way binding with multiple properties should clean up all listeners',
+    testWidgets(
+        'one-way binding with multiple properties should clean up all listeners',
         (tester) async {
       final vm = TestViewModel();
 
@@ -74,7 +76,8 @@ void main() {
                 ),
                 Bind<TestViewModel, List<String>>(
                   selector: (vm) => vm.items.value,
-                  builder: (context, value, update) => Text('Items: ${value.length}'),
+                  builder: (context, value, update) =>
+                      Text('Items: ${value.length}'),
                 ),
               ],
             ),
@@ -102,7 +105,8 @@ void main() {
       expect(() => vm.items.value = ['a', 'b'], returnsNormally);
     });
 
-    testWidgets('selector change should clean up old listeners and create new ones',
+    testWidgets(
+        'selector change should clean up old listeners and create new ones',
         (tester) async {
       final vm = TestViewModel();
       var useCounter = true;
@@ -112,7 +116,8 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, dynamic>(
-              selector: (vm) => useCounter ? vm.counter.value : vm.message.value,
+              selector: (vm) =>
+                  useCounter ? vm.counter.value : vm.message.value,
               builder: (context, value, update) => Text('$value'),
             ),
           ),
@@ -200,7 +205,8 @@ void main() {
             viewModel: (_) => vm,
             child: Bind<TestViewModel, List<String>>(
               selector: (vm) => vm.items.value,
-              builder: (context, value, update) => Text('Count: ${value.length}'),
+              builder: (context, value, update) =>
+                  Text('Count: ${value.length}'),
             ),
           ),
         ),
@@ -227,7 +233,8 @@ void main() {
       expect(() => vm.items.value = ['x', 'y'], returnsNormally);
     });
 
-    testWidgets('stress test - create and dispose many bindings', (tester) async {
+    testWidgets('stress test - create and dispose many bindings',
+        (tester) async {
       final vm = TestViewModel();
 
       // Create and dispose bindings multiple times
@@ -240,15 +247,18 @@ void main() {
                 children: [
                   Bind<TestViewModel, int>(
                     selector: (vm) => vm.counter.value,
-                    builder: (context, value, update) => Text('Counter: $value'),
+                    builder: (context, value, update) =>
+                        Text('Counter: $value'),
                   ),
                   Bind<TestViewModel, String>(
                     selector: (vm) => vm.message.value,
-                    builder: (context, value, update) => Text('Message: $value'),
+                    builder: (context, value, update) =>
+                        Text('Message: $value'),
                   ),
                   Bind<TestViewModel, List<String>>(
                     selector: (vm) => vm.items.value,
-                    builder: (context, value, update) => Text('Items: ${value.length}'),
+                    builder: (context, value, update) =>
+                        Text('Items: ${value.length}'),
                   ),
                 ],
               ),
@@ -273,7 +283,8 @@ void main() {
       expect(() => vm.items.value = ['end'], returnsNormally);
     });
 
-    testWidgets('mixed one-way and two-way bindings should clean up independently',
+    testWidgets(
+        'mixed one-way and two-way bindings should clean up independently',
         (tester) async {
       final vm = TestViewModel();
 
