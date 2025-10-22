@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 import '../core/observable.dart';
+import '../core/observable_node.dart';
+import '../internal/dependency_tracker.dart';
 import '../locator/fairy_resolver.dart';
 import 'bind_viewmodel_widget.dart';
 
@@ -250,6 +252,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
   dynamic _selected; // Can be ObservableProperty<TValue> or TValue
   VoidCallback? _listener;
   VoidCallback? _listenerDisposer;
+  List<VoidCallback>? _accessedNodesDisposers; // For one-way binding tracking
   bool _initialized = false;
 
   @override
@@ -264,8 +267,10 @@ class _BindState<TViewModel extends ObservableObject, TValue>
     // Resolve ViewModel from context
     _viewModel = Fairy.of<TViewModel>(context);
 
-    // Evaluate selector
-    _selected = widget.selector(_viewModel);
+    // Evaluate selector with dependency tracking
+    final (result, accessedNodes, _) =
+        DependencyTracker.track(() => widget.selector(_viewModel));
+    _selected = result;
 
     // Skip subscription for one-time binding
     if (widget.oneTime) {
@@ -284,11 +289,21 @@ class _BindState<TViewModel extends ObservableObject, TValue>
       _listenerDisposer =
           (_selected as ComputedProperty<TValue>).propertyChanged(_listener!);
     } else {
-      // One-way binding: subscribe to ViewModel and re-evaluate selector
+      // One-way binding: subscribe to all accessed ObservableNodes
       _listener = () => setState(() {
-            _selected = widget.selector(_viewModel);
+            // Re-evaluate selector on change
+            final (newResult, _, _) =
+                DependencyTracker.track(() => widget.selector(_viewModel));
+            _selected = newResult;
           });
-      _listenerDisposer = _viewModel.propertyChanged(_listener!);
+
+      // Subscribe to all nodes that were accessed during selector evaluation
+      _accessedNodesDisposers = [];
+      for (final node in accessedNodes) {
+        node.addListener(_listener!);
+        _accessedNodesDisposers!
+            .add(() => node.removeListener(_listener!));
+      }
     }
   }
 
@@ -299,7 +314,11 @@ class _BindState<TViewModel extends ObservableObject, TValue>
     // If selector changed, rebind
     if (oldWidget.selector != widget.selector) {
       _removeListener();
-      _selected = widget.selector(_viewModel);
+      
+      // Re-evaluate with tracking
+      final (result, accessedNodes, _) =
+          DependencyTracker.track(() => widget.selector(_viewModel));
+      _selected = result;
 
       if (!widget.oneTime) {
         if (_selected is ObservableProperty<TValue>) {
@@ -311,10 +330,19 @@ class _BindState<TViewModel extends ObservableObject, TValue>
           _listenerDisposer = (_selected as ComputedProperty<TValue>)
               .propertyChanged(_listener!);
         } else {
+          // One-way binding: subscribe to accessed nodes
           _listener = () => setState(() {
-                _selected = widget.selector(_viewModel);
+                final (newResult, _, _) =
+                    DependencyTracker.track(() => widget.selector(_viewModel));
+                _selected = newResult;
               });
-          _listenerDisposer = _viewModel.propertyChanged(_listener!);
+
+          _accessedNodesDisposers = [];
+          for (final node in accessedNodes) {
+            node.addListener(_listener!);
+            _accessedNodesDisposers!
+                .add(() => node.removeListener(_listener!));
+          }
         }
       }
     }
@@ -329,6 +357,15 @@ class _BindState<TViewModel extends ObservableObject, TValue>
   void _removeListener() {
     _listenerDisposer?.call();
     _listenerDisposer = null;
+    
+    // Dispose all accessed node listeners for one-way binding
+    if (_accessedNodesDisposers != null) {
+      for (final disposer in _accessedNodesDisposers!) {
+        disposer();
+      }
+      _accessedNodesDisposers = null;
+    }
+    
     _listener = null;
   }
 
