@@ -27,7 +27,7 @@ Add Fairy to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  fairy: ^1.2.0
+  fairy: ^1.3.0
 ```
 
 ### Basic Example
@@ -1293,30 +1293,31 @@ testWidgets('Bind.viewModel rebuilds on property change', (tester) async {
 
 ## Architecture Guidelines
 
-### ViewModel Responsibilities
+### ViewModel
+✅ **DO**: Business logic, state (ObservableProperty), commands, derived values (ComputedProperty)  
+❌ **DON'T**: Reference BuildContext/widgets, navigation, UI logic, styling
 
-✅ **DO:**
-- Contain business logic
-- Manage state with ObservableProperty
-- Expose commands for user actions
-- Coordinate with services/repositories
+### View (Widgets)
+✅ **DO**: Use `Bind`/`Command` widgets, handle navigation, declarative composition  
+❌ **DON'T**: Business logic, data validation, direct state modification
 
-❌ **DON'T:**
-- Reference widgets or BuildContext
-- Perform navigation
-- Contain UI logic or styling
+### Binding Patterns
+✅ **DO**: 
+- Single property: `selector: (vm) => vm.property.value`
+- Tuples: `selector: (vm) => (vm.a.value, vm.b.value)` ← All `.value`!
+- Two-way: `selector: (vm) => vm.property` (returns ObservableProperty)
 
-### View Responsibilities
+❌ **DON'T**: 
+- Mix in tuples: `(vm.a.value, vm.b)` ← TypeError!
+- Create new instances in selectors ← Infinite rebuilds!
 
-✅ **DO:**
-- Purely declarative widget composition
-- Bind to ViewModel properties and commands
-- Handle navigation
+### Commands
+✅ **DO**: Call `notifyCanExecuteChanged()` when conditions change, use `AsyncRelayCommand` for async  
+❌ **DON'T**: Long operations in sync commands, forget to update `canExecute`
 
-❌ **DON'T:**
-- Contain business logic
-- Directly modify application state
-- Perform data validation
+### Dependency Injection
+✅ **DO**: `FairyScope` for pages/features, `FairyLocator` for app-wide services, `FairyBridge` for overlays  
+❌ **DON'T**: Register ViewModels globally, manually dispose FairyScope ViewModels
 
 ## Comparison to Other Patterns
 
