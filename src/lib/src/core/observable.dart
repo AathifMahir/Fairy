@@ -292,7 +292,7 @@ class ObservableProperty<T> extends ObservableNode {
 
   /// Gets the current value and reports access for automatic tracking.
   ///
-  /// When accessed within a Bind.observer builder, this property will be
+  /// When accessed within a Bind.viewModel builder, this property will be
   /// automatically subscribed to for rebuilds.
   T get value {
     // Report access for dependency tracking (no-op if not tracking)
@@ -507,7 +507,7 @@ class ComputedProperty<T> extends ObservableNode with Disposable {
   /// Gets the current computed value and reports access for automatic tracking.
   ///
   /// Returns the cached value if available, otherwise recomputes.
-  /// When accessed within a Bind.observer builder, this property will be
+  /// When accessed within a Bind.viewModel builder, this property will be
   /// automatically subscribed to for rebuilds.
   T get value {
     throwIfDisposed();
