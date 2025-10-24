@@ -128,7 +128,8 @@ void main() {
       expect(find.text('Active: No'), findsOneWidget);
     });
 
-    testWidgets('multiple Bind widgets should all rebuild on single notification',
+    testWidgets(
+        'multiple Bind widgets should all rebuild on single notification',
         (tester) async {
       final vm = PlainPropertyViewModel();
 
@@ -587,8 +588,7 @@ void main() {
       expect(find.text('Update 9'), findsOneWidget);
     });
 
-    testWidgets('stress test - create and dispose (30 cycles)',
-        (tester) async {
+    testWidgets('stress test - create and dispose (30 cycles)', (tester) async {
       final vm = PlainPropertyViewModel();
 
       for (var i = 0; i < 30; i++) {
