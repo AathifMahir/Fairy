@@ -289,7 +289,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
       _listenerDisposer =
           (_selected as ComputedProperty<TValue>).propertyChanged(_listener!);
     } else {
-      // One-way binding: subscribe to all accessed ObservableNodes
+      // One-way binding: subscribe to accessed nodes or fallback to ViewModel
       _listener = () => setState(() {
             // Re-evaluate selector on change
             final (newResult, _, _) =
@@ -297,11 +297,17 @@ class _BindState<TViewModel extends ObservableObject, TValue>
             _selected = newResult;
           });
 
-      // Subscribe to all nodes that were accessed during selector evaluation
-      _accessedNodesDisposers = [];
-      for (final node in accessedNodes) {
-        node.addListener(_listener!);
-        _accessedNodesDisposers!.add(() => node.removeListener(_listener!));
+      if (accessedNodes.isNotEmpty) {
+        // Subscribe to all nodes that were accessed during selector evaluation
+        _accessedNodesDisposers = [];
+        for (final node in accessedNodes) {
+          node.addListener(_listener!);
+          _accessedNodesDisposers!.add(() => node.removeListener(_listener!));
+        }
+      } else {
+        // Fallback: No ObservableProperty accessed, subscribe to ViewModel
+        // This handles plain getters that call onPropertyChanged()
+        _listenerDisposer = _viewModel.propertyChanged(_listener!);
       }
     }
   }
@@ -329,17 +335,23 @@ class _BindState<TViewModel extends ObservableObject, TValue>
           _listenerDisposer = (_selected as ComputedProperty<TValue>)
               .propertyChanged(_listener!);
         } else {
-          // One-way binding: subscribe to accessed nodes
+          // One-way binding: subscribe to accessed nodes or fallback to ViewModel
           _listener = () => setState(() {
                 final (newResult, _, _) =
                     DependencyTracker.track(() => widget.selector(_viewModel));
                 _selected = newResult;
               });
 
-          _accessedNodesDisposers = [];
-          for (final node in accessedNodes) {
-            node.addListener(_listener!);
-            _accessedNodesDisposers!.add(() => node.removeListener(_listener!));
+          if (accessedNodes.isNotEmpty) {
+            _accessedNodesDisposers = [];
+            for (final node in accessedNodes) {
+              node.addListener(_listener!);
+              _accessedNodesDisposers!
+                  .add(() => node.removeListener(_listener!));
+            }
+          } else {
+            // Fallback: No ObservableProperty accessed, subscribe to ViewModel
+            _listenerDisposer = _viewModel.propertyChanged(_listener!);
           }
         }
       }

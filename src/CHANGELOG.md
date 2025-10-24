@@ -1,3 +1,37 @@
+## 1.3.5
+
+**Documentation Overhaul & Regression Fix** - Comprehensive README improvements and restores plain property binding support from v1.2.0.
+
+### 🐛 Bug Fixes
+
+- **Fixed**: Plain property getters with `onPropertyChanged()` now properly trigger UI rebuilds
+  - Issue: After v1.3.0, bindings using plain getters (e.g., `selector: (vm) => vm.message` where `message` is a regular property) stopped rebuilding
+  - Solution: Restored ViewModel subscription fallback for plain properties while preserving v1.3.0's ObservableProperty tracking
+  - Impact: Both ObservableProperty and plain property patterns now work correctly
+
+### 📚 Documentation
+
+- **Improved README structure** - Reduced from 1341 to ~520 lines (61% more compact)
+- **Added Quick Reference tables** - Properties, Commands, and Widget types at a glance
+- **Added Common Patterns section** - 4 practical copy-paste examples (form validation, list operations, loading states, dynamic canExecute)
+- **Added Performance benchmarks** - Comparative analysis with Provider and Riverpod
+- **Updated positioning** - "Simplicity over complexity" as core philosophy
+- **Unified root and package READMEs** - Consistent high-quality documentation across GitHub and pub.dev
+- **Fixed Bind.viewModel2/3/4 documentation** - Correctly described as multi-ViewModel binding
+- **Corrected `Bind.observer` references** to `Bind.viewModel` in API documentation
+
+### 🧪 Testing
+
+- Added 21 tests for plain property binding patterns
+- Total: 543 tests passing (up from 522 in v1.3.0)
+
+### Notes
+
+- Fully backward compatible with v1.2.0 and v1.3.0
+- No breaking changes
+
+---
+
 ## 1.3.0
 
 **One-Way Binding Fix & Tuple Support Release** - Critical bug fix for one-way binding with improved tuple handling.
