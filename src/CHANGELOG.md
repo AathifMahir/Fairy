@@ -1,3 +1,22 @@
+## 1.3.5+1
+
+**Documentation Refinement** - Improved clarity and completeness of binding patterns and disposal utilities.
+
+### 📚 Documentation
+
+- **Enhanced binding examples** - Added one-way binding example alongside two-way in Data Binding section
+- **Clarified binding patterns** - Corrected misleading statement about one-way binding requiring manual notifications
+- **Added UI integration** - Dynamic canExecute section now shows complete ViewModel-to-UI flow
+- **Compacted Custom Type Equality** - Streamlined section by removing redundant examples
+- **Added DisposableBag documentation** - Utility for managing multiple disposable resources in ViewModels
+
+### Notes
+
+- Documentation-only release, no code changes
+- Fully backward compatible
+
+---
+
 ## 1.3.5
 
 **Documentation Overhaul & Regression Fix** - Comprehensive README improvements and restores plain property binding support from v1.2.0.
