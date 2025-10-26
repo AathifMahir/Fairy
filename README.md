@@ -63,7 +63,10 @@ Bind<CounterViewModel, int>(
 Command<CounterViewModel>(
   command: (vm) => vm.incrementCommand,
   builder: (context, execute, canExecute, isRunning) =>
-    ElevatedButton(onPressed: execute, child: Text('Increment')),
+    ElevatedButton(
+      onPressed: canExecute ? execute : null,
+      child: Text('Increment'),
+    ),
 )
 ```
 
@@ -149,6 +152,7 @@ Command<MyVM>(
 ### Dynamic canExecute
 
 ```dart
+// ViewModel
 final selected = ObservableProperty<Item?>(null);
 
 late final deleteCommand = RelayCommand(_delete,
@@ -167,20 +171,38 @@ void dispose() {
   _disposeListener();
   super.dispose();
 }
+
+// UI - Command widget automatically respects canExecute
+Command<MyViewModel>(
+  command: (vm) => vm.deleteCommand,
+  builder: (context, execute, canExecute, isRunning) =>
+    ElevatedButton(
+      onPressed: canExecute ? execute : null,  // Button disabled when canExecute is false
+      child: Text('Delete'),
+    ),
+)
 ```
 
 ## Core Concepts
 
 ### Data Binding
 
-**Single property:**
+**Single property (two-way):**
 ```dart
 Bind<UserViewModel, String>(
-  selector: (vm) => vm.name,  // Two-way (returns ObservableProperty)
+  selector: (vm) => vm.name,  // Returns ObservableProperty - two-way binding
   builder: (context, value, update) => TextField(
     controller: TextEditingController(text: value),
-    onChanged: update,
+    onChanged: update,  // update() available for two-way binding
   ),
+)
+```
+
+**Single property (one-way):**
+```dart
+Bind<UserViewModel, String>(
+  selector: (vm) => vm.name.value,  // Returns raw value - one-way binding
+  builder: (context, value, update) => Text(value),  // No update needed
 )
 ```
 
@@ -309,33 +331,15 @@ class User {
   final String name;
   
   @override
-  bool operator ==(Object other) =>
-      other is User && id == other.id;
+  bool operator ==(Object other) => other is User && id == other.id;
   
   @override
   int get hashCode => id.hashCode;
 }
 
-final user = ObservableProperty<User>(User('1', 'Alice'));
-user.value = User('1', 'Bob');  // No rebuild (same id)
+// For types with collections, use Equals utility:
+// Equals.listEquals(list1, list2), Equals.mapEquals(map1, map2)
 ```
-
-**For types with collections:** Use `Equals` utility:
-
-```dart
-class Project {
-  final String name;
-  final List<String> tasks;
-  
-  @override
-  bool operator ==(Object other) =>
-      other is Project &&
-      name == other.name &&
-      Equals.listEquals(tasks, other.tasks);
-  
-  @override
-  int get hashCode => name.hashCode ^ Equals.listHash(tasks);
-}
 
 ## Best Practices
 
@@ -351,6 +355,26 @@ class ParentViewModel extends ObservableObject {
   @override
   void dispose() {
     childVM.dispose();
+    super.dispose();
+  }
+}
+```
+
+**Managing Multiple Disposables:** Use `DisposableBag` for cleaner disposal of multiple resources:
+
+```dart
+class MyViewModel extends ObservableObject {
+  final _disposables = DisposableBag();
+  
+  MyViewModel() {
+    _disposables.add(property.propertyChanged(() => /* ... */));
+    _disposables.add(command.canExecuteChanged(() => /* ... */));
+    _disposables.add(_subscription.cancel);  // Any VoidCallback
+  }
+  
+  @override
+  void dispose() {
+    _disposables.dispose();  // Disposes all at once
     super.dispose();
   }
 }
@@ -417,9 +441,10 @@ FairyScope(
 
 ### Choose Right Binding
 
-- **Single property:** `Bind<VM, T>` with `selector: (vm) => vm.prop`
+- **Single property (two-way):** `Bind<VM, T>` with `selector: (vm) => vm.prop` (returns ObservableProperty)
+- **Single property (one-way):** `Bind<VM, T>` with `selector: (vm) => vm.prop.value` (returns raw value)
 - **Multiple properties:** `Bind.viewModel<VM>` for auto-tracking
-- **Avoid:** One-way binding (`selector: (vm) => vm.prop.value`) - requires manual notifications
+- **Avoid:** Creating new instances in selectors (causes infinite rebuilds)
 
 ## Performance
 
@@ -484,9 +509,9 @@ testWidgets('counter increments on tap', (tester) async {
 
 ### Binding Patterns
 ✅ **DO**: 
-- Single property: `selector: (vm) => vm.property.value`
-- Tuples: `selector: (vm) => (vm.a.value, vm.b.value)` ← All `.value`!
-- Two-way: `selector: (vm) => vm.property` (returns ObservableProperty)
+- One-way (read-only): `selector: (vm) => vm.property.value`
+- Two-way (editable): `selector: (vm) => vm.property` (returns ObservableProperty)
+- Tuples (one-way): `selector: (vm) => (vm.a.value, vm.b.value)` ← All `.value`!
 
 ❌ **DON'T**: 
 - Mix in tuples: `(vm.a.value, vm.b)` ← TypeError!
