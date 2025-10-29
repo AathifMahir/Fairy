@@ -1,4 +1,5 @@
 import 'package:fairy/src/core/observable_node.dart';
+import 'package:fairy/src/internal/dependency_tracker.dart';
 import 'package:flutter/foundation.dart';
 
 /// Callback type for evaluating whether a command can execute.
@@ -78,7 +79,15 @@ class RelayCommand extends ObservableNode {
   ///
   /// Returns `true` if no [canExecute] predicate was provided, or if the
   /// predicate returns `true`.
-  bool get canExecute => _canExecute?.call() ?? true;
+  ///
+  /// **Auto-tracking:** When accessed inside [Bind.viewModel], the command is
+  /// automatically tracked and the widget rebuilds when [notifyCanExecuteChanged]
+  /// is called.
+  bool get canExecute {
+    // Report command access for automatic dependency tracking
+    DependencyTracker.reportAccess(this);
+    return _canExecute?.call() ?? true;
+  }
 
   /// Executes the command's action if [canExecute] is `true`.
   ///
@@ -198,13 +207,29 @@ class AsyncRelayCommand extends ObservableNode {
   ///
   /// Automatically set to `true` when execution starts and `false` when it completes.
   /// While running, [canExecute] returns `false` to prevent concurrent execution.
-  bool get isRunning => _isRunning;
+  ///
+  /// **Auto-tracking:** When accessed inside [Bind.viewModel] or [Bind] selectors,
+  /// the command is automatically tracked and the widget rebuilds when execution
+  /// state changes.
+  bool get isRunning {
+    // Report command access for automatic dependency tracking
+    DependencyTracker.reportAccess(this);
+    return _isRunning;
+  }
 
   /// Whether the command can currently execute.
   ///
   /// Returns `false` if the command is currently running, or if the [canExecute]
   /// predicate returns `false`.
-  bool get canExecute => !_isRunning && (_canExecute?.call() ?? true);
+  ///
+  /// **Auto-tracking:** When accessed inside [Bind.viewModel], the command is
+  /// automatically tracked and the widget rebuilds when [notifyCanExecuteChanged]
+  /// is called or when execution state changes.
+  bool get canExecute {
+    // Report command access for automatic dependency tracking
+    DependencyTracker.reportAccess(this);
+    return !_isRunning && (_canExecute?.call() ?? true);
+  }
 
   /// Executes the command's async action if [canExecute] is `true`.
   ///
@@ -314,9 +339,14 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
   /// Returns `true` if no [canExecute] predicate was provided, or if the
   /// predicate returns `true` for the given parameter.
   ///
-  /// Note: This is a method (not a getter), so automatic tracking is not applied.
-  /// Subscribe to canExecuteChanged() for manual tracking if needed.
-  bool canExecute(TParam param) => _canExecute?.call(param) ?? true;
+  /// **Auto-tracking:** When accessed inside [Bind.viewModel], the command is
+  /// automatically tracked and the widget rebuilds when [notifyCanExecuteChanged]
+  /// is called.
+  bool canExecute(TParam param) {
+    // Report command access for automatic dependency tracking
+    DependencyTracker.reportAccess(this);
+    return _canExecute?.call(param) ?? true;
+  }
 
   /// Executes the command's action with the given [param] if [canExecute] is `true`.
   ///
@@ -433,17 +463,29 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   ///
   /// Automatically set to `true` when execution starts and `false` when it completes.
   /// While running, [canExecute] returns `false` to prevent concurrent execution.
-  bool get isRunning => _isRunning;
+  ///
+  /// **Auto-tracking:** When accessed inside [Bind.viewModel] or [Bind] selectors,
+  /// the command is automatically tracked and the widget rebuilds when execution
+  /// state changes.
+  bool get isRunning {
+    // Report command access for automatic dependency tracking
+    DependencyTracker.reportAccess(this);
+    return _isRunning;
+  }
 
   /// Whether the command can execute with the given [param].
   ///
   /// Returns `false` if the command is currently running, or if the [canExecute]
   /// predicate returns `false` for the parameter.
   ///
-  /// Note: This method takes a parameter, so automatic tracking is not applied.
-  /// For automatic dependency tracking, observe properties that affect canExecute.
-  bool canExecute(TParam param) =>
-      !_isRunning && (_canExecute?.call(param) ?? true);
+  /// **Auto-tracking:** When accessed inside [Bind.viewModel], the command is
+  /// automatically tracked and the widget rebuilds when [notifyCanExecuteChanged]
+  /// is called or when execution state changes.
+  bool canExecute(TParam param) {
+    // Report command access for automatic dependency tracking
+    DependencyTracker.reportAccess(this);
+    return !_isRunning && (_canExecute?.call(param) ?? true);
+  }
 
   /// Executes the command's async action with the given [param] if [canExecute] is `true`.
   ///
