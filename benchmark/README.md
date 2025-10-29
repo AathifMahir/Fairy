@@ -17,13 +17,24 @@ The benchmarks compare three frameworks:
 - **📦 Provider**: Popular state management solution  
 - **🏗️ Riverpod**: Modern reactive framework
 
-### Latest Results
+### Latest Results (v1.4.0)
 
-- **Widget Performance**: Fairy performs within 2.2% of Riverpod (fastest)
-- **Build Performance**: Fairy builds 21% slower than Provider but still very fast
-- **Memory Management**: Fairy is 9-10% faster at cleanup than competitors
+Performance metrics (median of 5 measurements per test, averaged across 5 complete runs):
 
-See [PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) for detailed results and analysis.
+| Category | Fairy | Provider | Riverpod | Winner |
+|----------|-------|----------|----------|---------|
+| Widget Performance (1000 interactions) | 116.5% | 104.9% | 100% | Riverpod 🥇 |
+| Memory Management (50 cycles) | 113.9% | 105.1% | 100% | Riverpod 🥇 |
+| Selective Rebuild (explicit Bind) | 100% | 138.3% | 130.2% | Fairy 🥇 |
+| Auto-tracking Rebuild (Bind.viewModel) | 100% | 132.4% | 124.5% | Fairy 🥇 |
+
+**Key Highlights:**
+- **Selective Rebuilds**: Fairy is 30-38% faster (22-23ms vs 30-32ms)
+- **Auto-tracking**: Fairy is 24-32% faster (15.92ms vs 19.81-21.08ms)
+- **Rebuild Efficiency**: Fairy achieves 100% efficiency (500 rebuilds) vs 33% for Provider/Riverpod (1500 rebuilds)
+- **Memory**: **Intentional design decision** to use 14% more memory in exchange for 24-38% faster rebuilds (both auto-tracking and selective binding) plus superior developer experience with command auto-tracking
+
+*Lower percentages are better. All measurements use engine warm-up and median-of-5 methodology to reduce noise.*
 
 ## Frameworks Tested
 
@@ -36,7 +47,13 @@ All benchmarks use real framework implementations:
 ## Test Scenarios
 
 1. **Widget Performance**: 1000 rapid state updates with UI rebuilds
-2. **Build Performance**: 100 widget create/build cycles  
-3. **Memory Management**: 50 create/dispose cycles with state changes
+2. **Memory Management**: 50 create/dispose cycles with state changes
+3. **Selective Rebuild** (explicit Bind): 100 property updates with manual selectors
+4. **Auto-tracking Rebuild** (Bind.viewModel): 500 property updates with automatic dependency tracking
 
-The benchmarks use Flutter's official `benchmarkWidgets` function for accurate, real-world performance measurement.
+Each test includes:
+- Engine warm-up phase (3 rounds × all frameworks)
+- 5 measurements per framework (median selected)
+- Full disposal between framework tests
+
+The benchmarks use Flutter's `widgetTest` with `pumpWidget` for accurate, real-world performance measurement.

@@ -33,6 +33,11 @@ class DependencyTracker {
   /// 1. Stack-based (primary): Synchronous build execution
   /// 2. Context-based (fallback): Deferred callbacks via InheritedWidget
   static void reportAccess(ObservableNode node) {
+    // Early exit if no tracking session active (optimization)
+    if (_stack.isEmpty && _currentContext == null) {
+      return;
+    }
+
     // Stack-based session (primary - synchronous build)
     if (_stack.isNotEmpty) {
       _stack.last._accessed.add(node);

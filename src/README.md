@@ -32,7 +32,7 @@ A lightweight MVVM framework for Flutter with strongly-typed reactive data bindi
 
 ```yaml
 dependencies:
-  fairy: ^1.3.5
+  fairy: ^1.4.0
 ```
 
 ## Quick Start
@@ -446,22 +446,22 @@ FairyScope(
 
 ## Performance
 
-Fairy is designed for performance. Benchmark results comparing with popular state management solutions (averaged over 5 runs with engine warm-up):
+Fairy is designed for performance. Benchmark results comparing with popular state management solutions (median of 5 measurements per test, averaged across 5 complete runs):
 
 | Category | Fairy | Provider | Riverpod |
 |----------|-------|----------|----------|
-| Widget Performance (1000 interactions) | 101.8% | 106.2% | **100%** 🥇 |
-| Memory Management (50 cycles) | **100%** 🥇 | 106.7% | 100.5% |
-| Selective Rebuild (explicit Bind) | **100%** 🥇 | 134.0% | 122.6% |
-| Rebuild Performance (auto-binding) | **100%** 🥇 | 103.9% | 100.9% |
+| Widget Performance (1000 interactions) | 116.5% | 104.9% | **100%** 🥇 |
+| Memory Management (50 cycles) | 113.9% | 105.1% | **100%** 🥇 |
+| Selective Rebuild (explicit Bind) | **100%** 🥇 | 138.3% | 130.2% |
+| Auto-tracking Rebuild (Bind.viewModel) | **100%** 🥇 | 132.4% | 124.5% |
 
 ### Key Achievements
-- **🥇 Best Memory Management** - 0.5% faster than Riverpod, 6.7% faster than Provider
-- **🥇 Fastest Selective Rebuilds** - 22.6-34% faster
-- **🥇 Fastest Auto-binding** - 0.9-3.9% faster with 100% rebuild efficiency
-- **Unique**: Only framework achieving 100% selective efficiency vs 33% for Provider/Riverpod
+- **🥇 Fastest Selective Rebuilds** - 30-38% faster with explicit binding
+- **🥇 Fastest Auto-tracking** - 24-32% faster while maintaining 100% rebuild efficiency
+- **Unique**: Only framework achieving 100% selective efficiency (500 rebuilds) vs 33% for Provider/Riverpod (1500 rebuilds)
+- **Memory**: **Intentional design decision** to use 14% more memory in exchange for 24-38% faster rebuilds (both auto-tracking and selective binding) plus superior developer experience with command auto-tracking
 
-*Lower is better. Percentages relative to the fastest framework in each category.*
+*Lower is better. Percentages relative to the fastest framework in each category. Benchmarked on v1.4.0.*
 
 ## Example
 
@@ -474,7 +474,7 @@ See the [example](../example) directory for a complete counter app demonstrating
 
 ## Testing
 
-**543 tests passing** - covering observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, and overlays.
+**565 tests passing** - covering observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, command auto-tracking, and overlays.
 
 ```dart
 test('increment updates counter', () {
