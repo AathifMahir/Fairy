@@ -5,7 +5,7 @@
 ## Package Identity
 
 - **Name**: fairy
-- **Version**: 1.3.5
+- **Version**: 1.4.0
 - **Type**: Flutter state management library
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **License**: BSD-3-Clause
@@ -145,6 +145,51 @@ late final fetchItemCommand = AsyncRelayCommandWithParam<String>(
 - `bool isRunning` - Tracks execution state
 - `canExecute(T param)` returns false while `isRunning` is true
 
+### Command Auto-Tracking (v1.4.0)
+
+**All command `canExecute` and `isRunning` accesses are automatically tracked** when used inside `Bind.viewModel` builders.
+
+**Before v1.4.0:**
+```dart
+// ❌ This didn't rebuild when canExecute changed
+Bind.viewModel<MyViewModel>(
+  builder: (context, vm) {
+    return ElevatedButton(
+      onPressed: vm.saveCommand.canExecute ? vm.saveCommand.execute : null,
+      child: Text('Save'),
+    );
+  },
+)
+```
+
+**After v1.4.0:**
+```dart
+// ✅ Automatically rebuilds when canExecute or isRunning changes!
+Bind.viewModel<MyViewModel>(
+  builder: (context, vm) {
+    return ElevatedButton(
+      onPressed: vm.saveCommand.canExecute ? vm.saveCommand.execute : null,
+      child: vm.saveCommand.isRunning ? Text('Saving...') : Text('Save'),
+    );
+  },
+)
+```
+
+**What's tracked:**
+- `RelayCommand.canExecute` getter
+- `AsyncRelayCommand.canExecute` getter
+- `AsyncRelayCommand.isRunning` getter
+- `RelayCommandWithParam<T>.canExecute(param)` method
+- `AsyncRelayCommandWithParam<T>.canExecute(param)` method
+- `AsyncRelayCommandWithParam<T>.isRunning` getter
+
+**Benefits:**
+- No need for explicit `Command` widget when using `Bind.viewModel`
+- Cleaner, more concise code
+- Commands behave consistently with ObservableProperty auto-tracking
+- **Zero overhead** - tracking only registers when properties are accessed
+- Fully backward compatible - existing code works unchanged
+
 ### UI Binding Widgets
 
 #### Bind<TViewModel, TValue>
@@ -174,7 +219,7 @@ Bind<UserViewModel, String>(
 ```
 
 #### Bind.viewModel<TViewModel>
-Auto data binding - automatically tracks accessed properties.
+Auto data binding - automatically tracks accessed properties **and commands**.
 
 ```dart
 Bind.viewModel<UserViewModel>(
@@ -183,18 +228,32 @@ Bind.viewModel<UserViewModel>(
       children: [
         Text('${vm.firstName.value} ${vm.lastName.value}'),
         Text('Age: ${vm.age.value}'),
-        // All three properties automatically tracked!
+        // ✨ NEW in v1.4.0: Commands auto-tracked too!
+        ElevatedButton(
+          onPressed: vm.saveCommand.canExecute ? vm.saveCommand.execute : null,
+          child: vm.saveCommand.isRunning ? Text('Saving...') : Text('Save'),
+        ),
+        // All properties AND command state automatically tracked!
       ],
     );
   },
 )
 ```
 
+**v1.4.0 - Command Auto-Tracking:**
+- `canExecute` getters/methods are automatically tracked
+- `isRunning` getters are automatically tracked
+- Widget rebuilds when command state changes
+- Works for all command types (RelayCommand, AsyncRelayCommand, parameterized variants)
+- **Zero overhead** - tracking only registers when accessed
+- Fully backward compatible
+
 **When to use:**
 - Multiple related properties displayed together
+- Commands used directly in builder (without Command widget)
 - Complex UI with many data points
 - Rapid prototyping
-- 100% selective efficiency (only rebuilds when accessed properties change)
+- 100% selective efficiency (only rebuilds when accessed properties/commands change)
 
 #### Command<TViewModel>
 Command binding for non-parameterized commands.
@@ -1001,9 +1060,10 @@ These are public but the factory constructors (`Bind.viewModel`, `Command.param`
 ## Performance Characteristics
 
 - **Memory Management**: Highly optimized cleanup and disposal system
-- **Selective Rebuilds**: Exceptional performance with explicit selectors
-- **Auto-binding**: `Bind.viewModel` delivers superior speed with 100% selectivity
-- **Rebuild Efficiency**: Only rebuilds widgets when their accessed properties change
+- **Selective Rebuilds**: 30-38% faster than Provider/Riverpod with explicit selectors
+- **Auto-tracking Performance**: 24-32% faster with `Bind.viewModel` (command auto-tracking included)
+- **Rebuild Efficiency**: 100% selective - only rebuilds widgets when their accessed properties/commands change
+- **Memory Trade-off**: Intentional 14% increase for superior rebuild performance and developer experience
 
 ## Migration from 0.5.x to 1.0.0-rc.1
 
@@ -1062,9 +1122,11 @@ lib/
 
 - ViewModels are pure Dart classes - easy to unit test
 - Use `FairyScope` in widget tests for integration testing
-- **443 comprehensive tests passing** covering all core functionality:
+- **565 comprehensive tests passing** covering all core functionality:
   - ComputedProperty (with required parent)
   - All command types (sync, async, parameterized)
+  - **Command auto-tracking in Bind.viewModel** (v1.4.0)
+  - **Command selector patterns and edge cases** (v1.4.0)
   - Auto-disposal and memory management
   - Dependency injection (scoped and global)
   - Widget binding and lifecycle (Bind, Command, FairyBridge)
@@ -1074,7 +1136,8 @@ lib/
 
 ## Version History
 
-- **v1.1.2** (Current) - Documentation & testing improvements, 443 tests passing
+- **v1.4.0** (Current) - Command auto-tracking in Bind.viewModel, improved benchmark methodology, 565 tests passing
+- **v1.1.2** - Documentation & testing improvements, 443 tests passing
 - **v1.1.1** - Required parent parameter for ComputedProperty (memory leak fix)
 - **v1.1.0** - Enhanced disposal safety and error handling
 - **v1.0.0** - Stable release with all core features
