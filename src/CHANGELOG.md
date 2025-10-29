@@ -1,3 +1,73 @@
+## 1.4.0
+
+**Auto-Tracking for Commands** - Commands now automatically track when accessed in `Bind.viewModel`, enabling reactive UI updates without explicit `Command` widget usage.
+
+### ✨ New Features
+
+- **Command.canExecute auto-tracking** - All command `canExecute` getters/methods now report access to `DependencyTracker`
+  - `RelayCommand.canExecute` getter automatically tracked
+  - `AsyncRelayCommand.canExecute` getter automatically tracked
+  - `RelayCommandWithParam<T>.canExecute(param)` method automatically tracked
+  - `AsyncRelayCommandWithParam<T>.canExecute(param)` method automatically tracked
+  - Impact: `Bind.viewModel` now rebuilds when `notifyCanExecuteChanged()` is called, even without using `Command` widget
+
+### 🎯 Benefits
+
+**Before (v1.3.x):**
+```dart
+Bind.viewModel<MyViewModel>(
+  builder: (context, vm) {
+    // ❌ This won't rebuild when canExecute changes!
+    return ElevatedButton(
+      onPressed: vm.saveCommand.canExecute ? vm.saveCommand.execute : null,
+      child: Text('Save'),
+    );
+  },
+)
+```
+
+**After (v1.4.0):**
+```dart
+Bind.viewModel<MyViewModel>(
+  builder: (context, vm) {
+    // ✅ Automatically rebuilds when canExecute changes!
+    return ElevatedButton(
+      onPressed: vm.saveCommand.canExecute ? vm.saveCommand.execute : null,
+      child: Text('Save'),
+    );
+  },
+)
+```
+
+### 📝 Migration Guide
+
+**No code changes required!** This is fully backward compatible:
+
+- ✅ Existing `Command` widget usage → Works exactly the same
+- ✅ Direct command access in `Bind.viewModel` → Now auto-tracks (was broken before)
+- ✅ Direct command `execute()` calls → Works exactly the same
+
+### 🧪 Testing
+
+- Added 7 comprehensive tests for command auto-tracking in `Bind.viewModel`
+- Added 6 tests for command selector patterns and edge cases
+- All 565 tests passing
+
+### 📊 Performance
+
+- Improved benchmark methodology with noise reduction (warm-up + median of 5 measurements)
+- **Rebuild Performance**: 24-32% faster than Provider/Riverpod with auto-tracking
+- **Selective Rebuilds**: 30-38% faster with explicit binding
+- **Memory Trade-off**: Intentional 14% increase for superior rebuild performance and DX
+
+### Notes
+
+- Fully backward compatible - no breaking changes
+- Improves developer experience by making command usage more intuitive
+- Commands now behave consistently with `ObservableProperty` auto-tracking
+
+---
+
 ## 1.3.5+1
 
 **Documentation Refinement** - Improved clarity and completeness of binding patterns and disposal utilities.
