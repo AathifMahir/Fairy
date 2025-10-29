@@ -36,7 +36,7 @@ A lightweight MVVM framework for Flutter with strongly-typed reactive data bindi
 
 ```yaml
 dependencies:
-  fairy: ^1.3.5
+  fairy: ^1.4.0
 ```
 
 ```dart
@@ -474,7 +474,9 @@ See the [example](./src/example) directory for a complete counter app demonstrat
 - Data and command binding
 - Scoped dependency injection
 
-**543 tests passing** - covering observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, and overlays.
+## Testing
+
+**565 tests passing** - covering observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, command auto-tracking, and overlays.
 
 ```dart
 test('increment updates counter', () {
