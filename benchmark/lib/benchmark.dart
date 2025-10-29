@@ -772,24 +772,38 @@ void main() {
       await tester.pumpAndSettle();
       fairyObserverBuilds1 = fairyObserverBuilds2 = fairyObserverBuilds3 = 0;
 
-      final fairyObserverStopwatch = Stopwatch()..start();
-      
-      // Update property1 100 times - only widget1 should rebuild (auto-tracking)
-      for (int i = 0; i < 100; i++) {
+      // Warm-up run to stabilize JIT compilation and caches
+      for (int i = 0; i < 20; i++) {
         fairyVm!.property1.value = i;
         await tester.pump();
       }
-      fairyObserverStopwatch.stop();
+      fairyObserverBuilds1 = 0;
+
+      // Multiple measurement runs to reduce noise
+      final fairyObserverTimes = <int>[];
+      for (int run = 0; run < 5; run++) {
+        final stopwatch = Stopwatch()..start();
+        for (int i = 0; i < 100; i++) {
+          fairyVm!.property1.value = i;
+          await tester.pump();
+        }
+        stopwatch.stop();
+        fairyObserverTimes.add(stopwatch.elapsedMicroseconds);
+      }
+      
+      // Use median to eliminate outliers
+      fairyObserverTimes.sort();
+      final fairyObserverMedian = fairyObserverTimes[fairyObserverTimes.length ~/ 2];
       
       print('  🧚 Fairy Bind.viewModel:');
       print('    Widget 1 (accessing property1): $fairyObserverBuilds1 rebuilds ← Only this one!');
       print('    Widget 2 (accessing property2): $fairyObserverBuilds2 rebuilds ← Should be 0');
       print('    Widget 3 (accessing property3): $fairyObserverBuilds3 rebuilds ← Should be 0');
-      print('    Time: ${fairyObserverStopwatch.elapsedMilliseconds}ms');
+      print('    Time: ${(fairyObserverMedian / 1000).toStringAsFixed(2)}ms (median of 5 runs)');
       final totalFairyObserver = fairyObserverBuilds1 + fairyObserverBuilds2 + fairyObserverBuilds3;
       print('    Efficiency: ${totalFairyObserver > 0 ? ((fairyObserverBuilds1 / totalFairyObserver) * 100).toStringAsFixed(1) : 0}% of rebuilds were necessary\n');
       
-      _results.rebuildPerformance['Fairy Bind.viewModel'] = fairyObserverStopwatch.elapsedMicroseconds;
+      _results.rebuildPerformance['Fairy Bind.viewModel'] = fairyObserverMedian;
 
       // === PROVIDER CONSUMER (Global) ===
       int providerConsumerBuilds1 = 0, providerConsumerBuilds2 = 0, providerConsumerBuilds3 = 0;
@@ -832,23 +846,38 @@ void main() {
       await tester.pumpAndSettle();
       providerConsumerBuilds1 = providerConsumerBuilds2 = providerConsumerBuilds3 = 0;
 
-      final providerConsumerStopwatch = Stopwatch()..start();
-      
-      for (int i = 0; i < 100; i++) {
+      // Warm-up run
+      for (int i = 0; i < 20; i++) {
         providerNotifier.updateProperty1();
         await tester.pump();
       }
-      providerConsumerStopwatch.stop();
+      providerConsumerBuilds1 = providerConsumerBuilds2 = providerConsumerBuilds3 = 0;
+
+      // Multiple measurement runs to reduce noise
+      final providerConsumerTimes = <int>[];
+      for (int run = 0; run < 5; run++) {
+        final stopwatch = Stopwatch()..start();
+        for (int i = 0; i < 100; i++) {
+          providerNotifier.updateProperty1();
+          await tester.pump();
+        }
+        stopwatch.stop();
+        providerConsumerTimes.add(stopwatch.elapsedMicroseconds);
+      }
+      
+      // Use median to eliminate outliers
+      providerConsumerTimes.sort();
+      final providerConsumerMedian = providerConsumerTimes[providerConsumerTimes.length ~/ 2];
       
       print('  📦 Provider Consumer (no selector):');
       print('    Widget 1 (watching property1): $providerConsumerBuilds1 rebuilds');
       print('    Widget 2 (watching property2): $providerConsumerBuilds2 rebuilds ← Unnecessary!');
       print('    Widget 3 (watching property3): $providerConsumerBuilds3 rebuilds ← Unnecessary!');
-      print('    Time: ${providerConsumerStopwatch.elapsedMilliseconds}ms');
+      print('    Time: ${(providerConsumerMedian / 1000).toStringAsFixed(2)}ms (median of 5 runs)');
       final totalProviderConsumer = providerConsumerBuilds1 + providerConsumerBuilds2 + providerConsumerBuilds3;
       print('    Efficiency: ${totalProviderConsumer > 0 ? ((providerConsumerBuilds1 / totalProviderConsumer) * 100).toStringAsFixed(1) : 0}% of rebuilds were necessary\n');
       
-      _results.rebuildPerformance['Provider Consumer'] = providerConsumerStopwatch.elapsedMicroseconds;
+      _results.rebuildPerformance['Provider Consumer'] = providerConsumerMedian;
 
       // === RIVERPOD CONSUMER (Global) ===
       int riverpodConsumerBuilds1 = 0, riverpodConsumerBuilds2 = 0, riverpodConsumerBuilds3 = 0;
@@ -894,24 +923,39 @@ void main() {
       await tester.pumpAndSettle();
       riverpodConsumerBuilds1 = riverpodConsumerBuilds2 = riverpodConsumerBuilds3 = 0;
 
-      final riverpodConsumerStopwatch = Stopwatch()..start();
+      // Warm-up run
       final riverpodNotifier = riverpodContainer.read(riverpodMultiProvider.notifier);
-      
-      for (int i = 0; i < 100; i++) {
+      for (int i = 0; i < 20; i++) {
         riverpodNotifier.updateProperty1();
         await tester.pump();
       }
-      riverpodConsumerStopwatch.stop();
+      riverpodConsumerBuilds1 = riverpodConsumerBuilds2 = riverpodConsumerBuilds3 = 0;
+
+      // Multiple measurement runs to reduce noise
+      final riverpodConsumerTimes = <int>[];
+      for (int run = 0; run < 5; run++) {
+        final stopwatch = Stopwatch()..start();
+        for (int i = 0; i < 100; i++) {
+          riverpodNotifier.updateProperty1();
+          await tester.pump();
+        }
+        stopwatch.stop();
+        riverpodConsumerTimes.add(stopwatch.elapsedMicroseconds);
+      }
+      
+      // Use median to eliminate outliers
+      riverpodConsumerTimes.sort();
+      final riverpodConsumerMedian = riverpodConsumerTimes[riverpodConsumerTimes.length ~/ 2];
       
       print('  🏗️ Riverpod Consumer (no select):');
       print('    Widget 1 (watching property1): $riverpodConsumerBuilds1 rebuilds');
       print('    Widget 2 (watching property2): $riverpodConsumerBuilds2 rebuilds ← Unnecessary!');
       print('    Widget 3 (watching property3): $riverpodConsumerBuilds3 rebuilds ← Unnecessary!');
-      print('    Time: ${riverpodConsumerStopwatch.elapsedMilliseconds}ms');
+      print('    Time: ${(riverpodConsumerMedian / 1000).toStringAsFixed(2)}ms (median of 5 runs)');
       final totalRiverpodConsumer = riverpodConsumerBuilds1 + riverpodConsumerBuilds2 + riverpodConsumerBuilds3;
       print('    Efficiency: ${totalRiverpodConsumer > 0 ? ((riverpodConsumerBuilds1 / totalRiverpodConsumer) * 100).toStringAsFixed(1) : 0}% of rebuilds were necessary\n');
       
-      _results.rebuildPerformance['Riverpod Consumer'] = riverpodConsumerStopwatch.elapsedMicroseconds;
+      _results.rebuildPerformance['Riverpod Consumer'] = riverpodConsumerMedian;
       
       riverpodContainer.dispose();
     });
