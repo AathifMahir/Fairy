@@ -6,18 +6,17 @@ void main() {
     late FairyLocator locator;
 
     setUp(() {
-      locator = FairyLocator.instance;
-      locator.clear(); // Clean slate for each test
+      FairyLocator.clear(); // Clean slate for each test
     });
 
     tearDown(() {
-      locator.clear(); // Clean up after each test
+      FairyLocator.clear(); // Clean up after each test
     });
 
     group('singleton pattern', () {
       test('should return same instance', () {
-        final instance1 = FairyLocator.instance;
-        final instance2 = FairyLocator.instance;
+        final instance1 = FairyLocator._instance;
+        final instance2 = FairyLocator._instance;
 
         expect(identical(instance1, instance2), isTrue);
       });

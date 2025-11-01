@@ -56,16 +56,16 @@ class Fairy {
     }
 
     // Check global FairyLocator
-    if (FairyLocator.instance.contains<T>()) {
-      return FairyLocator.instance.get<T>();
+    if (FairyLocator.contains<T>()) {
+      return FairyLocator.get<T>();
     }
 
     // Not found anywhere
     throw StateError(
       'No ViewModel of type $T found.\n'
       'Make sure to either:\n'
-      '  1. Register it in FairyLocator: FairyLocator.instance.registerSingleton<$T>(...)\n'
-      '  2. Provide it via FairyScope: FairyScope(create: () => $T(), ...)\n'
+      '  1. Register it in FairyLocator: FairyLocator.registerSingleton<$T>(...)\n'
+      '  2. Provide it via FairyScope: FairyScope(viewModel: FairyScopeViewModel(() => $T()), ...)\n'
       '  3. Wrap your widget tree with a FairyScope containing the ViewModel',
     );
   }
@@ -97,8 +97,8 @@ class Fairy {
     }
 
     // Check FairyLocator
-    if (FairyLocator.instance.contains<T>()) {
-      return FairyLocator.instance.get<T>();
+    if (FairyLocator.contains<T>()) {
+      return FairyLocator.get<T>();
     }
 
     return null;

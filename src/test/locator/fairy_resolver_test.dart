@@ -1,3 +1,4 @@
+import 'package:fairy/src/locator/fairy_scope_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fairy/src/core/observable.dart';
@@ -9,12 +10,12 @@ import 'package:fairy/src/ui/fairy_bridge.dart';
 void main() {
   setUp(() {
     // Clear FairyLocator before each test
-    FairyLocator.instance.clear();
+    FairyLocator.clear();
   });
 
   tearDown(() {
     // Clean up after each test
-    FairyLocator.instance.clear();
+    FairyLocator.clear();
   });
 
   group('Fairy.of()', () {
@@ -25,7 +26,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => scopeVm,
+          viewModel: FairyScopeViewModel((_) => scopeVm),
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.of<ScopedViewModel>(context);
@@ -42,7 +43,7 @@ void main() {
     testWidgets('should resolve ViewModel from FairyLocator if not in scope',
         (tester) async {
       final globalVm = GlobalViewModel();
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       GlobalViewModel? resolvedVm;
 
@@ -64,13 +65,13 @@ void main() {
       final scopeVm = TestViewModel();
       final globalVm = TestViewModel();
 
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedVm;
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => scopeVm,
+          viewModel: FairyScopeViewModel((_) => scopeVm),
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.of<TestViewModel>(context);
@@ -115,7 +116,7 @@ void main() {
               fail('Should have thrown StateError');
             } catch (e) {
               expect(e.toString(),
-                  contains('FairyLocator.instance.registerSingleton'));
+                  contains('FairyLocator.registerSingleton'));
               expect(e.toString(), contains('FairyScope'));
               expect(e.toString(), contains('Make sure to either'));
             }
@@ -133,9 +134,9 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => outerVm,
+          viewModel: FairyScopeViewModel((_) => outerVm),
           child: FairyScope(
-            viewModel: (_) => innerVm,
+            viewModel: FairyScopeViewModel((_) => innerVm),
             child: Builder(
               builder: (context) {
                 resolvedInner = Fairy.of<InnerViewModel>(context);
@@ -165,11 +166,11 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => outerVm,
+          viewModel: FairyScopeViewModel((_) => outerVm),
           child: Builder(
             builder: (outerContext) {
               return FairyScope(
-                viewModel: (_) => InnerViewModel(),
+                viewModel: FairyScopeViewModel((_) => InnerViewModel()),
                 child: Builder(
                   builder: (innerContext) {
                     // Try to get TestViewModel from inner context
@@ -195,14 +196,14 @@ void main() {
       final scopeVm = ScopedViewModel();
       final globalVm = GlobalViewModel();
 
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       ScopedViewModel? resolvedScoped;
       GlobalViewModel? resolvedGlobal;
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => scopeVm,
+          viewModel: FairyScopeViewModel((_) => scopeVm),
           child: Builder(
             builder: (context) {
               resolvedScoped = Fairy.of<ScopedViewModel>(context);
@@ -228,7 +229,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => scopeVm,
+          viewModel: FairyScopeViewModel((_) => scopeVm),
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.maybeOf<ScopedViewModel>(context);
@@ -244,7 +245,7 @@ void main() {
 
     testWidgets('should return ViewModel from FairyLocator', (tester) async {
       final globalVm = GlobalViewModel();
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       GlobalViewModel? resolvedVm;
 
@@ -281,13 +282,13 @@ void main() {
       final scopeVm = TestViewModel();
       final globalVm = TestViewModel();
 
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedVm;
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => scopeVm,
+          viewModel: FairyScopeViewModel((_) => scopeVm),
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.maybeOf<TestViewModel>(context);
@@ -328,7 +329,7 @@ void main() {
       final scopeVm = ScopedViewModel();
       final globalVm = GlobalViewModel();
 
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       ScopedViewModel? resolvedScoped;
       GlobalViewModel? resolvedGlobal;
@@ -336,7 +337,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => scopeVm,
+          viewModel: FairyScopeViewModel((_) => scopeVm),
           child: Builder(
             builder: (context) {
               resolvedScoped = Fairy.maybeOf<ScopedViewModel>(context);
@@ -360,7 +361,7 @@ void main() {
       final globalVm = TestViewModel();
 
       // Register in global first
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? firstResolve;
       TestViewModel? secondResolve;
@@ -376,7 +377,7 @@ void main() {
               },
             ),
             FairyScope(
-              viewModel: (_) => scopeVm,
+              viewModel: FairyScopeViewModel((_) => scopeVm),
               child: Builder(
                 builder: (context) {
                   // Inside scope - should get scoped
@@ -397,7 +398,7 @@ void main() {
       final scopeVm = ScopedViewModel();
       final globalVm = ScopedViewModel();
 
-      FairyLocator.instance.registerSingleton<ScopedViewModel>(globalVm);
+      FairyLocator.registerSingleton<ScopedViewModel>(globalVm);
 
       ScopedViewModel? resolvedBefore;
       ScopedViewModel? resolvedAfter;
@@ -405,7 +406,7 @@ void main() {
       // With scope
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => scopeVm,
+          viewModel: FairyScopeViewModel((_) => scopeVm),
           child: Builder(
             builder: (context) {
               resolvedBefore = Fairy.of<ScopedViewModel>(context);
@@ -438,7 +439,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -466,7 +467,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -490,7 +491,7 @@ void main() {
 
     testWidgets('should work when no parent FairyScope exists', (tester) async {
       final globalVm = TestViewModel();
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedInOverlay;
 
@@ -517,7 +518,7 @@ void main() {
     testWidgets('should fallback to FairyLocator when no parent scope',
         (tester) async {
       final globalVm = GlobalViewModel();
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       GlobalViewModel? resolvedInOverlay;
 
@@ -550,7 +551,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               resolvedBeforeBridge = Fairy.of<TestViewModel>(parentContext);
@@ -566,7 +567,7 @@ void main() {
       // Create and destroy bridge
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               return Column(
@@ -590,7 +591,7 @@ void main() {
       // Remove bridge
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               resolvedAfterBridge = Fairy.of<TestViewModel>(parentContext);
@@ -614,7 +615,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               resolvedInParent = Fairy.of<TestViewModel>(parentContext);
@@ -649,8 +650,8 @@ void main() {
       await tester.pumpWidget(
         FairyScope(
           viewModels: [
-            (_) => vm1,
-            (_) => vm2,
+            FairyScopeViewModel((_) => vm1),
+            FairyScopeViewModel((_) => vm2),
           ],
           child: Builder(
             builder: (parentContext) {
@@ -682,7 +683,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -724,9 +725,9 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => outerVm,
+          viewModel: FairyScopeViewModel((_) => outerVm),
           child: FairyScope(
-            viewModel: (_) => innerVm,
+            viewModel: FairyScopeViewModel((_) => innerVm),
             child: Builder(
               builder: (innerContext) {
                 return FairyBridge(
@@ -756,7 +757,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -793,7 +794,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -821,7 +822,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               if (!bridgeBuilt) {
@@ -843,7 +844,7 @@ void main() {
       bridgeBuilt = true;
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => parentVm,
+          viewModel: FairyScopeViewModel((_) => parentVm),
           child: Builder(
             builder: (parentContext) {
               return const SizedBox();
@@ -861,13 +862,13 @@ void main() {
       final scopeVm = TestViewModel();
       final globalVm = TestViewModel();
 
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedInOverlay;
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => scopeVm,
+          viewModel: FairyScopeViewModel((_) => scopeVm),
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -896,7 +897,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => pageVm,
+            viewModel: FairyScopeViewModel((_) => pageVm),
             child: Builder(
               builder: (pageContext) {
                 return Scaffold(
@@ -949,9 +950,9 @@ void main() {
       final vm2 = ScopedViewModel();
       final vm3 = GlobalViewModel();
 
-      FairyLocator.instance.registerSingleton<TestViewModel>(vm1);
-      FairyLocator.instance.registerSingleton<ScopedViewModel>(vm2);
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(vm3);
+      FairyLocator.registerSingleton<TestViewModel>(vm1);
+      FairyLocator.registerSingleton<ScopedViewModel>(vm2);
+      FairyLocator.registerSingleton<GlobalViewModel>(vm3);
 
       TestViewModel? resolved1;
       ScopedViewModel? resolved2;
@@ -980,7 +981,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => scopeVm,
+          viewModel: FairyScopeViewModel((_) => scopeVm),
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.of<TestViewModel>(context);
@@ -996,7 +997,7 @@ void main() {
 
     testWidgets('should work when no FairyScope in tree', (tester) async {
       final globalVm = TestViewModel();
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedVm;
 

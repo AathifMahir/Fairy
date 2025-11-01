@@ -106,7 +106,7 @@ class FairyScopeLocatorImpl implements FairyScopeLocator {
 
     // 3. Fall back to global FairyLocator
     try {
-      return FairyLocator.instance.get<T>();
+      return FairyLocator.get<T>();
     } catch (e) {
       throw StateError(
         'No dependency of type $T found in FairyScope hierarchy or FairyLocator.\n'
