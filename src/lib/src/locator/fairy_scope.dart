@@ -1,5 +1,6 @@
 import 'package:fairy/src/internal/fairy_scope_data.dart';
 import 'package:fairy/src/internal/fairy_scope_locator.dart';
+import 'package:fairy/src/locator/fairy_scope_view_model.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/observable.dart';
@@ -81,57 +82,47 @@ class FairyScope extends StatefulWidget {
   /// The widget subtree that can access scoped ViewModels.
   final Widget child;
 
-  /// Factory function to create a single ViewModel.
+  /// Configuration for creating a single ViewModel.
   ///
-  /// The factory receives a [FairyScopeLocator] to resolve dependencies from:
-  /// - Global services in [FairyLocator]
-  /// - Parent scope ViewModels
-  ///
-  /// **IMPORTANT:** Do not store the locator reference or use it outside
-  /// the factory function. It is only valid during initialization.
-  ///
-  /// The created ViewModel will be owned and disposed by this scope.
-  final ObservableObject Function(FairyScopeLocator locator)? viewModel;
+  /// Use [FairyScopeViewModel] to configure how and when the ViewModel is created:
+  /// ```dart
+  /// FairyScope(
+  ///   viewModel: FairyScopeViewModel(
+  ///     (locator) => CounterViewModel(
+  ///       apiService: locator.get<ApiService>(),
+  ///     ),
+  ///     lazy: false, // Created immediately
+  ///   ),
+  ///   child: CounterPage(),
+  /// )
+  /// ```
+  final FairyScopeViewModel? viewModel;
 
-  /// List of factory functions to create multiple ViewModels.
+  /// List of ViewModel configurations.
   ///
-  /// Each factory receives a [FairyScopeLocator] to resolve dependencies.
-  /// ViewModels are created in order, so later factories can depend on
-  /// earlier ViewModels in the same scope.
+  /// Each [FairyScopeViewModel] defines how to create a ViewModel and when:
+  /// - `lazy: true` (default): Created on first access
+  /// - `lazy: false`: Created immediately
   ///
-  /// **IMPORTANT:** Do not store the locator reference or use it outside
-  /// the factory functions. It is only valid during initialization.
-  ///
-  /// All created ViewModels will be owned and disposed by this scope.
-  ///
-  /// Example:
+  /// ViewModels are created in order, so later VMs can depend on earlier ones:
   /// ```dart
   /// FairyScope(
   ///   viewModels: [
-  ///     (locator) => UserViewModel(),
-  ///     (locator) => SettingsViewModel(
-  ///       userViewModel: locator.get<UserViewModel>(), // Depends on first VM
-  ///     ),
+  ///     FairyScopeViewModel((locator) => UserViewModel(), lazy: false),
+  ///     FairyScopeViewModel((locator) => SettingsViewModel(
+  ///       userViewModel: locator.get<UserViewModel>(),
+  ///     )),
   ///   ],
   ///   child: MyApp(),
   /// )
   /// ```
-  final List<ObservableObject Function(FairyScopeLocator locator)>? viewModels;
-
-  /// Whether to automatically dispose ViewModels created by this scope.
-  ///
-  /// When `true` (default), ViewModels created via [viewModel] or [viewModels]
-  /// are disposed when the scope is removed.
-  ///
-  /// When `false`, no automatic disposal occurs.
-  final bool autoDispose;
+  final List<FairyScopeViewModel>? viewModels;
 
   const FairyScope({
     super.key,
     required this.child,
     this.viewModel,
     this.viewModels,
-    this.autoDispose = true,
   }) : assert(
           viewModel == null || viewModels == null,
           'Cannot use both viewModel and viewModels. Use one or the other.',
@@ -182,17 +173,35 @@ class _FairyScopeState extends State<FairyScope> {
     final locator = FairyScopeLocatorImpl(_data, parentScopes);
 
     try {
-      // Register single ViewModel created via factory
+      // Register single ViewModel
       if (widget.viewModel != null) {
-        final instance = widget.viewModel!(locator);
-        _data.registerDynamic(instance, owned: widget.autoDispose);
+        if (widget.viewModel!.lazy) {
+          // Lazy: Register factory for on-demand creation
+          _data.registerLazy(
+            widget.viewModel!.viewModelType,
+            () => widget.viewModel!.create(locator),
+          );
+        } else {
+          // Eager: Create immediately
+          final instance = widget.viewModel!.create(locator);
+          _data.registerDynamic(instance, owned: true);
+        }
       }
 
-      // Register multiple ViewModels created via factories
+      // Register multiple ViewModels
       if (widget.viewModels != null) {
-        for (final factory in widget.viewModels!) {
-          final instance = factory(locator);
-          _data.registerDynamic(instance, owned: widget.autoDispose);
+        for (final config in widget.viewModels!) {
+          if (config.lazy) {
+            // Lazy: Register factory for on-demand creation
+            _data.registerLazy(
+              config.viewModelType,
+              () => config.create(locator),
+            );
+          } else {
+            // Eager: Create immediately
+            final instance = config.create(locator);
+            _data.registerDynamic(instance, owned: true);
+          }
         }
       }
     } finally {

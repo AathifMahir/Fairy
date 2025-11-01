@@ -46,17 +46,21 @@ typedef CanExecute = bool Function();
 class RelayCommand extends ObservableNode {
   final VoidCallback _action;
   final CanExecute? _canExecute;
+  final void Function(Object error, StackTrace?)? _onError;
 
   /// Creates a [RelayCommand] with an action and optional canExecute predicate.
   ///
   /// [execute] is the method to execute when the command runs.
   /// [canExecute] is an optional predicate that determines if the action can run.
   /// If omitted, the command can always execute.
+  /// [onError] is an optional callback invoked when the action throws an error.
   RelayCommand(
     VoidCallback execute, {
     CanExecute? canExecute,
+    void Function(Object error, StackTrace?)? onError,
   })  : _action = execute,
-        _canExecute = canExecute;
+        _canExecute = canExecute,
+        _onError = onError;
 
   // ========================================================================
   // HIDDEN ObservableNode API (marked @protected for internal framework use)
@@ -92,9 +96,14 @@ class RelayCommand extends ObservableNode {
   /// Executes the command's action if [canExecute] is `true`.
   ///
   /// Does nothing if [canExecute] returns `false`.
+  /// If the action throws an error and [onError] was provided, the error is caught and passed to [onError].
   void execute() {
     if (canExecute) {
-      _action();
+      try {
+        _action();
+      } catch (error, stackTrace) {
+        _onError?.call(error, stackTrace);
+      }
     }
   }
 
@@ -171,20 +180,24 @@ class RelayCommand extends ObservableNode {
 class AsyncRelayCommand extends ObservableNode {
   final Future<void> Function() _action;
   final CanExecute? _canExecute;
+  final void Function(Object error, StackTrace?)? _onError;
   bool _isRunning = false;
 
   /// Creates an [AsyncRelayCommand] with an async action and optional canExecute predicate.
   ///
   /// [execute] is the asynchronous method to execute when the command runs.
   /// [canExecute] is an optional predicate that determines if the action can run.
+  /// [onError] is an optional callback invoked when the action throws an error.
   ///
   /// While the command is executing, [isRunning] is `true` and [canExecute]
   /// automatically returns `false` to prevent concurrent execution.
   AsyncRelayCommand(
     Future<void> Function() execute, {
     CanExecute? canExecute,
+    void Function(Object error, StackTrace?)? onError,
   })  : _action = execute,
-        _canExecute = canExecute;
+        _canExecute = canExecute,
+        _onError = onError;
 
   // ========================================================================
   // HIDDEN ObservableNode API (marked @protected for internal framework use)
@@ -235,6 +248,7 @@ class AsyncRelayCommand extends ObservableNode {
   ///
   /// Returns a [Future] that completes when the action completes.
   /// Sets [isRunning] to `true` during execution and `false` when complete.
+  /// If the action throws an error and [onError] was provided, the error is caught and passed to [onError].
   Future<void> execute() async {
     if (!canExecute) return;
 
@@ -243,6 +257,8 @@ class AsyncRelayCommand extends ObservableNode {
 
     try {
       await _action();
+    } catch (error, stackTrace) {
+      _onError?.call(error, stackTrace);
     } finally {
       _isRunning = false;
       notifyListeners();
@@ -306,16 +322,20 @@ class AsyncRelayCommand extends ObservableNode {
 class RelayCommandWithParam<TParam> extends ObservableNode {
   final void Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
+  final void Function(Object error, StackTrace?)? _onError;
 
   /// Creates a parameterized relay command.
   ///
   /// [execute] receives a parameter of type [TParam] when executed.
   /// [canExecute] optionally validates whether the action can run with the given parameter.
+  /// [onError] is an optional callback invoked when the action throws an error.
   RelayCommandWithParam(
     void Function(TParam) execute, {
     bool Function(TParam)? canExecute,
+    void Function(Object error, StackTrace?)? onError,
   })  : _action = execute,
-        _canExecute = canExecute;
+        _canExecute = canExecute,
+        _onError = onError;
 
   // ========================================================================
   // HIDDEN ObservableNode API (marked @protected for internal framework use)
@@ -351,9 +371,14 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
   /// Executes the command's action with the given [param] if [canExecute] is `true`.
   ///
   /// Does nothing if [canExecute] returns `false` for the parameter.
+  /// If the action throws an error and [onError] was provided, the error is caught and passed to [onError].
   void execute(TParam param) {
     if (canExecute(param)) {
-      _action(param);
+      try {
+        _action(param);
+      } catch (error, stackTrace) {
+        _onError?.call(error, stackTrace);
+      }
     }
   }
 
@@ -427,20 +452,24 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
 class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   final Future<void> Function(TParam) _action;
   final bool Function(TParam)? _canExecute;
+  final void Function(Object error, StackTrace?)? _onError;
   bool _isRunning = false;
 
   /// Creates an async parameterized command.
   ///
   /// [execute] is an async function that receives a parameter of type [TParam].
   /// [canExecute] optionally validates whether the action can run with the given parameter.
+  /// [onError] is an optional callback invoked when the action throws an error.
   ///
   /// While the command is executing, [isRunning] is `true` and [canExecute]
   /// automatically returns `false` to prevent concurrent execution.
   AsyncRelayCommandWithParam(
     Future<void> Function(TParam) execute, {
     bool Function(TParam)? canExecute,
+    void Function(Object error, StackTrace?)? onError,
   })  : _action = execute,
-        _canExecute = canExecute;
+        _canExecute = canExecute,
+        _onError = onError;
 
   // ========================================================================
   // HIDDEN ObservableNode API (marked @protected for internal framework use)
@@ -490,6 +519,7 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   /// Executes the command's async action with the given [param] if [canExecute] is `true`.
   ///
   /// Sets [isRunning] to `true` during execution and `false` when complete.
+  /// If the action throws an error and [onError] was provided, the error is caught and passed to [onError].
   Future<void> execute(TParam param) async {
     if (!canExecute(param)) return;
 
@@ -498,6 +528,8 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
 
     try {
       await _action(param);
+    } catch (error, stackTrace) {
+      _onError?.call(error, stackTrace);
     } finally {
       _isRunning = false;
       notifyListeners();
