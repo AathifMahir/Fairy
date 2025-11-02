@@ -1,4 +1,5 @@
 import 'package:fairy/src/internal/fairy_scope_data.dart';
+import 'package:fairy/src/locator/fairy_scope_view_model.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fairy/src/core/observable.dart';
@@ -156,7 +157,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: (_) => TestViewModel(),
+          viewModel: FairyScopeViewModel((_) => TestViewModel()),
           child: Builder(
             builder: (context) {
               capturedData = FairyScope.of(context);
@@ -192,7 +193,7 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => TestViewModel(),
+            viewModel: FairyScopeViewModel((locator) => TestViewModel()),
             child: Builder(
               builder: (context) {
                 final data = FairyScope.of(context);
@@ -214,10 +215,10 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) {
+            viewModel: FairyScopeViewModel((locator) {
               createCount++;
               return TestViewModel();
-            },
+            }),
             child: Builder(
               builder: (context) {
                 final data = FairyScope.of(context);
@@ -249,7 +250,7 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => vm,
+            viewModel: FairyScopeViewModel((locator) => vm),
             child: const SizedBox(),
           ),
         );
@@ -270,8 +271,8 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             viewModels: [
-              (locator) => TestViewModel(),
-              (locator) => AnotherViewModel(),
+              FairyScopeViewModel((locator) => TestViewModel()),
+              FairyScopeViewModel((locator) => AnotherViewModel()),
             ],
             child: Builder(
               builder: (context) {
@@ -293,8 +294,8 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             viewModels: [
-              (locator) => vm1,
-              (locator) => vm2,
+              FairyScopeViewModel((locator) => vm1),
+              FairyScopeViewModel((locator) => vm2),
             ],
             child: const SizedBox(),
           ),
@@ -316,9 +317,9 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             viewModels: [
-              (locator) => TestViewModel(),
-              (locator) => AnotherViewModel(),
-              (locator) => ThirdViewModel(),
+              FairyScopeViewModel((locator) => TestViewModel()),
+              FairyScopeViewModel((locator) => AnotherViewModel()),
+              FairyScopeViewModel((locator) => ThirdViewModel()),
             ],
             child: Builder(
               builder: (context) {
@@ -341,8 +342,7 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => vm,
-            autoDispose: true,
+            viewModel: FairyScopeViewModel((locator) => vm),
             child: const SizedBox(),
           ),
         );
@@ -360,8 +360,7 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => vm,
-            autoDispose: false,
+            viewModel: FairyScopeViewModel((locator) => vm),
             child: const SizedBox(),
           ),
         );
@@ -378,7 +377,7 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => vm,
+            viewModel: FairyScopeViewModel((locator) => vm),
             // autoDispose not specified (defaults to true)
             child: const SizedBox(),
           ),
@@ -398,8 +397,8 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             viewModels: [
-              (locator) => createdVm1,
-              (locator) => createdVm2,
+              FairyScopeViewModel((locator) => createdVm1),
+              FairyScopeViewModel((locator) => createdVm2),
             ],
             child: const SizedBox(),
           ),
@@ -421,7 +420,7 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => vm,
+            viewModel: FairyScopeViewModel((locator) => vm),
             child: const SizedBox(),
           ),
         );
@@ -440,7 +439,7 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: const SizedBox(),
           ),
         );
@@ -459,14 +458,14 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => TestViewModel(),
+            viewModel: FairyScopeViewModel((locator) => TestViewModel()),
             child: Builder(
               builder: (outerContext) {
                 final outerData = FairyScope.of(outerContext);
                 outerVm = outerData?.get<TestViewModel>();
 
                 return FairyScope(
-                  viewModel: (locator) => AnotherViewModel(),
+                  viewModel: FairyScopeViewModel((locator) => AnotherViewModel()),
                   child: Builder(
                     builder: (innerContext) {
                       final innerData = FairyScope.of(innerContext);
@@ -490,9 +489,9 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => TestViewModel(),
+            viewModel: FairyScopeViewModel((locator) => TestViewModel()),
             child: FairyScope(
-              viewModel: (locator) => AnotherViewModel(),
+              viewModel: FairyScopeViewModel((locator) => AnotherViewModel()),
               child: Builder(
                 builder: (context) {
                   final data = FairyScope.of(context);
@@ -517,9 +516,9 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => outerVm,
+            viewModel: FairyScopeViewModel((locator) => outerVm),
             child: FairyScope(
-              viewModel: (locator) => innerVm,
+              viewModel: FairyScopeViewModel((locator) => innerVm),
               child: const SizedBox(),
             ),
           ),
@@ -542,7 +541,7 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => viewModel,
+            viewModel: FairyScopeViewModel((locator) => viewModel),
             child: const _TestPageWidget(),
           ),
         );
@@ -562,8 +561,8 @@ void main() {
         // Trying to use both parameters should trigger assertion
         expect(
           () => FairyScope(
-            viewModel: (locator) => AnotherViewModel(),
-            viewModels: [(locator) => TestViewModel()],
+            viewModel: FairyScopeViewModel((locator) => AnotherViewModel()),
+            viewModels: [FairyScopeViewModel((locator) => TestViewModel())],
             child: const SizedBox(),
           ),
           throwsA(isA<AssertionError>()),
@@ -578,10 +577,10 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             key: const ValueKey(1),
-            viewModel: (locator) {
+            viewModel: FairyScopeViewModel((locator) {
               createCount++;
               return PageViewModel();
-            },
+            },),
             child: Builder(
               builder: (context) {
                 final vm = FairyScope.of(context)!.get<PageViewModel>();
@@ -599,10 +598,10 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             key: const ValueKey(2),
-            viewModel: (locator) {
+            viewModel: FairyScopeViewModel((locator) {
               createCount++;
               return PageViewModel();
-            },
+            }),
             child: Builder(
               builder: (context) {
                 final vm = FairyScope.of(context)!.get<PageViewModel>();
@@ -623,24 +622,24 @@ void main() {
   group('FairyScopeLocator', () {
     setUp(() {
       // Reset FairyLocator before each test
-      FairyLocator.instance.reset();
+      FairyLocator.reset();
     });
 
     group('dependency resolution from FairyLocator', () {
       testWidgets('should resolve service from FairyLocator', (tester) async {
         // Register service globally
         final service = TestService();
-        FairyLocator.instance.registerSingleton<TestService>(service);
+        FairyLocator.registerSingleton<TestService>(service);
 
         TestViewModel? vm;
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) {
+            viewModel: FairyScopeViewModel((locator) {
               final resolvedService = locator.get<TestService>();
               expect(identical(resolvedService, service), isTrue);
               return TestViewModel();
-            },
+            }),
             child: Builder(
               builder: (context) {
                 vm = FairyScope.of(context)?.get<TestViewModel>();
@@ -658,15 +657,15 @@ void main() {
         final service1 = TestService();
         final service2 = AnotherService();
 
-        FairyLocator.instance.registerSingleton<TestService>(service1);
-        FairyLocator.instance.registerSingleton<AnotherService>(service2);
+        FairyLocator.registerSingleton<TestService>(service1);
+        FairyLocator.registerSingleton<AnotherService>(service2);
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => ViewModelWithDependencies(
+            viewModel: FairyScopeViewModel((locator) => ViewModelWithDependencies(
               locator.get<TestService>(),
               locator.get<AnotherService>(),
-            ),
+            )),
             child: Builder(
               builder: (context) {
                 final vm =
@@ -684,10 +683,10 @@ void main() {
           (tester) async {
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) {
+            viewModel: FairyScopeViewModel((locator) {
               locator.get<TestService>(); // Not registered!
               return TestViewModel();
-            },
+            }),
             child: const SizedBox(),
           ),
         );
@@ -707,14 +706,14 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => parentVm,
+            viewModel: FairyScopeViewModel((locator) => parentVm),
             child: FairyScope(
-              viewModel: (locator) {
+              viewModel: FairyScopeViewModel((locator) {
                 final resolved = locator.get<TestViewModel>();
                 expect(identical(resolved, parentVm), isTrue);
                 return ViewModelWithDependencies(
                     TestService(), AnotherService());
-              },
+              }),
               child: Builder(
                 builder: (context) {
                   childVm =
@@ -735,16 +734,16 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => rootVm,
+            viewModel: FairyScopeViewModel((locator) => rootVm),
             child: FairyScope(
-              viewModel: (locator) => middleVm,
+              viewModel: FairyScopeViewModel((locator) => middleVm),
               child: FairyScope(
-                viewModel: (locator) {
+                viewModel: FairyScopeViewModel((locator) {
                   // Should get middle scope's VM
                   final resolved = locator.get<AnotherViewModel>();
                   expect(identical(resolved, middleVm), isTrue);
                   return ThirdViewModel();
-                },
+                }),
                 child: const SizedBox(),
               ),
             ),
@@ -757,16 +756,16 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => grandparentVm,
+            viewModel: FairyScopeViewModel((locator) => grandparentVm),
             child: FairyScope(
-              viewModel: (locator) => AnotherViewModel(),
+              viewModel: FairyScopeViewModel((locator) => AnotherViewModel()),
               child: FairyScope(
-                viewModel: (locator) {
+                viewModel: FairyScopeViewModel((locator) {
                   // Should traverse up to grandparent scope
                   final resolved = locator.get<TestViewModel>();
                   expect(identical(resolved, grandparentVm), isTrue);
                   return ThirdViewModel();
-                },
+                }),
                 child: const SizedBox(),
               ),
             ),
@@ -784,18 +783,18 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             viewModels: [
-              (locator) {
+              FairyScopeViewModel((locator) {
                 firstVm = TestViewModel();
                 return firstVm!;
-              },
-              (locator) {
+              }),
+              FairyScopeViewModel((locator) {
                 // Should be able to get first VM
                 final resolved = locator.get<TestViewModel>();
                 expect(identical(resolved, firstVm), isTrue);
                 secondVm =
                     ViewModelWithDependencies(TestService(), AnotherService());
                 return secondVm!;
-              },
+              }),
             ],
             child: const SizedBox(),
           ),
@@ -810,15 +809,15 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             viewModels: [
-              (locator) => TestViewModel(),
-              (locator) => ViewModelWithDependencies(
+              FairyScopeViewModel((locator) => TestViewModel()),
+              FairyScopeViewModel((locator) => ViewModelWithDependencies(
                     TestService(),
                     AnotherService(),
-                  ),
-              (locator) => ComplexViewModel(
+                  )),
+              FairyScopeViewModel((locator) => ComplexViewModel(
                     locator.get<TestViewModel>(),
                     locator.get<ViewModelWithDependencies>(),
-                  ),
+                  )),
             ],
             child: Builder(
               builder: (context) {
@@ -842,12 +841,12 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             viewModels: [
-              (locator) {
+              FairyScopeViewModel((locator) {
                 // Try to get VM that will be created later
                 locator.get<AnotherViewModel>(); // Not created yet!
                 return TestViewModel();
-              },
-              (locator) => AnotherViewModel(),
+              }),
+              FairyScopeViewModel((locator) => AnotherViewModel()),
             ],
             child: const SizedBox(),
           ),
@@ -865,18 +864,18 @@ void main() {
       testWidgets('should resolve from both parent scope and FairyLocator',
           (tester) async {
         final service = TestService();
-        FairyLocator.instance.registerSingleton<TestService>(service);
+        FairyLocator.registerSingleton<TestService>(service);
 
         final parentVm = TestViewModel();
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => parentVm,
+            viewModel: FairyScopeViewModel((locator) => parentVm),
             child: FairyScope(
-              viewModel: (locator) => ViewModelWithMixedDependencies(
+              viewModel: FairyScopeViewModel((locator) => ViewModelWithMixedDependencies(
                 locator.get<TestService>(), // From FairyLocator
                 locator.get<TestViewModel>(), // From parent scope
-              ),
+              )),
               child: Builder(
                 builder: (context) {
                   final vm = FairyScope.of(context)!
@@ -895,22 +894,22 @@ void main() {
           (tester) async {
         // Register in FairyLocator
         final globalVm = TestViewModel();
-        FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+        FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
         // Register in parent scope (should shadow global)
         final scopedVm = TestViewModel();
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => scopedVm,
+            viewModel: FairyScopeViewModel((locator) => scopedVm),
             child: FairyScope(
-              viewModel: (locator) {
+              viewModel: FairyScopeViewModel((locator) {
                 final resolved = locator.get<TestViewModel>();
                 // Should get scoped VM, not global
                 expect(identical(resolved, scopedVm), isTrue);
                 expect(identical(resolved, globalVm), isFalse);
                 return AnotherViewModel();
-              },
+              }),
               child: const SizedBox(),
             ),
           ),
@@ -925,10 +924,10 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) {
+            viewModel: FairyScopeViewModel((locator) {
               capturedLocator = locator;
               return TestViewModel();
-            },
+            }),
             child: const SizedBox(),
           ),
         );
@@ -947,10 +946,10 @@ void main() {
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) {
+            viewModel: FairyScopeViewModel((locator) {
               capturedLocator = locator;
               return TestViewModel();
-            },
+            }),
             child: const SizedBox(),
           ),
         );
@@ -979,7 +978,7 @@ void main() {
           (tester) async {
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => BadViewModelWithStoredLocator(locator),
+            viewModel: FairyScopeViewModel((locator) => BadViewModelWithStoredLocator(locator)),
             child: const SizedBox(),
           ),
         );
@@ -1002,10 +1001,10 @@ void main() {
           (tester) async {
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) {
+            viewModel: FairyScopeViewModel((locator) {
               locator.get<NonExistentService>();
               return TestViewModel();
-            },
+            }),
             child: const SizedBox(),
           ),
         );
@@ -1021,10 +1020,10 @@ void main() {
       testWidgets('should provide helpful resolution guidance', (tester) async {
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) {
+            viewModel: FairyScopeViewModel((locator) {
               locator.get<TestService>();
               return TestViewModel();
-            },
+            }),
             child: const SizedBox(),
           ),
         );
@@ -1041,24 +1040,24 @@ void main() {
       testWidgets('should handle deep nesting with mixed dependencies',
           (tester) async {
         final service = TestService();
-        FairyLocator.instance.registerSingleton<TestService>(service);
+        FairyLocator.registerSingleton<TestService>(service);
 
         await tester.pumpWidget(
           FairyScope(
-            viewModel: (locator) => TestViewModel(),
+            viewModel: FairyScopeViewModel((locator) => TestViewModel()),
             child: FairyScope(
               viewModels: [
-                (locator) => AnotherViewModel(),
-                (locator) => ViewModelWithDependencies(
+                FairyScopeViewModel((locator) => AnotherViewModel()),
+               FairyScopeViewModel( (locator) => ViewModelWithDependencies(
                       TestService(),
                       AnotherService(),
-                    ),
+                    )),
               ],
               child: FairyScope(
-                viewModel: (locator) => ComplexViewModel(
+                viewModel: FairyScopeViewModel((locator) => ComplexViewModel(
                   locator.get<TestViewModel>(), // From grandparent
                   locator.get<ViewModelWithDependencies>(), // From parent
-                ),
+                )),
                 child: Builder(
                   builder: (context) {
                     final data = FairyScope.of(context)!;
@@ -1087,7 +1086,7 @@ void main() {
             textDirection: TextDirection.ltr,
             children: [
               FairyScope(
-                viewModel: (locator) => scope1Vm,
+                viewModel: FairyScopeViewModel((locator) => scope1Vm),
                 child: Builder(
                   builder: (context) {
                     final vm = FairyScope.of(context)!.get<TestViewModel>();
@@ -1097,7 +1096,7 @@ void main() {
                 ),
               ),
               FairyScope(
-                viewModel: (locator) => scope2Vm,
+                viewModel: FairyScopeViewModel((locator) => scope2Vm),
                 child: Builder(
                   builder: (context) {
                     final vm = FairyScope.of(context)!.get<TestViewModel>();
@@ -1120,18 +1119,18 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             // Scope 1 - Root
-            viewModel: (locator) => firstScopeVm,
+            viewModel: FairyScopeViewModel((locator) => firstScopeVm),
             child: FairyScope(
               // Scope 2 - Level 1
-              viewModel: (locator) {
+              viewModel: FairyScopeViewModel((locator) {
                 // Verify can access parent scope
                 final parent = locator.get<TestViewModel>();
                 expect(identical(parent, firstScopeVm), isTrue);
                 return secondScopeVm;
-              },
+              }),
               child: FairyScope(
                 // Scope 3 - Level 2
-                viewModel: (locator) {
+                viewModel: FairyScopeViewModel((locator) {
                   // Verify can access grandparent scope
                   final grandparent = locator.get<TestViewModel>();
                   expect(identical(grandparent, firstScopeVm), isTrue);
@@ -1139,10 +1138,10 @@ void main() {
                   final parent = locator.get<AnotherViewModel>();
                   expect(identical(parent, secondScopeVm), isTrue);
                   return thirdScopeVm;
-                },
+                }),
                 child: FairyScope(
                   // Scope 4 - Level 3 (deepest)
-                  viewModel: (locator) {
+                  viewModel: FairyScopeViewModel((locator) {
                     // Access VM from first scope (3 levels up)
                     final fromFirstScope = locator.get<TestViewModel>();
                     expect(identical(fromFirstScope, firstScopeVm), isTrue);
@@ -1160,7 +1159,7 @@ void main() {
                         fromFirstScope,
                         ViewModelWithDependencies(
                             TestService(), AnotherService()));
-                  },
+                  }),
                   child: Builder(
                     builder: (context) {
                       final data = FairyScope.of(context)!;

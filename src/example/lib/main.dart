@@ -145,7 +145,7 @@ class CounterExamplePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FairyScope(
-      viewModel: (_) => CounterViewModel(),
+      viewModel: FairyScopeViewModel((_) => CounterViewModel()),
       child: const CounterPage(),
     );
   }
@@ -164,7 +164,7 @@ class CounterApp extends StatelessWidget {
       ),
       home: FairyScope(
         // Create scoped ViewModel - automatically disposed when widget is removed
-        viewModel: (_) => CounterViewModel(),
+        viewModel: FairyScopeViewModel((_) => CounterViewModel()),
         child: const CounterPage(),
       ),
     );
@@ -194,7 +194,7 @@ class CounterPage extends StatelessWidget {
             // Bind widget: Two-way data binding with counter property
             // Updates automatically when counter changes
             Bind<CounterViewModel, int>(
-              selector: (vm) => vm.counter,
+              bind: (vm) => vm.counter,
               builder: (context, value, update) {
                 return Text(
                   '$value',

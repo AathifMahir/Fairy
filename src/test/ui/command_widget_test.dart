@@ -65,7 +65,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
                 builder: (context, execute, canExecute, isRunning) {
@@ -95,7 +95,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
                 builder: (context, execute, canExecute, isRunning) {
@@ -124,7 +124,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Command<TestViewModel>(
                 command: (vm) => vm.saveCommand,
                 builder: (context, execute, canExecute, isRunning) {
@@ -159,7 +159,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Command<AsyncTestViewModel>(
                 command: (vm) => vm.fetchCommand,
                 builder: (context, execute, canExecute, isRunning) {
@@ -193,7 +193,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Command<AsyncTestViewModel>(
                 command: (vm) => vm.fetchCommand,
                 builder: (context, execute, canExecute, isRunning) {
@@ -242,7 +242,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: CommandWithParam<ParamViewModel, String>(
                 command: (vm) => vm.processCommand,
                 parameter: () => testData, // Required parameter
@@ -274,7 +274,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Column(
                 children: [
                   Command<TestViewModel>(
@@ -321,9 +321,9 @@ void main() {
       final vm = TestViewModel();
 
       // Register globally so FairyScope doesn't dispose it
-      FairyLocator.instance.registerSingleton<TestViewModel>(vm);
+      FairyLocator.registerSingleton<TestViewModel>(vm);
       addTearDown(() {
-        FairyLocator.instance.unregister<TestViewModel>();
+        FairyLocator.unregister<TestViewModel>();
         vm.dispose();
       });
 

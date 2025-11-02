@@ -48,9 +48,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind<CommandSelectorTestViewModel, bool>(
-                selector: (vm) => vm.saveCommand.canExecute,
+                bind: (vm) => vm.saveCommand.canExecute,
                 builder: (context, canExecute, update) {
                   buildCount++;
                   lastCanExecuteValue = canExecute;
@@ -106,9 +106,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind<CommandSelectorTestViewModel, bool>(
-                selector: (vm) => vm.fetchCommand.isRunning,
+                bind: (vm) => vm.fetchCommand.isRunning,
                 builder: (context, isRunning, update) {
                   buildCount++;
                   lastIsRunningValue = isRunning;
@@ -166,9 +166,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind<CommandSelectorTestViewModel, RelayCommand>(
-                selector: (vm) => vm.saveCommand,
+                bind: (vm) => vm.saveCommand,
                 builder: (context, command, update) {
                   buildCount++;
                   capturedCommand = command;
@@ -224,9 +224,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind<CommandSelectorTestViewModel, RelayCommand>(
-                selector: (vm) => vm.saveCommand,
+                bind: (vm) => vm.saveCommand,
                 builder: (context, command, update) {
                   buildCount++;
                   return Text('Can execute: ${command.canExecute}');
@@ -269,9 +269,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind<CommandSelectorTestViewModel, RelayCommand>(
-                selector: (vm) => vm.saveCommand,
+                bind: (vm) => vm.saveCommand,
                 builder: (context, command, update) {
                   buildCount++;
                   // Accessing canExecute HERE (in builder) doesn't trigger tracking
@@ -328,9 +328,9 @@ void main() {
               children: [
                 // Recommended: Track specific state
                 FairyScope(
-                  viewModel: (_) => vm1,
+                  viewModel: FairyScopeViewModel((_) => vm1),
                   child: Bind<CommandSelectorTestViewModel, bool>(
-                    selector: (vm) => vm.saveCommand.canExecute,
+                    bind: (vm) => vm.saveCommand.canExecute,
                     builder: (context, canExecute, update) {
                       recommendedBuilds++;
                       return ElevatedButton(
@@ -343,9 +343,9 @@ void main() {
                 ),
                 // Anti-pattern: Return command object
                 FairyScope(
-                  viewModel: (_) => vm2,
+                  viewModel: FairyScopeViewModel((_) => vm2),
                   child: Bind<CommandSelectorTestViewModel, RelayCommand>(
-                    selector: (vm) => vm.saveCommand,
+                    bind: (vm) => vm.saveCommand,
                     builder: (context, command, update) {
                       antiPatternBuilds++;
                       return ElevatedButton(
@@ -401,9 +401,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind<CommandSelectorTestViewModel, RelayCommand>(
-                selector: (vm) => vm.saveCommand,
+                bind: (vm) => vm.saveCommand,
                 builder: (context, command, update) {
                   // update would be null anyway (one-way binding)
                   // What would update even do? Replace the command object?
@@ -431,24 +431,24 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Column(
                 children: [
                   // ✅ GOOD: Track canExecute state
                   Bind<CommandSelectorTestViewModel, bool>(
-                    selector: (vm) => vm.saveCommand.canExecute,
+                    bind: (vm) => vm.saveCommand.canExecute,
                     builder: (context, canExecute, _) =>
                         Text('Can save: $canExecute'),
                   ),
                   // ✅ GOOD: Track isRunning state
                   Bind<CommandSelectorTestViewModel, bool>(
-                    selector: (vm) => vm.fetchCommand.isRunning,
+                    bind: (vm) => vm.fetchCommand.isRunning,
                     builder: (context, isRunning, _) =>
                         Text('Is fetching: $isRunning'),
                   ),
                   // ⚠️ AWKWARD: Track command object
                   Bind<CommandSelectorTestViewModel, RelayCommand>(
-                    selector: (vm) => vm.saveCommand,
+                    bind: (vm) => vm.saveCommand,
                     builder: (context, cmd, _) =>
                         Text('Has command: ${cmd.canExecute}'),
                   ),

@@ -13,7 +13,7 @@ class TodoListApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FairyScope(
-      viewModel: (_) => TodoListViewModel(),
+      viewModel: FairyScopeViewModel((_) => TodoListViewModel()),
       child: const TodoListPage(),
     );
   }
@@ -34,7 +34,7 @@ class TodoListPage extends StatelessWidget {
             command: (vm) => vm.toggleFilterCommand,
             builder: (context, execute, canExecute, isRunning) {
               return Bind<TodoListViewModel, bool>(
-                selector: (vm) => vm.showOnlyActive,
+                bind: (vm) => vm.showOnlyActive,
                 builder: (context, showOnlyActive, update) {
                   return IconButton(
                     icon: Icon(
@@ -104,7 +104,7 @@ class TodoListPage extends StatelessWidget {
               children: [
                 // Search bar
                 Bind<TodoListViewModel, String>(
-                  selector: (vm) => vm.filterText,
+                  bind: (vm) => vm.filterText,
                   builder: (context, value, update) {
                     return TextField(
                       onChanged: update,
@@ -127,7 +127,7 @@ class TodoListPage extends StatelessWidget {
                 const SizedBox(height: 12),
                 // Priority filter chips
                 Bind<TodoListViewModel, TodoPriority?>(
-                  selector: (vm) => vm.filterPriority,
+                  bind: (vm) => vm.filterPriority,
                   builder: (context, selectedPriority, update) {
                     final vm = Fairy.of<TodoListViewModel>(context);
                     return Row(
@@ -186,7 +186,7 @@ class TodoListPage extends StatelessWidget {
           // Todo List
           Expanded(
             child: Bind<TodoListViewModel, List<Todo>>(
-              selector: (vm) => vm.filteredTodos,
+              bind: (vm) => vm.filteredTodos,
               builder: (context, todos, update) {
                 if (todos.isEmpty) {
                   return Center(
@@ -287,7 +287,7 @@ class _AddTodoDialog extends StatelessWidget {
         children: [
           // Use Bind widget to get the TextEditingController
           Bind<TodoListViewModel, TextEditingController>(
-            selector: (vm) => vm.titleController,
+            bind: (vm) => vm.titleController,
             builder: (context, controller, update) {
               return TextField(
                 controller: controller,
@@ -303,7 +303,7 @@ class _AddTodoDialog extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Bind<TodoListViewModel, TextEditingController>(
-            selector: (vm) => vm.descriptionController,
+            bind: (vm) => vm.descriptionController,
             builder: (context, controller, update) {
               return TextField(
                 controller: controller,
@@ -326,7 +326,7 @@ class _AddTodoDialog extends StatelessWidget {
         // We bind to the TextEditingController and use ValueListenableBuilder
         // to rebuild when the text changes
         Bind<TodoListViewModel, TextEditingController>(
-          selector: (vm) => vm.titleController,
+          bind: (vm) => vm.titleController,
           builder: (context, controller, _) {
             // ValueListenableBuilder listens to controller changes and rebuilds
             return ValueListenableBuilder<TextEditingValue>(

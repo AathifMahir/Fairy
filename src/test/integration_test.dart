@@ -96,11 +96,11 @@ void main() {
   group('Integration Test', () {
     setUp(() {
       // Register global service
-      FairyLocator.instance.registerSingleton<CounterService>(CounterService());
+      FairyLocator.registerSingleton<CounterService>(CounterService());
     });
 
     tearDown(() {
-      FairyLocator.instance.unregister<CounterService>();
+      FairyLocator.unregister<CounterService>();
     });
 
     testWidgets('full stack: DI + reactive properties + commands + binding',
@@ -109,14 +109,14 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => CounterViewModel(
-                FairyLocator.instance.get<CounterService>(),
-              ),
+              viewModel: FairyScopeViewModel((locator) => CounterViewModel(
+                locator.get<CounterService>(),
+              )),
               child: Column(
                 children: [
                   // Two-way binding: TextField updates counter directly
                   Bind<CounterViewModel, int>(
-                    selector: (vm) => vm.counter,
+                    bind: (vm) => vm.counter,
                     builder: (context, value, update) {
                       return TextField(
                         key: const Key('counterField'),
@@ -132,7 +132,7 @@ void main() {
 
                   // Display counter value (two-way binding via property, but read-only)
                   Bind<CounterViewModel, int>(
-                    selector: (vm) => vm.counter,
+                    bind: (vm) => vm.counter,
                     builder: (context, value, update) {
                       return Text('Count: $value',
                           key: const Key('counterText'));
@@ -190,7 +190,7 @@ void main() {
 
                   // Display isProcessing state
                   Bind<CounterViewModel, bool>(
-                    selector: (vm) => vm.isProcessing,
+                    bind: (vm) => vm.isProcessing,
                     builder: (context, value, update) {
                       return Text(
                         value ? 'Processing...' : 'Ready',
@@ -289,14 +289,14 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) {
+              viewModel: FairyScopeViewModel((locator) {
                 vm = CounterViewModel(
-                  FairyLocator.instance.get<CounterService>(),
+                  locator.get<CounterService>(),
                 );
                 return vm!;
-              },
+              }),
               child: Bind<CounterViewModel, int>(
-                selector: (vm) => vm.counter,
+                bind: (vm) => vm.counter,
                 builder: (context, value, update) => Text('$value'),
               ),
             ),
@@ -324,12 +324,12 @@ void main() {
     testWidgets('global DI: ViewModel survives widget disposal',
         (tester) async {
       final vm = CounterViewModel(
-        FairyLocator.instance.get<CounterService>(),
+        FairyLocator.get<CounterService>(),
       );
-      FairyLocator.instance.registerSingleton<CounterViewModel>(vm);
+      FairyLocator.registerSingleton<CounterViewModel>(vm);
 
       addTearDown(() {
-        FairyLocator.instance.unregister<CounterViewModel>();
+        FairyLocator.unregister<CounterViewModel>();
         vm.dispose();
       });
 
@@ -337,7 +337,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: Bind<CounterViewModel, int>(
-              selector: (vm) => vm.counter,
+              bind: (vm) => vm.counter,
               builder: (context, value, update) => Text('$value'),
             ),
           ),
@@ -362,13 +362,13 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => CounterViewModel(
-                FairyLocator.instance.get<CounterService>(),
-              ),
+              viewModel: FairyScopeViewModel((locator) => CounterViewModel(
+                locator.get<CounterService>(),
+              )),
               child: Column(
                 children: [
                   Bind<CounterViewModel, int>(
-                    selector: (vm) => vm.counter,
+                    bind: (vm) => vm.counter,
                     builder: (context, value, update) {
                       return Text('Value: $value', key: const Key('display'));
                     },
@@ -439,3 +439,4 @@ void main() {
     });
   });
 }
+

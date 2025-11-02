@@ -25,9 +25,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TestViewModel, int>(
-              selector: (vm) => vm.counter.value,
+              bind: (vm) => vm.counter.value,
               builder: (context, value, update) => Text('$value'),
             ),
           ),
@@ -45,7 +45,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: const SizedBox(),
           ),
         ),
@@ -63,19 +63,19 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Column(
               children: [
                 Bind<TestViewModel, int>(
-                  selector: (vm) => vm.counter.value,
+                  bind: (vm) => vm.counter.value,
                   builder: (context, value, update) => Text('Counter: $value'),
                 ),
                 Bind<TestViewModel, String>(
-                  selector: (vm) => vm.message.value,
+                  bind: (vm) => vm.message.value,
                   builder: (context, value, update) => Text('Message: $value'),
                 ),
                 Bind<TestViewModel, List<String>>(
-                  selector: (vm) => vm.items.value,
+                  bind: (vm) => vm.items.value,
                   builder: (context, value, update) =>
                       Text('Items: ${value.length}'),
                 ),
@@ -93,7 +93,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: const SizedBox(),
           ),
         ),
@@ -106,7 +106,7 @@ void main() {
     });
 
     testWidgets(
-        'selector change should clean up old listeners and create new ones',
+        'bind change should clean up old listeners and create new ones',
         (tester) async {
       final vm = TestViewModel();
       var useCounter = true;
@@ -114,9 +114,9 @@ void main() {
       Widget buildWidget() {
         return MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TestViewModel, dynamic>(
-              selector: (vm) =>
+              bind: (vm) =>
                   useCounter ? vm.counter.value : vm.message.value,
               builder: (context, value, update) => Text('$value'),
             ),
@@ -147,7 +147,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: const SizedBox(),
           ),
         ),
@@ -165,9 +165,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TestViewModel, int>(
-              selector: (vm) => vm.counter,
+              bind: (vm) => vm.counter,
               builder: (context, value, update) => Text('$value'),
             ),
           ),
@@ -185,7 +185,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: const SizedBox(),
           ),
         ),
@@ -202,9 +202,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TestViewModel, List<String>>(
-              selector: (vm) => vm.items.value,
+              bind: (vm) => vm.items.value,
               builder: (context, value, update) =>
                   Text('Count: ${value.length}'),
             ),
@@ -223,7 +223,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: const SizedBox(),
           ),
         ),
@@ -242,21 +242,21 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Column(
                 children: [
                   Bind<TestViewModel, int>(
-                    selector: (vm) => vm.counter.value,
+                    bind: (vm) => vm.counter.value,
                     builder: (context, value, update) =>
                         Text('Counter: $value'),
                   ),
                   Bind<TestViewModel, String>(
-                    selector: (vm) => vm.message.value,
+                    bind: (vm) => vm.message.value,
                     builder: (context, value, update) =>
                         Text('Message: $value'),
                   ),
                   Bind<TestViewModel, List<String>>(
-                    selector: (vm) => vm.items.value,
+                    bind: (vm) => vm.items.value,
                     builder: (context, value, update) =>
                         Text('Items: ${value.length}'),
                   ),
@@ -270,7 +270,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: const SizedBox(),
             ),
           ),
@@ -291,17 +291,17 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Column(
               children: [
                 // One-way binding
                 Bind<TestViewModel, int>(
-                  selector: (vm) => vm.counter.value,
+                  bind: (vm) => vm.counter.value,
                   builder: (context, value, update) => Text('One-way: $value'),
                 ),
                 // Two-way binding
                 Bind<TestViewModel, String>(
-                  selector: (vm) => vm.message,
+                  bind: (vm) => vm.message,
                   builder: (context, value, update) => Text('Two-way: $value'),
                 ),
               ],
@@ -317,7 +317,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: const SizedBox(),
           ),
         ),
@@ -335,9 +335,9 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind<TestViewModel, int>(
-                selector: (vm) => vm.counter.value,
+                bind: (vm) => vm.counter.value,
                 builder: (context, value, update) => Text('$value'),
               ),
             ),
@@ -356,7 +356,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: const SizedBox(),
             ),
           ),

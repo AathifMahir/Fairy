@@ -1,3 +1,4 @@
+import 'package:fairy/src/locator/fairy_scope_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fairy/src/core/observable.dart';
@@ -13,7 +14,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<ListViewModel>(
                 builder: (context, vm) {
@@ -59,7 +60,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<ListViewModel>(
                 builder: (context, vm) {
@@ -94,7 +95,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<NestedViewModel>(
                 builder: (context, vm) {
@@ -136,7 +137,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<MultiObservableViewModel>(
                 builder: (context, vm) {
@@ -187,7 +188,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<ConditionalViewModel>(
                 builder: (context, vm) {
@@ -237,7 +238,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<ComputedViewModel>(
                 builder: (context, vm) {
@@ -278,7 +279,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<NestedListViewModel>(
                 builder: (context, vm) {
@@ -331,7 +332,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<SeparatorViewModel>(
                 builder: (context, vm) {
@@ -374,7 +375,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<CallbackViewModel>(
                 builder: (context, vm) {
@@ -417,7 +418,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<AsyncViewModel>(
                 builder: (context, vm) {
@@ -451,7 +452,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<TimerViewModel>(
                 builder: (context, vm) {
@@ -483,7 +484,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Scaffold(
               body: Bind.viewModel<LargeListViewModel>(
                 builder: (context, vm) {
@@ -531,8 +532,8 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModels: [
-              (locator) => vm1,
-              (locator) => vm2,
+              FairyScopeViewModel((locator) => vm1),
+              FairyScopeViewModel((locator) => vm2),
             ],
             child: Scaffold(
               body: Bind.viewModel2<ListViewModel, SecondViewModel>(
@@ -579,8 +580,8 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModels: [
-              (locator) => vm1,
-              (locator) => vm2,
+              FairyScopeViewModel((locator) => vm1),
+              FairyScopeViewModel((locator) => vm2),
             ],
             child: Scaffold(
               body: Bind.viewModel2<ListViewModel, SecondViewModel>(
@@ -622,8 +623,8 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModels: [
-              (locator) => vm1,
-              (locator) => vm2,
+              FairyScopeViewModel((locator) => vm1),
+              FairyScopeViewModel((locator) => vm2),
             ],
             child: Scaffold(
               body: Bind.viewModel2<ListViewModel, SecondViewModel>(
@@ -673,9 +674,9 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModels: [
-              (locator) => vm1,
-              (locator) => vm2,
-              (locator) => vm3,
+              FairyScopeViewModel((locator) => vm1),
+              FairyScopeViewModel((locator) => vm2),
+              FairyScopeViewModel((locator) => vm3),
             ],
             child: Scaffold(
               body: Bind.viewModel3<ListViewModel, SecondViewModel,
@@ -721,9 +722,9 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModels: [
-              (locator) => vm1,
-              (locator) => vm2,
-              (locator) => vm3,
+              FairyScopeViewModel((locator) => vm1),
+              FairyScopeViewModel((locator) => vm2),
+              FairyScopeViewModel((locator) => vm3),
             ],
             child: Scaffold(
               body: Bind.viewModel3<ListViewModel, SecondViewModel,
@@ -776,10 +777,10 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModels: [
-              (locator) => vm1,
-              (locator) => vm2,
-              (locator) => vm3,
-              (locator) => vm4,
+              FairyScopeViewModel((locator) => vm1),
+              FairyScopeViewModel((locator) => vm2),
+              FairyScopeViewModel((locator) => vm3),
+              FairyScopeViewModel((locator) => vm4),
             ],
             child: Scaffold(
               body: Bind.viewModel4<ListViewModel, SecondViewModel,
@@ -827,10 +828,10 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModels: [
-              (locator) => vm1,
-              (locator) => vm2,
-              (locator) => vm3,
-              (locator) => vm4,
+              FairyScopeViewModel((locator) => vm1),
+              FairyScopeViewModel((locator) => vm2),
+              FairyScopeViewModel((locator) => vm3),
+              FairyScopeViewModel((locator) => vm4),
             ],
             child: Scaffold(
               body: Bind.viewModel4<ListViewModel, SecondViewModel,
@@ -898,10 +899,10 @@ void main() {
         MaterialApp(
           home: FairyScope(
             viewModels: [
-              (locator) => vm1,
-              (locator) => vm2,
-              (locator) => vm3,
-              (locator) => vm4,
+              FairyScopeViewModel((locator) => vm1),
+              FairyScopeViewModel((locator) => vm2),
+              FairyScopeViewModel((locator) => vm3),
+              FairyScopeViewModel((locator) => vm4),
             ],
             child: Scaffold(
               body: Bind.viewModel4<ListViewModel, SecondViewModel,

@@ -24,11 +24,11 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, (int, String)>(
               // CRITICAL: Must access .value for ALL properties in tuple
               // Tuples do NOT support mixed ObservableProperty/value
-              selector: (vm) => (vm.counter.value, vm.message.value),
+              bind: (vm) => (vm.counter.value, vm.message.value),
               builder: (context, tuple, update) {
                 final (count, msg) = tuple;
                 return Text('$count - $msg');
@@ -64,9 +64,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, (int, String, bool)>(
-              selector: (vm) => (
+              bind: (vm) => (
                 vm.counter.value,
                 vm.message.value,
                 vm.isEnabled.value,
@@ -104,10 +104,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, (int, String)>(
               // Only accesses counter and message
-              selector: (vm) => (vm.counter.value, vm.message.value),
+              bind: (vm) => (vm.counter.value, vm.message.value),
               builder: (context, tuple, update) {
                 buildCount++;
                 final (count, msg) = tuple;
@@ -143,9 +143,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, (int, String)>(
-              selector: (vm) => (
+              bind: (vm) => (
                 vm.counter.value * 2, // Computed from counter
                 vm.message.value.toUpperCase(), // Computed from message
               ),
@@ -177,9 +177,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, ((int, String), bool)>(
-              selector: (vm) => (
+              bind: (vm) => (
                 (vm.counter.value, vm.message.value),
                 vm.isEnabled.value,
               ),
@@ -214,9 +214,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, (int, String, bool)>(
-              selector: (vm) => (
+              bind: (vm) => (
                 vm.counter.value,
                 vm.message.value,
                 vm.isEnabled.value,
@@ -236,7 +236,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: const SizedBox(),
           ),
         ),
@@ -256,9 +256,9 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind<TupleTestViewModel, (int, String)>(
-                selector: (vm) => (vm.counter.value, vm.message.value),
+                bind: (vm) => (vm.counter.value, vm.message.value),
                 builder: (context, tuple, update) {
                   final (count, msg) = tuple;
                   return Text('$count - $msg');
@@ -276,7 +276,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             home: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: const SizedBox(),
             ),
           ),
@@ -298,10 +298,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, int>(
               // Two-way binding: returns ObservableProperty<int>
-              selector: (vm) => vm.counter,
+              bind: (vm) => vm.counter,
               builder: (context, value, update) {
                 return Column(
                   children: [
@@ -345,10 +345,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, String>(
               // Two-way binding: returns ObservableProperty<String>
-              selector: (vm) => vm.message,
+              bind: (vm) => vm.message,
               builder: (context, value, update) {
                 return Column(
                   children: [
@@ -392,9 +392,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, int>(
-              selector: (vm) => vm.counter,
+              bind: (vm) => vm.counter,
               builder: (context, value, update) => Text('$value'),
             ),
           ),
@@ -407,7 +407,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: const SizedBox(),
           ),
         ),
@@ -425,10 +425,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, int>(
               // Two-way: returns ObservableProperty
-              selector: (vm) => vm.counter,
+              bind: (vm) => vm.counter,
               builder: (context, value, update) {
                 return ElevatedButton(
                   onPressed: () => update!(value + 1),
@@ -451,10 +451,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, int>(
               // One-way: returns raw value
-              selector: (vm) => vm.counter.value,
+              bind: (vm) => vm.counter.value,
               builder: (context, value, update) {
                 return ElevatedButton(
                   onPressed: () {
@@ -492,10 +492,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, (int, String)>(
               // Returns (ObservableProperty<int>, ObservableProperty<String>)
-              selector: (vm) => (vm.counter, vm.message),
+              bind: (vm) => (vm.counter, vm.message),
               builder: (context, tuple, update) {
                 final (count, msg) = tuple;
                 return Text('$count - $msg');
@@ -521,10 +521,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, (int, String)>(
               // Returns (int, ObservableProperty<String>)
-              selector: (vm) => (vm.counter.value, vm.message),
+              bind: (vm) => (vm.counter.value, vm.message),
               builder: (context, tuple, update) {
                 final (count, msg) = tuple;
                 return Text('$count - $msg');
@@ -546,10 +546,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, (int, String)>(
               // Returns (ObservableProperty<int>, String)
-              selector: (vm) => (vm.counter, vm.message.value),
+              bind: (vm) => (vm.counter, vm.message.value),
               builder: (context, tuple, update) {
                 final (count, msg) = tuple;
                 return Text('$count - $msg');
@@ -570,10 +570,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<TupleTestViewModel, (int, String, bool)>(
               // Returns (ObservableProperty<int>, ObservableProperty<String>, ObservableProperty<bool>)
-              selector: (vm) => (vm.counter, vm.message, vm.isEnabled),
+              bind: (vm) => (vm.counter, vm.message, vm.isEnabled),
               builder: (context, tuple, update) {
                 final (count, msg, enabled) = tuple;
                 return Text('$count - $msg - $enabled');

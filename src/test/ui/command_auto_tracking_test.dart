@@ -129,7 +129,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind.viewModel<CommandTrackingViewModel>(
                 builder: (context, vm) {
                   buildCount++;
@@ -181,7 +181,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind.viewModel<AsyncCommandTrackingViewModel>(
                 builder: (context, vm) {
                   buildCount++;
@@ -242,7 +242,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind.viewModel<ParamCommandTrackingViewModel>(
                 builder: (context, vm) {
                   buildCount++;
@@ -295,7 +295,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind.viewModel<AsyncParamCommandTrackingViewModel>(
                 builder: (context, vm) {
                   buildCount++;
@@ -363,8 +363,8 @@ void main() {
           home: Scaffold(
             body: FairyScope(
               viewModels: [
-                (_) => vm1,
-                (_) => vm2,
+                FairyScopeViewModel((_) => vm1),
+                FairyScopeViewModel((_) => vm2),
               ],
               child: Bind.viewModel2<CommandTrackingViewModel,
                   AsyncCommandTrackingViewModel>(
@@ -416,7 +416,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Command<CommandTrackingViewModel>(
                 command: (vm) => vm.saveCommand,
                 builder: (context, execute, canExecute, isRunning) {
@@ -466,7 +466,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind.viewModel<AsyncCommandTrackingViewModel>(
                 builder: (context, vm) {
                   buildCount++;

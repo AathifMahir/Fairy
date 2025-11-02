@@ -53,9 +53,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<ListViewModel, List<String>>(
-              selector: (vm) =>
+              bind: (vm) =>
                   vm.items.value, // Accessing .value (one-way binding)
               builder: (context, value, update) {
                 buildCount++;
@@ -90,9 +90,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<ListViewModel, List<String>>(
-              selector: (vm) => vm.items.value,
+              bind: (vm) => vm.items.value,
               builder: (context, value, update) {
                 buildCount++;
                 return Column(
@@ -126,9 +126,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<ListViewModel, List<String>>(
-              selector: (vm) =>
+              bind: (vm) =>
                   vm.items, // Accessing ObservableProperty (two-way binding)
               builder: (context, value, update) {
                 buildCount++;
@@ -165,9 +165,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: (_) => vm,
+            viewModel: FairyScopeViewModel((_) => vm),
             child: Bind<DeepEqualityListViewModel, List<String>>(
-              selector: (vm) => vm.items.value,
+              bind: (vm) => vm.items.value,
               builder: (context, value, update) {
                 buildCount++;
                 return Column(

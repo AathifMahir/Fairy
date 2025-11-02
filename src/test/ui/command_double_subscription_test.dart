@@ -106,7 +106,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind.viewModel<TrackedViewModel>(
                 builder: (context, vm) {
                   bindRebuildCount++;
@@ -175,7 +175,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind.viewModel<TrackedViewModel>(
                 builder: (context, vm) {
                   buildCount++;
@@ -224,7 +224,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Command<TrackedViewModel>(
                 command: (vm) => vm.saveCommand,
                 builder: (context, execute, canExecute, isRunning) {
@@ -269,7 +269,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind.viewModel<TrackedViewModel>(
                 builder: (context, vm) {
                   totalRebuilds++;
@@ -328,7 +328,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: FairyScope(
-              viewModel: (_) => vm,
+              viewModel: FairyScopeViewModel((_) => vm),
               child: Bind.viewModel<TrackedViewModel>(
                 builder: (context, vm) {
                   return Command<TrackedViewModel>(
@@ -378,7 +378,7 @@ void main() {
               children: [
                 // Scenario 1: Nested Command in Bind.viewModel
                 FairyScope(
-                  viewModel: (_) => vm1,
+                  viewModel: FairyScopeViewModel((_) => vm1),
                   child: Bind.viewModel<TrackedViewModel>(
                     builder: (context, vm) {
                       nestedRebuilds++;
@@ -397,7 +397,7 @@ void main() {
                 ),
                 // Scenario 2: Direct access in Bind.viewModel
                 FairyScope(
-                  viewModel: (_) => vm2,
+                  viewModel: FairyScopeViewModel((_) => vm2),
                   child: Bind.viewModel<TrackedViewModel>(
                     builder: (context, vm) {
                       directRebuilds++;
@@ -460,7 +460,7 @@ void main() {
                 // Scenario 1: Nested (double subscription)
                 Expanded(
                   child: FairyScope(
-                    viewModel: (_) => nestedVm,
+                    viewModel: FairyScopeViewModel((_) => nestedVm),
                     child: Bind.viewModel<TrackedViewModel>(
                       builder: (context, vm) {
                         nestedBindRebuilds++;
@@ -481,7 +481,7 @@ void main() {
                 // Scenario 2: Direct access (single subscription)
                 Expanded(
                   child: FairyScope(
-                    viewModel: (_) => directVm,
+                    viewModel: FairyScopeViewModel((_) => directVm),
                     child: Bind.viewModel<TrackedViewModel>(
                       builder: (context, vm) {
                         directRebuilds++;
@@ -498,7 +498,7 @@ void main() {
                 // Scenario 3: Standalone Command (single subscription)
                 Expanded(
                   child: FairyScope(
-                    viewModel: (_) => standaloneVm,
+                    viewModel: FairyScopeViewModel((_) => standaloneVm),
                     child: Column(
                       children: [
                         Command<TrackedViewModel>(
@@ -512,7 +512,7 @@ void main() {
                           },
                         ),
                         Bind<TrackedViewModel, String>(
-                          selector: (vm) => vm.userName,
+                          bind: (vm) => vm.userName,
                           builder: (context, userName, update) {
                             return Text('Name: $userName');
                           },
