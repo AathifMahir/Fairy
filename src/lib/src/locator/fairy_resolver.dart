@@ -65,7 +65,7 @@ class Fairy {
       'No ViewModel of type $T found.\n'
       'Make sure to either:\n'
       '  1. Register it in FairyLocator: FairyLocator.registerSingleton<$T>(...)\n'
-      '  2. Provide it via FairyScope: FairyScope(viewModel: FairyScopeViewModel(() => $T()), ...)\n'
+      '  2. Provide it via FairyScope: FairyScope(viewModel: (_) => $T(), ...)\n'
       '  3. Wrap your widget tree with a FairyScope containing the ViewModel',
     );
   }
