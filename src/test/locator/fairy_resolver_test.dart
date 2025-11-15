@@ -1,4 +1,3 @@
-import 'package:fairy/src/locator/fairy_scope_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fairy/src/core/observable.dart';
@@ -26,7 +25,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => scopeVm),
+          viewModel: (_) => scopeVm,
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.of<ScopedViewModel>(context);
@@ -71,7 +70,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => scopeVm),
+          viewModel: (_) => scopeVm,
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.of<TestViewModel>(context);
@@ -134,9 +133,9 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => outerVm),
+          viewModel: (_) => outerVm,
           child: FairyScope(
-            viewModel: FairyScopeViewModel((_) => innerVm),
+            viewModel: (_) => innerVm,
             child: Builder(
               builder: (context) {
                 resolvedInner = Fairy.of<InnerViewModel>(context);
@@ -166,11 +165,11 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => outerVm),
+          viewModel: (_) => outerVm,
           child: Builder(
             builder: (outerContext) {
               return FairyScope(
-                viewModel: FairyScopeViewModel((_) => InnerViewModel()),
+                viewModel: (_) => InnerViewModel(),
                 child: Builder(
                   builder: (innerContext) {
                     // Try to get TestViewModel from inner context
@@ -203,7 +202,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => scopeVm),
+          viewModel: (_) => scopeVm,
           child: Builder(
             builder: (context) {
               resolvedScoped = Fairy.of<ScopedViewModel>(context);
@@ -229,7 +228,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => scopeVm),
+          viewModel: (_) => scopeVm,
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.maybeOf<ScopedViewModel>(context);
@@ -288,7 +287,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => scopeVm),
+          viewModel: (_) => scopeVm,
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.maybeOf<TestViewModel>(context);
@@ -337,7 +336,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => scopeVm),
+          viewModel: (_) => scopeVm,
           child: Builder(
             builder: (context) {
               resolvedScoped = Fairy.maybeOf<ScopedViewModel>(context);
@@ -377,7 +376,7 @@ void main() {
               },
             ),
             FairyScope(
-              viewModel: FairyScopeViewModel((_) => scopeVm),
+              viewModel: (_) => scopeVm,
               child: Builder(
                 builder: (context) {
                   // Inside scope - should get scoped
@@ -406,7 +405,7 @@ void main() {
       // With scope
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => scopeVm),
+          viewModel: (_) => scopeVm,
           child: Builder(
             builder: (context) {
               resolvedBefore = Fairy.of<ScopedViewModel>(context);
@@ -439,7 +438,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -467,7 +466,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -551,7 +550,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               resolvedBeforeBridge = Fairy.of<TestViewModel>(parentContext);
@@ -567,7 +566,7 @@ void main() {
       // Create and destroy bridge
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               return Column(
@@ -591,7 +590,7 @@ void main() {
       // Remove bridge
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               resolvedAfterBridge = Fairy.of<TestViewModel>(parentContext);
@@ -615,7 +614,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               resolvedInParent = Fairy.of<TestViewModel>(parentContext);
@@ -650,8 +649,8 @@ void main() {
       await tester.pumpWidget(
         FairyScope(
           viewModels: [
-            FairyScopeViewModel((_) => vm1),
-            FairyScopeViewModel((_) => vm2),
+            (_) => vm1,
+            (_) => vm2,
           ],
           child: Builder(
             builder: (parentContext) {
@@ -683,7 +682,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -725,9 +724,9 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => outerVm),
+          viewModel: (_) => outerVm,
           child: FairyScope(
-            viewModel: FairyScopeViewModel((_) => innerVm),
+            viewModel: (_) => innerVm,
             child: Builder(
               builder: (innerContext) {
                 return FairyBridge(
@@ -757,7 +756,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -794,7 +793,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -822,7 +821,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               if (!bridgeBuilt) {
@@ -844,7 +843,7 @@ void main() {
       bridgeBuilt = true;
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => parentVm),
+          viewModel: (_) => parentVm,
           child: Builder(
             builder: (parentContext) {
               return const SizedBox();
@@ -868,7 +867,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => scopeVm),
+          viewModel: (_) => scopeVm,
           child: Builder(
             builder: (parentContext) {
               return FairyBridge(
@@ -897,7 +896,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: FairyScope(
-            viewModel: FairyScopeViewModel((_) => pageVm),
+            viewModel: (_) => pageVm,
             child: Builder(
               builder: (pageContext) {
                 return Scaffold(
@@ -981,7 +980,7 @@ void main() {
 
       await tester.pumpWidget(
         FairyScope(
-          viewModel: FairyScopeViewModel((_) => scopeVm),
+          viewModel: (_) => scopeVm,
           child: Builder(
             builder: (context) {
               resolvedVm = Fairy.of<TestViewModel>(context);
