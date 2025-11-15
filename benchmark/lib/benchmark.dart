@@ -254,21 +254,21 @@ void main() {
                       // Each Bind watches a DIFFERENT property
                       // TValue is int, selector returns ObservableProperty<int> → Two-way binding
                       Bind<FairyMultiPropertyViewModel, int>(
-                        selector: (vm) => vm.property1, // Returns ObservableProperty<int> → Two-way!
+                        bind: (vm) => vm.property1, // Returns ObservableProperty<int> → Two-way!
                         builder: (context, value, update) {
                           fairy1BuildsSelective++;
                           return Text('Fairy1: $value', key: const ValueKey('fairy1'));
                         },
                       ),
                       Bind<FairyMultiPropertyViewModel, int>(
-                        selector: (vm) => vm.property2, // Returns ObservableProperty<int> → Two-way!
+                        bind: (vm) => vm.property2, // Returns ObservableProperty<int> → Two-way!
                         builder: (context, value, update) {
                           fairy2BuildsSelective++;
                           return Text('Fairy2: $value', key: const ValueKey('fairy2'));
                         },
                       ),
                       Bind<FairyMultiPropertyViewModel, int>(
-                        selector: (vm) => vm.property3, // Returns ObservableProperty<int> → Two-way!
+                        bind: (vm) => vm.property3, // Returns ObservableProperty<int> → Two-way!
                         builder: (context, value, update) {
                           fairy3BuildsSelective++;
                           return Text('Fairy3: $value', key: const ValueKey('fairy3'));

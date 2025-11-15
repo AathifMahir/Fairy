@@ -15,7 +15,7 @@ class FairyCounterWidget extends StatelessWidget {
           return Column(
             children: [
               Bind<FairyCounterViewModel, int>(
-                selector: (vm) => vm.counter.value,
+                bind: (vm) => vm.counter.value,
                 builder: (context, value, update) => Text('Count: $value'),
               ),
               Command<FairyCounterViewModel>(
