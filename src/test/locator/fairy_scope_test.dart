@@ -360,6 +360,7 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             viewModel: (locator) => vm,
+            autoDispose: false,
             child: const SizedBox(),
           ),
         );
