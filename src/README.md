@@ -44,7 +44,7 @@ class CounterViewModel extends ObservableObject {
   late final incrementCommand = RelayCommand(() => counter.value++);
 }
 
-// 2. Provide ViewModel with FairyScope
+// 2. Provide ViewModel with FairyScope (can be used anywhere in widget tree)
 void main() => runApp(
   FairyScope(
     viewModel: (_) => CounterViewModel(),
@@ -54,7 +54,7 @@ void main() => runApp(
 
 // 3. Bind UI
 Bind<CounterViewModel, int>(
-  selector: (vm) => vm.counter,
+  bind: (vm) => vm.counter,
   builder: (context, value, update) => Text('$value'),
 )
 
@@ -188,7 +188,7 @@ Command<MyViewModel>(
 **Single property (two-way):**
 ```dart
 Bind<UserViewModel, String>(
-  selector: (vm) => vm.name,  // Returns ObservableProperty - two-way binding
+  bind: (vm) => vm.name,  // Returns ObservableProperty - two-way binding
   builder: (context, value, update) => TextField(
     controller: TextEditingController(text: value),
     onChanged: update,  // update() available for two-way binding
@@ -199,7 +199,7 @@ Bind<UserViewModel, String>(
 **Single property (one-way):**
 ```dart
 Bind<UserViewModel, String>(
-  selector: (vm) => vm.name.value,  // Returns raw value - one-way binding
+  bind: (vm) => vm.name.value,  // Returns raw value - one-way binding
   builder: (context, value, update) => Text(value),  // No update needed
 )
 ```
@@ -236,14 +236,20 @@ late final total = ComputedProperty<double>(
 
 ### FairyScope - Widget-Scoped DI
 
+**Key capabilities:**
+- ✅ **Multiple scopes**: Use `FairyScope` multiple times in widget tree - each creates independent scope
+- ✅ **Nestable**: Child scopes can access parent scope ViewModels via `Fairy.of<T>(context)`
+- ✅ **Per-page ViewModels**: Ideal pattern - wrap each page/route with `FairyScope` for automatic lifecycle
+- ✅ **Resolution order**: Searches nearest `FairyScope` first, then parent scopes, finally `FairyLocator`
+
 ```dart
-// Single ViewModel
+// Single ViewModel per page (recommended pattern)
 FairyScope(
   viewModel: (_) => ProfileViewModel(),
   child: ProfilePage(),
 )
 
-// Multiple ViewModels
+// Multiple ViewModels in one scope
 FairyScope(
   viewModels: [
     (_) => UserViewModel(),
@@ -254,11 +260,22 @@ FairyScope(
   child: DashboardPage(),
 )
 
+// Nested scopes - child can access parent ViewModels
+FairyScope(
+  viewModel: (_) => AppViewModel(),
+  child: MaterialApp(
+    home: FairyScope(
+      viewModel: (_) => HomeViewModel(),
+      child: HomePage(),  // Can access both HomeVM and AppVM
+    ),
+  ),
+)
+
 // Access in widgets
 final vm = Fairy.of<UserViewModel>(context);
 ```
 
-**Auto-disposal:** `autoDispose: true` (default) automatically disposes ViewModels when scope is removed.
+**Auto-disposal:** `autoDispose: true` (default) automatically disposes ViewModels when scope is removed from widget tree.
 
 ### FairyLocator - Global DI
 
@@ -290,7 +307,7 @@ showDialog(
     context: context,
     child: AlertDialog(
       content: Bind<MyViewModel, String>(
-        selector: (vm) => vm.data,
+        bind: (vm) => vm.data,
         builder: (context, value, _) => Text(value),
       ),
     ),
@@ -340,6 +357,73 @@ class User {
 ```
 
 ## Best Practices
+
+### Cross-ViewModel Communication
+
+**Why per-property listening**: `ObservableProperty` changes do NOT trigger parent `ObservableObject.onPropertyChanged()` - this preserves Fairy's granular rebuild advantage. Each property notifies only its own listeners, enabling targeted UI updates.
+
+```dart
+// ✅ Direct property subscription (recommended)
+class DashboardViewModel extends ObservableObject {
+  final _userVM = UserViewModel();
+  VoidCallback? _nameListener;
+  
+  DashboardViewModel() {
+    _nameListener = _userVM.name.propertyChanged(() {
+      print('User name changed: ${_userVM.name.value}');
+    });
+  }
+  
+  @override
+  void dispose() {
+    _nameListener?.call();  // Dispose listener
+    _userVM.dispose();
+    super.dispose();
+  }
+}
+
+// ✅ Multiple subscriptions with DisposableBag
+class DashboardViewModel extends ObservableObject {
+  final _userVM = UserViewModel();
+  final _disposables = DisposableBag();
+  
+  DashboardViewModel() {
+    _disposables.add(_userVM.name.propertyChanged(() => /* ... */));
+    _disposables.add(_userVM.email.propertyChanged(() => /* ... */));
+  }
+  
+  @override
+  void dispose() {
+    _disposables.dispose();
+    _userVM.dispose();
+    super.dispose();
+  }
+}
+
+// ✅ ComputedProperty for derived state (cleanest)
+class DashboardViewModel extends ObservableObject {
+  final _userVM = UserViewModel();
+  late final displayName = ComputedProperty<String>(
+    () => '${_userVM.name.value} (${_userVM.email.value})',
+  );
+}
+```
+
+**Plain properties with manual `onPropertyChanged()`**: Use `ObservableObject.propertyChanged()` to listen to ALL changes on a ViewModel (not individual `ObservableProperty` instances):
+
+```dart
+class Logger extends ObservableObject {
+  final _userVM = UserViewModel();
+  VoidCallback? _vmListener;
+  
+  Logger() {
+    // Listens to ALL property changes on _userVM
+    _vmListener = _userVM.propertyChanged(() {
+      print('Some property changed on UserViewModel');
+    });
+  }
+}
+```
 
 ### Auto-Disposal
 
@@ -420,7 +504,7 @@ dispose = viewModel.propertyChanged(() { print('changed'); });
 
 // ✅ BEST: Use Bind/Command widgets (auto-managed)
 Bind<MyViewModel, int>(
-  selector: (vm) => vm.counter,
+  bind: (vm) => vm.counter,
   builder: (context, value, _) => Text('$value'),
 )
 ```
@@ -439,10 +523,10 @@ FairyScope(
 
 ### Choose Right Binding
 
-- **Single property (two-way):** `Bind<VM, T>` with `selector: (vm) => vm.prop` (returns ObservableProperty)
-- **Single property (one-way):** `Bind<VM, T>` with `selector: (vm) => vm.prop.value` (returns raw value)
+- **Single property (two-way):** `Bind<VM, T>` with `bind: (vm) => vm.prop` (returns ObservableProperty)
+- **Single property (one-way):** `Bind<VM, T>` with `bind: (vm) => vm.prop.value` (returns raw value)
 - **Multiple properties:** `Bind.viewModel<VM>` for auto-tracking
-- **Avoid:** Creating new instances in selectors (causes infinite rebuilds)
+- **Avoid:** Creating new instances in binds (causes infinite rebuilds)
 
 ## Performance
 
@@ -511,13 +595,13 @@ testWidgets('counter increments on tap', (tester) async {
 
 ### Binding Patterns
 ✅ **DO**: 
-- One-way (read-only): `selector: (vm) => vm.property.value`
-- Two-way (editable): `selector: (vm) => vm.property` (returns ObservableProperty)
-- Tuples (one-way): `selector: (vm) => (vm.a.value, vm.b.value)` ← All `.value`!
+- One-way (read-only): `bind: (vm) => vm.property.value`
+- Two-way (editable): `bind: (vm) => vm.property` (returns ObservableProperty)
+- Tuples (one-way): `bind: (vm) => (vm.a.value, vm.b.value)` ← All `.value`!
 
 ❌ **DON'T**: 
 - Mix in tuples: `(vm.a.value, vm.b)` ← TypeError!
-- Create new instances in selectors ← Infinite rebuilds!
+- Create new instances in binds ← Infinite rebuilds!
 
 ### Commands
 ✅ **DO**: Call `notifyCanExecuteChanged()` when conditions change, use `AsyncRelayCommand` for async  
