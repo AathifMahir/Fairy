@@ -102,7 +102,11 @@ class RelayCommand extends ObservableNode {
       try {
         _action();
       } catch (error, stackTrace) {
-        _onError?.call(error, stackTrace);
+        if (_onError != null) {
+          _onError!(error, stackTrace);
+        } else {
+          rethrow;
+        }
       }
     }
   }
@@ -258,7 +262,11 @@ class AsyncRelayCommand extends ObservableNode {
     try {
       await _action();
     } catch (error, stackTrace) {
-      _onError?.call(error, stackTrace);
+      if (_onError != null) {
+        _onError!(error, stackTrace);
+      } else {
+        rethrow;
+      }
     } finally {
       _isRunning = false;
       notifyListeners();
@@ -377,7 +385,11 @@ class RelayCommandWithParam<TParam> extends ObservableNode {
       try {
         _action(param);
       } catch (error, stackTrace) {
-        _onError?.call(error, stackTrace);
+        if (_onError != null) {
+          _onError!(error, stackTrace);
+        } else {
+          rethrow;
+        }
       }
     }
   }
@@ -520,16 +532,20 @@ class AsyncRelayCommandWithParam<TParam> extends ObservableNode {
   ///
   /// Sets [isRunning] to `true` during execution and `false` when complete.
   /// If the action throws an error and [onError] was provided, the error is caught and passed to [onError].
-  Future<void> execute(TParam param) async {
-    if (!canExecute(param)) return;
+  Future<void> execute(TParam parameter) async {
+    if (!canExecute(parameter)) return;
 
     _isRunning = true;
     notifyListeners();
 
     try {
-      await _action(param);
+      await _action(parameter);
     } catch (error, stackTrace) {
-      _onError?.call(error, stackTrace);
+      if (_onError != null) {
+        _onError!(error, stackTrace);
+      } else {
+        rethrow;
+      }
     } finally {
       _isRunning = false;
       notifyListeners();
