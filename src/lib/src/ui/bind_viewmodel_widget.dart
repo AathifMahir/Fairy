@@ -124,10 +124,12 @@ class BindViewModel<TViewModel extends ObservableObject>
 
 class _BindViewModelState<TViewModel extends ObservableObject>
     extends State<BindViewModel<TViewModel>> {
-  /// Current subscriptions (for cleanup)
-  final List<VoidCallback> _disposers = [];
+  /// Map of nodes to their disposer functions for selective cleanup.
+  /// Enables efficient subscription updates without disposing unchanged nodes.
+  final Map<ObservableNode, VoidCallback> _subscriptions = {};
 
-  /// Current set of tracked nodes (for diffing)
+  /// Current set of observable nodes being tracked.
+  /// Used to detect subscription changes during reconciliation.
   final Set<ObservableNode> _currentNodes = {};
 
   /// Called when any subscribed ObservableNode changes.
@@ -143,10 +145,10 @@ class _BindViewModelState<TViewModel extends ObservableObject>
   @override
   void dispose() {
     // Clean up all subscriptions
-    for (final disposer in _disposers) {
+    for (final disposer in _subscriptions.values) {
       disposer();
     }
-    _disposers.clear();
+    _subscriptions.clear();
     _currentNodes.clear();
 
     super.dispose();
@@ -188,10 +190,12 @@ class _BindViewModelState<TViewModel extends ObservableObject>
     // Reconcile subscriptions after successful build
     _reconcileSubscriptions(accessed);
 
-    // Schedule a post-frame callback to check for deferred accesses
-    // This handles lazy builder callbacks (like ListView.builder's itemBuilder)
-    // that execute after the synchronous build completes
+    // Only schedule post-frame callback if session exists and might have deferred accesses
+    // This optimization avoids unnecessary callbacks when there are no lazy builders
     if (session != null) {
+      // Capture initial snapshot size to detect new accesses
+      final initialAccessedCount = accessed.length;
+      
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
@@ -199,10 +203,14 @@ class _BindViewModelState<TViewModel extends ObservableObject>
         // The session's Set is mutable and shared, so we can check for growth
         final currentAccessed =
             (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
-        final newAccesses = currentAccessed.difference(_currentNodes);
-        if (newAccesses.isNotEmpty) {
-          // Reconcile with the new accesses
-          _reconcileSubscriptions(_currentNodes.union(newAccesses));
+        
+        // Only reconcile if new accesses were added after initial build
+        if (currentAccessed.length > initialAccessedCount) {
+          final newAccesses = currentAccessed.difference(_currentNodes);
+          if (newAccesses.isNotEmpty) {
+            // Reconcile with the new accesses
+            _reconcileSubscriptions(_currentNodes.union(newAccesses));
+          }
         }
       });
     }
@@ -215,44 +223,28 @@ class _BindViewModelState<TViewModel extends ObservableObject>
   /// Performs a diff between the previous set of tracked nodes and the new set,
   /// adding subscriptions for newly accessed nodes and removing subscriptions
   /// for nodes that are no longer accessed.
-  ///
-  /// For simplicity when nodes are removed, all subscriptions are disposed and
-  /// recreated rather than tracking which disposer belongs to which node.
   void _reconcileSubscriptions(Set<ObservableNode> accessed) {
-    // Early exit optimization - no changes needed
-    if (_currentNodes.length == accessed.length &&
-        _currentNodes.containsAll(accessed)) {
+    // Early exit if nothing changed
+    if (_currentNodes.containsAll(accessed) && accessed.containsAll(_currentNodes)) {
       return;
     }
 
-    // Find nodes no longer accessed
-    final removed = _currentNodes.difference(accessed);
+    // Calculate which subscriptions to remove and add
+    final toRemove = _currentNodes.difference(accessed);
+    final toAdd = accessed.difference(_currentNodes);
 
-    // Find newly accessed nodes
-    final added = accessed.difference(_currentNodes);
-
-    if (removed.isNotEmpty) {
-      // Clean slate approach: dispose all and recreate
-      // This is simpler than tracking disposer→node mappings
-      for (final disposer in _disposers) {
-        disposer();
-      }
-      _disposers.clear();
-
-      // Re-subscribe to all currently accessed nodes
-      for (final node in accessed) {
-        final disposer = _createSubscription(node);
-        _disposers.add(disposer);
-      }
-    } else if (added.isNotEmpty) {
-      // Only add new subscriptions (no removals needed)
-      for (final node in added) {
-        final disposer = _createSubscription(node);
-        _disposers.add(disposer);
-      }
+    // Clean up old subscriptions
+    for (final node in toRemove) {
+      final disposer = _subscriptions.remove(node);
+      disposer?.call();
     }
 
-    // Update snapshot
+    // Add new subscriptions
+    for (final node in toAdd) {
+      _subscriptions[node] = _createSubscription(node);
+    }
+
+    // Update current nodes set
     _currentNodes
       ..clear()
       ..addAll(accessed);
@@ -309,7 +301,7 @@ class BindViewModel2<TViewModel1 extends ObservableObject,
 class _BindViewModel2State<TViewModel1 extends ObservableObject,
         TViewModel2 extends ObservableObject>
     extends State<BindViewModel2<TViewModel1, TViewModel2>> {
-  final List<VoidCallback> _disposers = [];
+  final Map<ObservableNode, VoidCallback> _subscriptions = {};
   final Set<ObservableNode> _currentNodes = {};
 
   void _onNodeChanged() {
@@ -319,10 +311,10 @@ class _BindViewModel2State<TViewModel1 extends ObservableObject,
 
   @override
   void dispose() {
-    for (final disposer in _disposers) {
+    for (final disposer in _subscriptions.values) {
       disposer();
     }
-    _disposers.clear();
+    _subscriptions.clear();
     _currentNodes.clear();
     super.dispose();
   }
@@ -374,29 +366,20 @@ class _BindViewModel2State<TViewModel1 extends ObservableObject,
   }
 
   void _reconcileSubscriptions(Set<ObservableNode> accessed) {
-    if (_currentNodes.length == accessed.length &&
-        _currentNodes.containsAll(accessed)) {
+    if (_currentNodes.containsAll(accessed) && accessed.containsAll(_currentNodes)) {
       return;
     }
 
-    final removed = _currentNodes.difference(accessed);
+    final toRemove = _currentNodes.difference(accessed);
+    final toAdd = accessed.difference(_currentNodes);
 
-    if (removed.isNotEmpty) {
-      for (final disposer in _disposers) {
-        disposer();
-      }
-      _disposers.clear();
+    for (final node in toRemove) {
+      final disposer = _subscriptions.remove(node);
+      disposer?.call();
+    }
 
-      for (final node in accessed) {
-        final disposer = _createSubscription(node);
-        _disposers.add(disposer);
-      }
-    } else {
-      final added = accessed.difference(_currentNodes);
-      for (final node in added) {
-        final disposer = _createSubscription(node);
-        _disposers.add(disposer);
-      }
+    for (final node in toAdd) {
+      _subscriptions[node] = _createSubscription(node);
     }
 
     _currentNodes
@@ -457,7 +440,7 @@ class _BindViewModel3State<
         TViewModel2 extends ObservableObject,
         TViewModel3 extends ObservableObject>
     extends State<BindViewModel3<TViewModel1, TViewModel2, TViewModel3>> {
-  final List<VoidCallback> _disposers = [];
+  final Map<ObservableNode, VoidCallback> _subscriptions = {};
   final Set<ObservableNode> _currentNodes = {};
 
   void _onNodeChanged() {
@@ -467,10 +450,10 @@ class _BindViewModel3State<
 
   @override
   void dispose() {
-    for (final disposer in _disposers) {
+    for (final disposer in _subscriptions.values) {
       disposer();
     }
-    _disposers.clear();
+    _subscriptions.clear();
     _currentNodes.clear();
     super.dispose();
   }
@@ -524,29 +507,20 @@ class _BindViewModel3State<
   }
 
   void _reconcileSubscriptions(Set<ObservableNode> accessed) {
-    if (_currentNodes.length == accessed.length &&
-        _currentNodes.containsAll(accessed)) {
+    if (_currentNodes.containsAll(accessed) && accessed.containsAll(_currentNodes)) {
       return;
     }
 
-    final removed = _currentNodes.difference(accessed);
+    final toRemove = _currentNodes.difference(accessed);
+    final toAdd = accessed.difference(_currentNodes);
 
-    if (removed.isNotEmpty) {
-      for (final disposer in _disposers) {
-        disposer();
-      }
-      _disposers.clear();
+    for (final node in toRemove) {
+      final disposer = _subscriptions.remove(node);
+      disposer?.call();
+    }
 
-      for (final node in accessed) {
-        final disposer = _createSubscription(node);
-        _disposers.add(disposer);
-      }
-    } else {
-      final added = accessed.difference(_currentNodes);
-      for (final node in added) {
-        final disposer = _createSubscription(node);
-        _disposers.add(disposer);
-      }
+    for (final node in toAdd) {
+      _subscriptions[node] = _createSubscription(node);
     }
 
     _currentNodes
@@ -613,7 +587,7 @@ class _BindViewModel4State<
         TViewModel4 extends ObservableObject>
     extends State<
         BindViewModel4<TViewModel1, TViewModel2, TViewModel3, TViewModel4>> {
-  final List<VoidCallback> _disposers = [];
+  final Map<ObservableNode, VoidCallback> _subscriptions = {};
   final Set<ObservableNode> _currentNodes = {};
 
   void _onNodeChanged() {
@@ -623,10 +597,10 @@ class _BindViewModel4State<
 
   @override
   void dispose() {
-    for (final disposer in _disposers) {
+    for (final disposer in _subscriptions.values) {
       disposer();
     }
-    _disposers.clear();
+    _subscriptions.clear();
     _currentNodes.clear();
     super.dispose();
   }
@@ -682,29 +656,20 @@ class _BindViewModel4State<
   }
 
   void _reconcileSubscriptions(Set<ObservableNode> accessed) {
-    if (_currentNodes.length == accessed.length &&
-        _currentNodes.containsAll(accessed)) {
+    if (_currentNodes.containsAll(accessed) && accessed.containsAll(_currentNodes)) {
       return;
     }
 
-    final removed = _currentNodes.difference(accessed);
+    final toRemove = _currentNodes.difference(accessed);
+    final toAdd = accessed.difference(_currentNodes);
 
-    if (removed.isNotEmpty) {
-      for (final disposer in _disposers) {
-        disposer();
-      }
-      _disposers.clear();
+    for (final node in toRemove) {
+      final disposer = _subscriptions.remove(node);
+      disposer?.call();
+    }
 
-      for (final node in accessed) {
-        final disposer = _createSubscription(node);
-        _disposers.add(disposer);
-      }
-    } else {
-      final added = accessed.difference(_currentNodes);
-      for (final node in added) {
-        final disposer = _createSubscription(node);
-        _disposers.add(disposer);
-      }
+    for (final node in toAdd) {
+      _subscriptions[node] = _createSubscription(node);
     }
 
     _currentNodes
