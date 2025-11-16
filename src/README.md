@@ -14,6 +14,10 @@ A lightweight MVVM framework for Flutter with strongly-typed reactive data bindi
 - [Common Patterns](#common-patterns)
 - [Core Concepts](#core-concepts)
 - [Dependency Injection](#dependency-injection)
+- [Advanced Features](#advanced-features)
+  - [Deep Equality for Collections](#deep-equality-for-collections)
+  - [Custom Type Equality](#custom-type-equality)
+  - [Command Error Handling](#command-error-handling)
 - [Best Practices](#best-practices)
 - [Performance](#performance)
 - [Testing](#testing)
@@ -24,7 +28,7 @@ A lightweight MVVM framework for Flutter with strongly-typed reactive data bindi
 - 🎯 **Type-Safe** - Strongly-typed with compile-time safety
 - ✨ **No Code Generation** - Runtime-only, no build_runner
 - 🔄 **Auto UI Updates** - Data binding that just works
-- ⚡ **Command Pattern** - Actions with `canExecute` validation
+- ⚡ **Command Pattern** - Actions with `canExecute` validation and error handling
 - 🏗️ **Dependency Injection** - Global and scoped DI
 - 📦 **Lightweight** - Zero external dependencies
 
@@ -79,14 +83,16 @@ Command<CounterViewModel>(
 
 ### Command Types
 
-| Type | Parameters | Async | Example |
-|------|-----------|-------|---------|
-| `RelayCommand` | ❌ | ❌ | `late final save = RelayCommand(_save);` |
-| `AsyncRelayCommand` | ❌ | ✅ | `late final fetch = AsyncRelayCommand(_fetch);` |
-| `RelayCommandWithParam<T>` | ✅ | ❌ | `late final delete = RelayCommandWithParam<String>(_delete);` |
-| `AsyncRelayCommandWithParam<T>` | ✅ | ✅ | `late final upload = AsyncRelayCommandWithParam<File>(_upload);` |
+| Type | Parameters | Async | Error Handling | Example |
+|------|-----------|-------|----------------|---------|
+| `RelayCommand` | ❌ | ❌ | ✅ | `late final save = RelayCommand(_save, onError: _handleError);` |
+| `AsyncRelayCommand` | ❌ | ✅ | ✅ | `late final fetch = AsyncRelayCommand(_fetch, onError: _handleError);` |
+| `RelayCommandWithParam<T>` | ✅ | ❌ | ✅ | `late final delete = RelayCommandWithParam<String>(_delete, onError: _handleError);` |
+| `AsyncRelayCommandWithParam<T>` | ✅ | ✅ | ✅ | `late final upload = AsyncRelayCommandWithParam<File>(_upload, onError: _handleError);` |
 
 **Async commands** automatically track `isRunning` and prevent concurrent execution.
+
+**Error handling** is optional via `onError` callback - store errors in ViewModel properties and display with `Bind`.
 
 ### Widget Types
 
@@ -105,16 +111,25 @@ Command<CounterViewModel>(
 class LoginViewModel extends ObservableObject {
   final email = ObservableProperty<String>('');
   final password = ObservableProperty<String>('');
+  final errorMessage = ObservableProperty<String?>(null);
   
   late final isValid = ComputedProperty<bool>(
     () => email.value.contains('@') && password.value.length >= 8,
     [email, password], this,
   );
   
-  late final loginCommand = AsyncRelayCommand(_login, 
-    canExecute: () => isValid.value);
+  late final loginCommand = AsyncRelayCommand(
+    _login,
+    canExecute: () => isValid.value,
+    onError: (error, stackTrace) {
+      errorMessage.value = 'Login failed: $error';
+    },
+  );
   
-  Future<void> _login() async { /* ... */ }
+  Future<void> _login() async {
+    errorMessage.value = null; // Clear previous errors
+    await authService.login(email.value, password.value);
+  }
 }
 ```
 
@@ -132,18 +147,42 @@ late final deleteCommand = RelayCommandWithParam<String>(
 );
 ```
 
-### Loading States
+### Loading States with Error Handling
 
 ```dart
-late final fetchCommand = AsyncRelayCommand(_fetch);
+class MyViewModel extends ObservableObject {
+  final data = ObservableProperty<List<Item>>([]);
+  final error = ObservableProperty<String?>(null);
+  
+  late final fetchCommand = AsyncRelayCommand(
+    _fetch,
+    onError: (e, _) => error.value = e.toString(),
+  );
+  
+  Future<void> _fetch() async {
+    error.value = null;
+    data.value = await apiService.fetchData();
+  }
+}
 
-// In UI - isRunning automatically prevents double-taps
-Command<MyVM>(
-  command: (vm) => vm.fetchCommand,
-  builder: (context, execute, canExecute, isRunning) {
-    if (isRunning) return CircularProgressIndicator();
-    return ElevatedButton(onPressed: execute, child: Text('Fetch'));
-  },
+// UI - Show loading, error, or data
+Column(
+  children: [
+    Bind<MyViewModel, String?>(
+      bind: (vm) => vm.error,
+      builder: (context, error, _) {
+        if (error != null) return ErrorCard(error);
+        return SizedBox.shrink();
+      },
+    ),
+    Command<MyViewModel>(
+      command: (vm) => vm.fetchCommand,
+      builder: (context, execute, canExecute, isRunning) {
+        if (isRunning) return CircularProgressIndicator();
+        return ElevatedButton(onPressed: execute, child: Text('Fetch'));
+      },
+    ),
+  ],
 )
 ```
 
@@ -282,8 +321,8 @@ final vm = Fairy.of<UserViewModel>(context);
 ```dart
 // Register services in main()
 void main() {
-  FairyLocator.instance.registerSingleton<ApiService>(ApiService());
-  FairyLocator.instance.registerLazySingleton<DbService>(() => DbService());
+  FairyLocator.registerSingleton<ApiService>(ApiService());
+  FairyLocator.registerLazySingleton<DbService>(() => DbService());
   runApp(MyApp());
 }
 
@@ -355,6 +394,120 @@ class User {
 // For types with collections, use Equals utility:
 // Equals.listEquals(list1, list2), Equals.mapEquals(map1, map2)
 ```
+
+### Command Error Handling
+
+Commands support optional error handling via `onError` callback. Errors are stored in ViewModel properties and displayed using `Bind` widgets - consistent with Fairy's "Learn 2 widgets" philosophy.
+
+**Basic Pattern:**
+```dart
+class MyViewModel extends ObservableObject {
+  final errorMessage = ObservableProperty<String?>(null);
+  
+  late final saveCommand = AsyncRelayCommand(
+    _save,
+    onError: (error, stackTrace) {
+      errorMessage.value = 'Failed to save: $error';
+    },
+  );
+  
+  Future<void> _save() async {
+    errorMessage.value = null; // Clear previous errors
+    await repository.save(data.value);
+  }
+}
+
+// UI - Display errors with Bind
+Bind<MyViewModel, String?>(
+  bind: (vm) => vm.errorMessage,
+  builder: (context, error, _) {
+    if (error == null) return SizedBox.shrink();
+    return Card(
+      color: Colors.red[100],
+      child: Padding(
+        padding: EdgeInsets.all(8),
+        child: Text(error, style: TextStyle(color: Colors.red[900])),
+      ),
+    );
+  },
+)
+```
+
+**Type-Safe Error Handling:**
+```dart
+class MyViewModel extends ObservableObject {
+  final error = ObservableProperty<Exception?>(null);
+  
+  late final loginCommand = AsyncRelayCommand(
+    _login,
+    onError: (error, stackTrace) {
+      this.error.value = error as Exception;
+      analytics.logError(error);
+    },
+  );
+  
+  Future<void> _login() async {
+    error.value = null;
+    await authService.login(email.value, password.value);
+  }
+}
+
+// UI - Different handling per error type
+Bind<MyViewModel, Exception?>(
+  bind: (vm) => vm.error,
+  builder: (context, error, _) {
+    if (error is NetworkException) {
+      return ErrorCard('Check your internet connection');
+    } else if (error is AuthException) {
+      return ErrorCard('Invalid credentials');
+    } else if (error != null) {
+      return ErrorCard('An error occurred');
+    }
+    return SizedBox.shrink();
+  },
+)
+```
+
+**Snackbar Pattern:**
+```dart
+class MyViewModel extends ObservableObject {
+  final showSnackbar = ObservableProperty<String?>(null);
+  
+  late final deleteCommand = RelayCommandWithParam<String>(
+    _delete,
+    onError: (error, _) {
+      showSnackbar.value = 'Delete failed: $error';
+    },
+  );
+  
+  void _delete(String id) {
+    showSnackbar.value = null;
+    repository.delete(id);
+  }
+}
+
+// UI - Trigger snackbar
+Bind<MyViewModel, String?>(
+  bind: (vm) => vm.showSnackbar,
+  builder: (context, message, update) {
+    if (message != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+        update?.call(null); // Clear after showing
+      });
+    }
+    return YourPageContent();
+  },
+)
+```
+
+**Key Points:**
+- ✅ **Errors are state** - Store in `ObservableProperty` like any other state
+- ✅ **Use Bind to display** - Consistent with existing patterns
+- ✅ **Optional** - Only add `onError` when you need error handling
+- ✅ **All command types supported** - Works with sync/async, with/without parameters
 
 ## Best Practices
 
@@ -558,7 +711,7 @@ See the [example](../example) directory for a complete counter app demonstrating
 
 ## Testing
 
-**565 tests passing** - covering observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, command auto-tracking, and overlays.
+**574 tests passing** - covering observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, command auto-tracking, error handling, and overlays.
 
 ```dart
 test('increment updates counter', () {
