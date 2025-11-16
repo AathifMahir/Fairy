@@ -32,7 +32,7 @@ A lightweight MVVM framework for Flutter with strongly-typed reactive data bindi
 
 ```yaml
 dependencies:
-  fairy: ^1.4.0
+  fairy: ^2.0.0
 ```
 
 ## Quick Start
@@ -534,18 +534,18 @@ Fairy is designed for performance. Benchmark results comparing with popular stat
 
 | Category | Fairy | Provider | Riverpod |
 |----------|-------|----------|----------|
-| Widget Performance (1000 interactions) | 116.5% | 104.9% | **100%** 🥇 |
-| Memory Management (50 cycles) | 113.9% | 105.1% | **100%** 🥇 |
-| Selective Rebuild (explicit Bind) | **100%** 🥇 | 138.3% | 130.2% |
-| Auto-tracking Rebuild (Bind.viewModel) | **100%** 🥇 | 132.4% | 124.5% |
+| Widget Performance (1000 interactions) | 112.7% | 101.9% | **100%** 🥇 |
+| Memory Management (50 cycles) | 112.6% | 103.9% | **100%** 🥇 |
+| Selective Rebuild (explicit Bind) | **100%** 🥇 | 133.5% | 131.3% |
+| Auto-tracking Rebuild (Bind.viewModel) | **100%** 🥇 | 133.3% | 126.1% |
 
 ### Key Achievements
-- **🥇 Fastest Selective Rebuilds** - 30-38% faster with explicit binding
-- **🥇 Fastest Auto-tracking** - 24-32% faster while maintaining 100% rebuild efficiency
+- **🥇 Fastest Selective Rebuilds** - 31-34% faster with explicit binding
+- **🥇 Fastest Auto-tracking** - 26-33% faster while maintaining 100% rebuild efficiency
 - **Unique**: Only framework achieving 100% selective efficiency (500 rebuilds) vs 33% for Provider/Riverpod (1500 rebuilds)
-- **Memory**: **Intentional design decision** to use 14% more memory in exchange for 24-38% faster rebuilds (both auto-tracking and selective binding) plus superior developer experience with command auto-tracking
+- **Memory**: **Intentional design decision** to use 13% more memory in exchange for 26-34% faster rebuilds (both auto-tracking and selective binding) plus superior developer experience with command auto-tracking
 
-*Lower is better. Percentages relative to the fastest framework in each category. Benchmarked on v1.4.0.*
+*Lower is better. Percentages relative to the fastest framework in each category. Benchmarked on v2.0.0.*
 
 ## Example
 
