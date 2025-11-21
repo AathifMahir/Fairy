@@ -512,7 +512,7 @@ void main() {
                           },
                         ),
                         Bind<TrackedViewModel, String>(
-                          selector: (vm) => vm.userName,
+                          bind: (vm) => vm.userName,
                           builder: (context, userName, update) {
                             return Text('Name: $userName');
                           },

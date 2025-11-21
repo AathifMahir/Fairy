@@ -7,23 +7,23 @@ void main() {
     group('FairyLocator Disposal Checks', () {
       setUp(() {
         // Clear any existing registrations
-        FairyLocator.instance.clear();
+        FairyLocator.clear();
       });
 
       tearDown(() {
-        FairyLocator.instance.clear();
+        FairyLocator.clear();
       });
 
       test('should throw when getting disposed singleton', () {
         final vm = _TestViewModel();
-        FairyLocator.instance.registerSingleton(vm);
+        FairyLocator.registerSingleton(vm);
 
         // Dispose the ViewModel
         vm.dispose();
 
         // Attempting to get should throw
         expect(
-          () => FairyLocator.instance.get<_TestViewModel>(),
+          () => FairyLocator.get<_TestViewModel>(),
           throwsA(
             isA<StateError>().having(
               (e) => e.message,
@@ -36,52 +36,52 @@ void main() {
 
       test('should return fresh instance from lazy singleton on first access',
           () {
-        FairyLocator.instance.registerLazySingleton(() => _TestViewModel());
+        FairyLocator.registerLazySingleton(() => _TestViewModel());
 
         // Get instance (creates and caches)
-        final vm1 = FairyLocator.instance.get<_TestViewModel>();
+        final vm1 = FairyLocator.get<_TestViewModel>();
         expect(vm1.isDisposed, isFalse);
 
         // Get again - should return same instance
-        final vm2 = FairyLocator.instance.get<_TestViewModel>();
+        final vm2 = FairyLocator.get<_TestViewModel>();
         expect(identical(vm1, vm2), isTrue);
       });
 
       test('should throw when getting disposed lazy singleton', () {
-        FairyLocator.instance.registerLazySingleton(() => _TestViewModel());
+        FairyLocator.registerLazySingleton(() => _TestViewModel());
 
         // Get instance (creates and caches)
-        final vm = FairyLocator.instance.get<_TestViewModel>();
+        final vm = FairyLocator.get<_TestViewModel>();
 
         // Dispose it
         vm.dispose();
 
         // Attempting to get again should throw
         expect(
-          () => FairyLocator.instance.get<_TestViewModel>(),
+          () => FairyLocator.get<_TestViewModel>(),
           throwsA(isA<StateError>()),
         );
       });
 
       test('should not check disposal for non-Disposable types', () {
         final service = _NonDisposableService();
-        FairyLocator.instance.registerSingleton(service);
+        FairyLocator.registerSingleton(service);
 
         // Should work fine (no disposal check needed)
         expect(
-          () => FairyLocator.instance.get<_NonDisposableService>(),
+          () => FairyLocator.get<_NonDisposableService>(),
           returnsNormally,
         );
       });
 
       test('disposal check should provide helpful error message', () {
         final vm = _TestViewModel();
-        FairyLocator.instance.registerSingleton(vm);
+        FairyLocator.registerSingleton(vm);
 
         vm.dispose();
 
         try {
-          FairyLocator.instance.get<_TestViewModel>();
+          FairyLocator.get<_TestViewModel>();
           fail('Should have thrown');
         } on StateError catch (e) {
           expect(e.message, contains('_TestViewModel'));
@@ -203,13 +203,13 @@ void main() {
 
     group('Integration Tests', () {
       tearDown(() {
-        FairyLocator.instance.clear();
+        FairyLocator.clear();
       });
 
       test('should handle disposal across locator and scope', () {
         // Register service in locator
         final service = _TestViewModel();
-        FairyLocator.instance.registerSingleton(service);
+        FairyLocator.registerSingleton(service);
 
         // Register ViewModel in scope that depends on service
         final scopeData = FairyScopeData();
@@ -217,8 +217,7 @@ void main() {
         scopeData.registerDynamic(vm, owned: true);
 
         // Both should be accessible
-        expect(
-            () => FairyLocator.instance.get<_TestViewModel>(), returnsNormally);
+        expect(() => FairyLocator.get<_TestViewModel>(), returnsNormally);
         expect(() => scopeData.get<_TestViewModel>(), returnsNormally);
 
         // Dispose service
@@ -226,7 +225,7 @@ void main() {
 
         // Service should throw
         expect(
-          () => FairyLocator.instance.get<_TestViewModel>(),
+          () => FairyLocator.get<_TestViewModel>(),
           throwsA(isA<StateError>()),
         );
 

@@ -782,7 +782,7 @@ void main() {
                     Text('Outer: ${vm.name.value}'),
                     // Nested Bind with explicit selector
                     Bind<TestViewModel, String>(
-                      selector: (vm) => vm.name,
+                      bind: (vm) => vm.name,
                       builder: (context, value, update) {
                         innerRebuilds++;
                         return Text('Inner: $value');
@@ -842,7 +842,7 @@ void main() {
                     Text('Outer'),
                     // First nested Bind
                     Bind<TestViewModel, String>(
-                      selector: (vm) => vm.name,
+                      bind: (vm) => vm.name,
                       builder: (context, value, update) {
                         innerRebuilds1++;
                         return Text('Inner1: $value');
@@ -850,7 +850,7 @@ void main() {
                     ),
                     // Second nested Bind on different property
                     Bind<TestViewModel, int>(
-                      selector: (vm) => vm.age,
+                      bind: (vm) => vm.age,
                       builder: (context, value, update) {
                         innerRebuilds2++;
                         return Text('Inner2: $value');
@@ -869,26 +869,26 @@ void main() {
       expect(innerRebuilds1, equals(1));
       expect(innerRebuilds2, equals(1));
 
-      // Change only name - outer tracks name, so it rebuilds
-      // When outer rebuilds, it rebuilds inner1 as well (parent rebuild)
-      // inner2 doesn't subscribe to name, but gets rebuilt due to parent
+      // Change only name - outer DOESN'T track name (child's selector runs in own session)
+      // innerRebuilds1 subscribes to name, so it rebuilds
+      // outer doesn't rebuild since it doesn't track name
+      // innerRebuilds2 doesn't rebuild since parent doesn't rebuild and it doesn't track name
       vm.name.value = 'New Name';
       await tester.pump();
 
-      expect(outerRebuilds, equals(2));
-      expect(innerRebuilds1, equals(2));
-      expect(innerRebuilds2,
-          equals(2)); // Rebuilds because parent (outer) rebuilds
+      expect(outerRebuilds, equals(1)); // Doesn't access name
+      expect(innerRebuilds1, equals(2)); // Subscribes to name, rebuilds
+      expect(innerRebuilds2, equals(1)); // Parent didn't rebuild, stays at 1
 
-      // Change only age - outer doesn't track age directly
-      // But inner2 subscribes to age, triggers rebuild, which rebuilds parent
+      // Change only age - outer doesn't track age
+      // inner2 subscribes to age, so inner2 rebuilds
+      // outer and inner1 don't rebuild since they don't track age
       vm.age.value = 25;
       await tester.pump();
 
-      expect(outerRebuilds, equals(3)); // Rebuilds because child rebuilds
-      expect(innerRebuilds1, equals(3)); // Rebuilds because parent rebuilds
-      expect(
-          innerRebuilds2, equals(3)); // Rebuilds because it subscribes to age
+      expect(outerRebuilds, equals(1)); // Doesn't track age
+      expect(innerRebuilds1, equals(2)); // Doesn't track age (tracks name only)
+      expect(innerRebuilds2, equals(2)); // Subscribes to age, rebuilds
     });
 
     testWidgets(
@@ -958,7 +958,7 @@ void main() {
                 return Bind.viewModel<TestViewModel>(
                   builder: (context, vm) {
                     return Bind<TestViewModel, String>(
-                      selector: (vm) => vm.name,
+                      bind: (vm) => vm.name,
                       builder: (context, value, update) {
                         return Text('Deeply nested: $value');
                       },
@@ -1010,7 +1010,7 @@ void main() {
                     Text('Outer: $name'),
                     // Inner Bind with explicit selector
                     Bind<TestViewModel, int>(
-                      selector: (vm) {
+                      bind: (vm) {
                         // This should NOT be inside tracking session
                         accessedInInner.clear();
                         accessedInInner.add('age');
@@ -1055,7 +1055,7 @@ void main() {
               builder: (context, vm) {
                 outerRebuilds++;
                 return Bind<TestViewModel, String>(
-                  selector: (vm) => vm.name,
+                  bind: (vm) => vm.name,
                   builder: (context, value, update) {
                     innerRebuilds++;
                     return Text(value);
@@ -1071,19 +1071,21 @@ void main() {
       expect(innerRebuilds, equals(1));
 
       // Single property change
+      // Outer doesn't access name directly (child selector runs in own session)
+      // Inner subscribes to name, so only inner rebuilds
       vm.name.value = 'Once';
       await tester.pump();
 
-      // Should rebuild exactly once each (not multiple times)
-      expect(outerRebuilds, equals(2));
-      expect(innerRebuilds, equals(2));
+      // Only inner rebuilds (it subscribes to name)
+      expect(outerRebuilds, equals(1)); // Doesn't access name
+      expect(innerRebuilds, equals(2)); // Subscribes to name
 
       // Another single change
       vm.name.value = 'Twice';
       await tester.pump();
 
-      expect(outerRebuilds, equals(3));
-      expect(innerRebuilds, equals(3));
+      expect(outerRebuilds, equals(1)); // Still doesn't access name
+      expect(innerRebuilds, equals(3)); // Rebuilds again
     });
   });
 }

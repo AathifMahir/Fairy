@@ -64,7 +64,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<PlainPropertyViewModel, String>(
-              selector: (vm) => vm.name, // Plain getter
+              bind: (vm) => vm.name, // Plain getter
               builder: (context, value, update) => Text(value),
             ),
           ),
@@ -88,7 +88,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<PlainPropertyViewModel, int>(
-              selector: (vm) => vm.age, // Plain getter
+              bind: (vm) => vm.age, // Plain getter
               builder: (context, value, update) => Text('Age: $value'),
             ),
           ),
@@ -112,7 +112,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<PlainPropertyViewModel, bool>(
-              selector: (vm) => vm.isActive,
+              bind: (vm) => vm.isActive,
               builder: (context, value, update) =>
                   Text('Active: ${value ? "Yes" : "No"}'),
             ),
@@ -140,15 +140,15 @@ void main() {
             child: Column(
               children: [
                 Bind<PlainPropertyViewModel, String>(
-                  selector: (vm) => vm.name,
+                  bind: (vm) => vm.name,
                   builder: (context, value, update) => Text('Name: $value'),
                 ),
                 Bind<PlainPropertyViewModel, int>(
-                  selector: (vm) => vm.age,
+                  bind: (vm) => vm.age,
                   builder: (context, value, update) => Text('Age: $value'),
                 ),
                 Bind<PlainPropertyViewModel, bool>(
-                  selector: (vm) => vm.isActive,
+                  bind: (vm) => vm.isActive,
                   builder: (context, value, update) =>
                       Text('Active: ${value ? "Yes" : "No"}'),
                 ),
@@ -181,7 +181,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<PlainPropertyViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 capturedUpdate = update;
                 return Text(value);
@@ -204,7 +204,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<PlainPropertyViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) => Text(value),
             ),
           ),
@@ -238,7 +238,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<MixedPropertyViewModel, String>(
-              selector: (vm) => vm.title, // Plain property
+              bind: (vm) => vm.title, // Plain property
               builder: (context, value, update) => Text('Title: $value'),
             ),
           ),
@@ -264,7 +264,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<MixedPropertyViewModel, int>(
-              selector: (vm) => vm.counter, // ObservableProperty
+              bind: (vm) => vm.counter, // ObservableProperty
               builder: (context, value, update) {
                 buildCount++;
                 return Text('Counter: $value');
@@ -299,7 +299,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<MixedPropertyViewModel, String>(
-              selector: (vm) => vm.upperTitle, // Computed from plain property
+              bind: (vm) => vm.upperTitle, // Computed from plain property
               builder: (context, value, update) => Text(value),
             ),
           ),
@@ -323,7 +323,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<PlainPropertyViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 buildCount++;
                 return Text(value);
@@ -633,7 +633,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<PlainPropertyViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 buildCount++;
                 return Text(value);
@@ -655,7 +655,7 @@ void main() {
       expect(find.text('John'), findsOneWidget); // Still old value
     });
 
-    testWidgets('should handle selector change from plain to plain',
+    testWidgets('should handle bind change from plain to plain',
         (tester) async {
       final vm = PlainPropertyViewModel();
       var showName = true;
@@ -669,7 +669,7 @@ void main() {
                 return Column(
                   children: [
                     Bind<PlainPropertyViewModel, dynamic>(
-                      selector: (vm) => showName ? vm.name : vm.age,
+                      bind: (vm) => showName ? vm.name : vm.age,
                       builder: (context, value, update) => Text('$value'),
                     ),
                     ElevatedButton(
@@ -719,7 +719,7 @@ void main() {
             home: FairyScope(
               viewModel: (_) => vm,
               child: Bind<PlainPropertyViewModel, String>(
-                selector: (vm) => vm.name,
+                bind: (vm) => vm.name,
                 builder: (context, value, update) => Text(value),
               ),
             ),

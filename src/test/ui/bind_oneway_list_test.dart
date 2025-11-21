@@ -55,7 +55,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<ListViewModel, List<String>>(
-              selector: (vm) =>
+              bind: (vm) =>
                   vm.items.value, // Accessing .value (one-way binding)
               builder: (context, value, update) {
                 buildCount++;
@@ -92,7 +92,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<ListViewModel, List<String>>(
-              selector: (vm) => vm.items.value,
+              bind: (vm) => vm.items.value,
               builder: (context, value, update) {
                 buildCount++;
                 return Column(
@@ -128,7 +128,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<ListViewModel, List<String>>(
-              selector: (vm) =>
+              bind: (vm) =>
                   vm.items, // Accessing ObservableProperty (two-way binding)
               builder: (context, value, update) {
                 buildCount++;
@@ -167,7 +167,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<DeepEqualityListViewModel, List<String>>(
-              selector: (vm) => vm.items.value,
+              bind: (vm) => vm.items.value,
               builder: (context, value, update) {
                 buildCount++;
                 return Column(

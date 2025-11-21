@@ -8,12 +8,12 @@ import 'bind_viewmodel_widget.dart';
 /// A widget that binds ViewModel data to UI with automatic type detection.
 ///
 /// [Bind] is the core data binding widget in Fairy. It automatically detects
-/// whether to use one-way or two-way binding based on what the [selector] returns:
+/// whether to use one-way or two-way binding based on what the [bind] returns:
 ///
-/// **Two-way binding:** When [selector] returns an [ObservableProperty<TValue>],
+/// **Two-way binding:** When [bind] returns an [ObservableProperty<TValue>],
 /// the widget subscribes to that property and provides an `update` callback.
 ///
-/// **One-way binding:** When [selector] returns a raw [TValue], the widget
+/// **One-way binding:** When [bind] returns a raw [TValue], the widget
 /// subscribes to the entire ViewModel and the `update` callback is `null`.
 ///
 /// ## Two-Way Binding Example:
@@ -27,7 +27,7 @@ import 'bind_viewmodel_widget.dart';
 /// }
 ///
 /// Bind<UserViewModel, String>(
-///   selector: (vm) => vm.userName,  // Returns ObservableProperty<String>
+///   bind: (vm) => vm.userName,  // Returns ObservableProperty<String>
 ///   builder: (context, value, update) {
 ///     return TextField(
 ///       controller: TextEditingController(text: value),
@@ -50,31 +50,31 @@ import 'bind_viewmodel_widget.dart';
 /// }
 ///
 /// Bind<CounterViewModel, int>(
-///   selector: (vm) => vm.doubled,  // Returns int (raw value)
+///   bind: (vm) => vm.doubled,  // Returns int (raw value)
 ///   builder: (context, value, update) {
 ///     return Text('$value');  // update is null for one-way binding
 ///   },
 /// )
 /// ```
 ///
-/// **Critical:** Selectors must return **stable references**. Never create
-/// new [ObservableProperty] instances inside selectors.
+/// **Critical:** Bind functions must return **stable references**. Never create
+/// new [ObservableProperty] instances inside bind functions.
 class Bind<TViewModel extends ObservableObject, TValue> extends StatefulWidget {
   const Bind({
-    required this.selector,
+    required this.bind,
     required this.builder,
     super.key,
     this.oneTime = false,
   });
 
-  /// Selector function that extracts the bindable value from the ViewModel.
+  /// Bind function that extracts the bindable value from the ViewModel.
   ///
   /// Can return either:
   /// - [ObservableProperty<TValue>] for two-way binding
   /// - [TValue] for one-way binding
   ///
-  /// **Must return stable references!** Don't create new objects in selectors.
-  final dynamic Function(TViewModel vm) selector;
+  /// **Must return stable references!** Don't create new objects in bind functions.
+  final dynamic Function(TViewModel vm) bind;
 
   /// Builder function that constructs the UI.
   ///
@@ -267,9 +267,9 @@ class _BindState<TViewModel extends ObservableObject, TValue>
     // Resolve ViewModel from context
     _viewModel = Fairy.of<TViewModel>(context);
 
-    // Evaluate selector with dependency tracking
+    // Evaluate bind with dependency tracking
     final (result, accessedNodes, _) =
-        DependencyTracker.track(() => widget.selector(_viewModel));
+        DependencyTracker.track(() => widget.bind(_viewModel));
     _selected = result;
 
     // Skip subscription for one-time binding
@@ -277,7 +277,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
       return;
     }
 
-    // Subscribe based on what selector returned
+    // Subscribe based on what bind returned
     if (_selected is ObservableProperty<TValue>) {
       // Two-way binding: subscribe to the property directly
       _listener = () => setState(() {});
@@ -291,9 +291,9 @@ class _BindState<TViewModel extends ObservableObject, TValue>
     } else {
       // One-way binding: subscribe to accessed nodes or fallback to ViewModel
       _listener = () => setState(() {
-            // Re-evaluate selector on change
+            // Re-evaluate bind on change
             final (newResult, _, _) =
-                DependencyTracker.track(() => widget.selector(_viewModel));
+                DependencyTracker.track(() => widget.bind(_viewModel));
             _selected = newResult;
           });
 
@@ -316,13 +316,13 @@ class _BindState<TViewModel extends ObservableObject, TValue>
   void didUpdateWidget(Bind<TViewModel, TValue> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // If selector changed, rebind
-    if (oldWidget.selector != widget.selector) {
+    // If bind changed, rebind
+    if (oldWidget.bind != widget.bind) {
       _removeListener();
 
       // Re-evaluate with tracking
       final (result, accessedNodes, _) =
-          DependencyTracker.track(() => widget.selector(_viewModel));
+          DependencyTracker.track(() => widget.bind(_viewModel));
       _selected = result;
 
       if (!widget.oneTime) {
@@ -338,7 +338,7 @@ class _BindState<TViewModel extends ObservableObject, TValue>
           // One-way binding: subscribe to accessed nodes or fallback to ViewModel
           _listener = () => setState(() {
                 final (newResult, _, _) =
-                    DependencyTracker.track(() => widget.selector(_viewModel));
+                    DependencyTracker.track(() => widget.bind(_viewModel));
                 _selected = newResult;
               });
 

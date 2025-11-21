@@ -1,3 +1,136 @@
+## 2.0.0
+
+**V2 Major Release** - Cleaner API with better error handling and simplified dependency injection.
+
+### 🔄 Breaking Changes
+
+#### 1. Bind Widget: `selector:` → `bind:` Parameter
+
+**Migration:** Find and replace `selector:` with `bind:` in all `Bind` widgets.
+
+```dart
+// Before (V1)
+Bind<UserViewModel, String>(
+  selector: (vm) => vm.userName,
+  builder: (context, value, update) => TextField(...),
+)
+
+// After (V2)
+Bind<UserViewModel, String>(
+  bind: (vm) => vm.userName,
+  builder: (context, value, update) => TextField(...),
+)
+```
+
+#### 2. FairyLocator: Remove `.instance`
+
+**Migration:** Find and replace `FairyLocator.instance.` with `FairyLocator.`
+
+```dart
+// Before (V1)
+FairyLocator.instance.registerSingleton<ApiService>(ApiService());
+final api = FairyLocator.instance.get<ApiService>();
+
+// After (V2)
+FairyLocator.registerSingleton<ApiService>(ApiService());
+final api = FairyLocator.get<ApiService>();
+```
+
+**All methods are now static:** `registerSingleton`, `registerLazySingleton`, `registerFactory`, `get`, `isRegistered`, `unregister`, `reset`.
+
+### ✨ New Features
+
+#### Command Error Handling with `onError` Callback
+
+Commands now support error handling at the UI level via optional `onError` callback. Available on all command types:
+
+```dart
+class LoginViewModel extends ObservableObject {
+  final errorMessage = ObservableProperty<String?>(null);
+  
+  late final loginCommand = AsyncRelayCommand(
+    _login,
+    onError: (error, stackTrace) {
+      errorMessage.value = 'Login failed: $error';
+      logger.error('Login error', error, stackTrace);
+    },
+  );
+  
+  Future<void> _login() async {
+    errorMessage.value = null; // Clear previous errors
+    await authService.login(email.value, password.value);
+  }
+}
+
+// Display errors using Bind (consistent with "Learn 2 widgets" philosophy)
+Bind<LoginViewModel, String?>(
+  bind: (vm) => vm.errorMessage,
+  builder: (context, error, _) {
+    if (error == null) return SizedBox.shrink();
+    return ErrorCard(error);
+  },
+)
+```
+
+**Key Points:**
+- Errors stored as state in ViewModel (`ObservableProperty`)
+- Display errors via `Bind` widget (consistent pattern)
+- Optional callback - only add when needed
+- Available on: `RelayCommand`, `AsyncRelayCommand`, `RelayCommandWithParam<T>`, `AsyncRelayCommandWithParam<T>`
+
+### 🎯 Design Decisions
+
+#### Why No `context.watch<T>()` or `ref.watch<T>()` Style Extensions?
+
+**Deliberate omission** to maintain Fairy's core philosophy and simplicity:
+
+- **Widget-based API keeps it simple**: `Bind` and `Command` widgets handle all reactive needs without requiring custom `StatelessWidget`/`StatefulWidget` base classes
+- **No framework coupling**: Unlike Provider/Riverpod which require `ConsumerWidget`/`ConsumerStatefulWidget`, Fairy works with standard Flutter widgets
+- **Avoid complexity**: Listenable extensions would require new widget types and lifecycle patterns, contradicting the "Learn 2 widgets" philosophy
+- **Explicit over implicit**: `Bind` widgets make reactive dependencies visible and auditable in the widget tree
+
+**For imperative access** (e.g., calling commands in callbacks), `Fairy.of<T>(context)` provides read-only ViewModel access. For overlays, use `FairyBridge` widget.
+
+### 📚 Documentation
+
+- Added comprehensive command error handling examples (basic, type-safe, snackbar patterns)
+- Updated Quick Reference table with error handling capabilities
+- Updated all examples to use V2 API (`bind:` parameter, static `FairyLocator`)
+- Enhanced Common Patterns section with error handling integration
+
+### 🧪 Testing
+
+- **574 tests** passing (up from 565 in v1.4.0)
+- Added 9 tests for command error handling scenarios
+- All breaking changes validated with updated tests
+
+### 📊 Performance
+
+- Benchmarks updated with V2 measurements
+- Performance characteristics maintained from v1.4.0
+- Memory: 112.6% baseline, Widget: 112.7% baseline
+- Selective Rebuilds: 100% baseline (31-34% faster than Provider/Riverpod)
+- Auto-tracking: 100% baseline (26-33% faster than Provider/Riverpod)
+
+### 💡 Migration Effort
+
+**Small projects (< 10 files):** 10-15 minutes  
+**Medium projects (10-50 files):** 20-30 minutes  
+**Large projects (50+ files):** 30-60 minutes
+
+**Migration steps:**
+1. Replace `selector:` → `bind:` (find & replace)
+2. Replace `FairyLocator.instance.` → `FairyLocator.` (find & replace)
+3. Test thoroughly
+4. Optionally add error handling where needed
+
+
+### 📅 Release & Support
+
+**Introduced formal versioning policy:** Fairy now follows a non-breaking minor version principle with clear support cadence. See README for full details on version compatibility and support policy.
+
+---
+
 ## 1.4.0
 
 **Auto-Tracking for Commands** - Commands now automatically track when accessed in `Bind.viewModel`, enabling reactive UI updates without explicit `Command` widget usage.

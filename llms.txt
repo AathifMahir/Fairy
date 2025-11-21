@@ -5,11 +5,19 @@
 ## Package Identity
 
 - **Name**: fairy
-- **Version**: 1.4.0
+- **Version**: 2.0.0
 - **Type**: Flutter state management library
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **License**: BSD-3-Clause
 - **Repository**: https://github.com/AathifMahir/Fairy
+
+## Versioning Policy
+
+Fairy follows a **non-breaking minor version** principle:
+- **Major versions** (v1.0, v2.0, v3.0): May include breaking changes with migration guides
+- **Minor versions** (v2.1, v2.2, v2.3): New features and enhancements, **no breaking changes**
+- **Patch versions** (v2.0.1, v2.0.2): Bug fixes and documentation updates only
+- **Support**: Only current and previous major versions receive updates
 
 ## Core Philosophy
 
@@ -145,6 +153,40 @@ late final fetchItemCommand = AsyncRelayCommandWithParam<String>(
 - `bool isRunning` - Tracks execution state
 - `canExecute(T param)` returns false while `isRunning` is true
 
+### Command Error Handling
+
+All command types support optional `onError` callback for UI-level error handling. Errors are stored in ViewModel properties and displayed using `Bind` widgets.
+
+```dart
+class LoginViewModel extends ObservableObject {
+  final errorMessage = ObservableProperty<String?>(null);
+  
+  late final loginCommand = AsyncRelayCommand(
+    _login,
+    onError: (error, stackTrace) {
+      errorMessage.value = 'Login failed: $error';
+      logger.error('Login error', error, stackTrace);
+    },
+  );
+  
+  Future<void> _login() async {
+    errorMessage.value = null; // Clear previous errors
+    await authService.login(email.value, password.value);
+  }
+}
+
+// Display errors using Bind
+Bind<LoginViewModel, String?>(
+  bind: (vm) => vm.errorMessage,
+  builder: (context, error, _) {
+    if (error == null) return SizedBox.shrink();
+    return ErrorCard(error);
+  },
+)
+```
+
+**Available on:** `RelayCommand`, `AsyncRelayCommand`, `RelayCommandWithParam<T>`, `AsyncRelayCommandWithParam<T>`
+
 ### Command Auto-Tracking (v1.4.0)
 
 **All command `canExecute` and `isRunning` accesses are automatically tracked** when used inside `Bind.viewModel` builders.
@@ -193,12 +235,12 @@ Bind.viewModel<MyViewModel>(
 ### UI Binding Widgets
 
 #### Bind<TViewModel, TValue>
-Primary data binding widget with explicit selector.
+Primary data binding widget with explicit binding.
 
 **Two-way binding** (returns ObservableProperty):
 ```dart
 Bind<UserViewModel, String>(
-  selector: (vm) => vm.name,  // Returns ObservableProperty<String>
+  bind: (vm) => vm.name,  // Returns ObservableProperty<String>
   builder: (context, value, update) {
     return TextField(
       controller: TextEditingController(text: value),
@@ -211,7 +253,7 @@ Bind<UserViewModel, String>(
 **One-way binding** (returns raw value):
 ```dart
 Bind<UserViewModel, String>(
-  selector: (vm) => vm.name.value,  // Returns String
+  bind: (vm) => vm.name.value,  // Returns String
   builder: (context, value, update) {
     return Text(value);  // update is null
   },
@@ -304,7 +346,7 @@ Command.param<TodoViewModel, String>(
 **For reactive parameters from controllers:**
 ```dart
 Bind<TodoViewModel, TextEditingController>(
-  selector: (vm) => vm.titleController,
+  bind: (vm) => vm.titleController,
   builder: (context, controller, _) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
@@ -533,7 +575,7 @@ FairyScope(
 // ❌ WRONG: This causes memory leaks!
 void main() {
   // DON'T register ViewModels in FairyLocator
-  FairyLocator.instance.register<LoginViewModel>(LoginViewModel());
+  FairyLocator.register<LoginViewModel>(LoginViewModel());
   runApp(MyApp());
 }
 
@@ -568,16 +610,16 @@ Global singleton registry for **app-wide services ONLY**. Do NOT use for ViewMod
 ```dart
 // Register in main() - ONLY for services
 void main() {
-  FairyLocator.instance.registerSingleton<ApiService>(ApiService());
-  FairyLocator.instance.registerLazySingleton<DatabaseService>(
+  FairyLocator.registerSingleton<ApiService>(ApiService());
+  FairyLocator.registerLazySingleton<DatabaseService>(
     () => DatabaseService()
   );
-  // ❌ NEVER: FairyLocator.instance.register<MyViewModel>(MyViewModel());
+  // ❌ NEVER: FairyLocator.register<MyViewModel>(MyViewModel());
   runApp(MyApp());
 }
 
 // Access anywhere
-final api = FairyLocator.instance.get<ApiService>();
+final api = FairyLocator.get<ApiService>();
 ```
 
 #### Fairy (Resolver)
@@ -613,7 +655,7 @@ void _showAddTodoDialog(BuildContext context) {
       child: AlertDialog(
         title: Text('Add Todo'),
         content: Bind<TodoViewModel, TextEditingController>(
-          selector: (vm) => vm.titleController,
+          bind: (vm) => vm.titleController,
           builder: (context, controller, _) => TextField(controller: controller),
         ),
         actions: [
@@ -720,9 +762,10 @@ disposer();
 ## Best Practices
 
 ### 1. Choose the Right Binding
-- **Single property**: Use `Bind<TViewModel, TValue>` with explicit selector
+- **Single property**: Use `Bind<TViewModel, TValue>` with explicit `bind` parameter
 - **Multiple properties**: Use `Bind.viewModel<TViewModel>` for convenience
-- **Avoid one-way binding**: Prefer returning `ObservableProperty` over raw values
+- **Two-way binding**: Return `ObservableProperty` for editable fields
+- **One-way binding**: Return raw value (`.value`) for read-only display
 
 ### 2. Command Dependencies
 When `canExecute` depends on other properties, refresh the command. **Always use descriptive disposer names:**
@@ -751,19 +794,19 @@ class MyViewModel extends ObservableObject {
 }
 ```
 
-### 3. Selector Stability
-Selectors must return stable property references. Never create new instances:
+### 3. Binding Stability
+Binding functions must return stable property references. Never create new instances:
 
 ```dart
 // ❌ BAD: Creates new property each time
 Bind<MyViewModel, int>(
-  selector: (vm) => ObservableProperty<int>(vm.counter.value),
+  bind: (vm) => ObservableProperty<int>(vm.counter.value),
   builder: ...
 )
 
 // ✅ GOOD: Returns stable property reference
 Bind<MyViewModel, int>(
-  selector: (vm) => vm.counter,
+  bind: (vm) => vm.counter,
   builder: ...
 )
 ```
@@ -786,13 +829,13 @@ FairyScope(
 
 // ✅ CORRECT: Services in FairyLocator (main.dart)
 void main() {
-  FairyLocator.instance.registerSingleton<ApiService>(ApiService());
+  FairyLocator.registerSingleton<ApiService>(ApiService());
   runApp(MyApp());
 }
 
 // ❌ WRONG: ViewModels in FairyLocator (memory leak!)
 void main() {
-  FairyLocator.instance.register<ProfileViewModel>(ProfileViewModel());
+  FairyLocator.register<ProfileViewModel>(ProfileViewModel());
   runApp(MyApp());
 }
 ```
@@ -1065,20 +1108,6 @@ These are public but the factory constructors (`Bind.viewModel`, `Command.param`
 - **Rebuild Efficiency**: 100% selective - only rebuilds widgets when their accessed properties/commands change
 - **Memory Trade-off**: Intentional 14% increase for superior rebuild performance and developer experience
 
-## Migration from 0.5.x to 1.0.0-rc.1
-
-### Breaking Changes
-
-1. **Remove extension methods** - Use direct types:
-   - `observableProperty<T>()` → `ObservableProperty<T>()`
-   - `computedProperty<T>()` → `ComputedProperty<T>()`
-   - `relayCommand()` → `RelayCommand()`
-   - `asyncRelayCommand()` → `AsyncRelayCommand()`
-
-2. **Remove parent parameter** from all commands:
-   - Before: `RelayCommand(execute, parent: this, canExecute: ...)`
-   - After: `RelayCommand(execute, canExecute: ...)`
-
 ## Package Structure
 
 ```
@@ -1113,7 +1142,7 @@ lib/
 **Solution**: Always capture and call disposers from `propertyChanged()` or use `Bind`/`Command` widgets.
 
 ### Error: Widget not rebuilding
-**Solution**: Ensure selector returns ObservableProperty, not raw value. Or use `Bind.viewModel`.
+**Solution**: Ensure `bind` parameter returns ObservableProperty, not raw value. Or use `Bind.viewModel`.
 
 ### Error: Command not updating `canExecute`
 **Solution**: Call `command.notifyCanExecuteChanged()` when dependencies change.
@@ -1122,11 +1151,11 @@ lib/
 
 - ViewModels are pure Dart classes - easy to unit test
 - Use `FairyScope` in widget tests for integration testing
-- **565 comprehensive tests passing** covering all core functionality:
+- **574 comprehensive tests passing** covering all core functionality:
   - ComputedProperty (with required parent)
   - All command types (sync, async, parameterized)
-  - **Command auto-tracking in Bind.viewModel** (v1.4.0)
-  - **Command selector patterns and edge cases** (v1.4.0)
+  - Command auto-tracking in Bind.viewModel
+  - Command error handling scenarios
   - Auto-disposal and memory management
   - Dependency injection (scoped and global)
   - Widget binding and lifecycle (Bind, Command, FairyBridge)
@@ -1136,7 +1165,8 @@ lib/
 
 ## Version History
 
-- **v1.4.0** (Current) - Command auto-tracking in Bind.viewModel, improved benchmark methodology, 565 tests passing
+- **v2.0.0** (Current) - Cleaner API (`bind:` parameter, static `FairyLocator`), command error handling, 574 tests passing
+- **v1.4.0** - Command auto-tracking in Bind.viewModel, improved benchmark methodology, 565 tests passing
 - **v1.1.2** - Documentation & testing improvements, 443 tests passing
 - **v1.1.1** - Required parent parameter for ComputedProperty (memory leak fix)
 - **v1.1.0** - Enhanced disposal safety and error handling

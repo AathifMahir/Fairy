@@ -2,7 +2,7 @@ import 'package:fairy/src/utils/lifecycle.dart';
 
 /// A global dependency injection container for app-wide services and ViewModels.
 ///
-/// [FairyLocator] is a singleton that provides service location capabilities
+/// [FairyLocator] provides static service location capabilities
 /// throughout your application. It supports singleton, lazy singleton, async
 /// singleton, and transient registrations.
 ///
@@ -22,31 +22,30 @@ import 'package:fairy/src/utils/lifecycle.dart';
 /// ```dart
 /// void main() async {
 ///   // Eager singleton
-///   Fairy.instance.registerSingleton<ApiService>(ApiService());
+///   FairyLocator.registerSingleton<ApiService>(ApiService());
 ///
 ///   // Lazy singleton
-///   Fairy.instance.registerLazySingleton<Logger>(() => Logger());
+///   FairyLocator.registerLazySingleton<Logger>(() => Logger());
 ///
 ///   // Async singleton (await during app startup)
-///   await Fairy.instance.registerSingletonAsync<DatabaseService>(
+///   await FairyLocator.registerSingletonAsync<DatabaseService>(
 ///     () async => await DatabaseService.connect(),
 ///   );
 ///
 ///   // Transient (new instance each time)
-///   Fairy.instance.registerTransient<RequestId>(() => RequestId.generate());
+///   FairyLocator.registerTransient<RequestId>(() => RequestId.generate());
 ///
 ///   runApp(MyApp());
 /// }
 ///
 /// // Access anywhere
-/// final api = Fairy.instance.get<ApiService>();
-/// final logger = Fairy.instance.get<Logger>();
+/// final api = FairyLocator.get<ApiService>();
+/// final logger = FairyLocator.get<Logger>();
 /// ```
 class FairyLocator {
   FairyLocator._internal();
 
-  /// The singleton instance of [FairyLocator].
-  static final FairyLocator instance = FairyLocator._internal();
+  static final FairyLocator _instance = FairyLocator._internal();
 
   final Map<Type, Object> _singletons = {};
   final Map<Type, Object Function()> _factories = {};
@@ -61,13 +60,14 @@ class FairyLocator {
   /// Example:
   /// ```dart
   /// final service = MyService();
-  /// Fairy.instance.registerSingleton<MyService>(service);
+  /// FairyLocator.registerSingleton<MyService>(service);
   /// ```
-  void registerSingleton<T extends Object>(T instance) {
-    if (_singletons.containsKey(T) || _factories.containsKey(T)) {
+  static void registerSingleton<T extends Object>(T instance) {
+    if (_instance._singletons.containsKey(T) ||
+        _instance._factories.containsKey(T)) {
       throw StateError('Type $T is already registered');
     }
-    _singletons[T] = instance;
+    _instance._singletons[T] = instance;
   }
 
   /// Registers a lazy singleton of type [T].
@@ -80,18 +80,19 @@ class FairyLocator {
   ///
   /// Example:
   /// ```dart
-  /// Fairy.instance.registerLazySingleton<DatabaseService>(
+  /// FairyLocator.registerLazySingleton<DatabaseService>(
   ///   () => DatabaseService(),
   /// );
   /// ```
-  void registerLazySingleton<T extends Object>(T Function() factory) {
-    if (_singletons.containsKey(T) || _factories.containsKey(T)) {
+  static void registerLazySingleton<T extends Object>(T Function() factory) {
+    if (_instance._singletons.containsKey(T) ||
+        _instance._factories.containsKey(T)) {
       throw StateError('Type $T is already registered');
     }
-    _factories[T] = () {
+    _instance._factories[T] = () {
       final instance = factory();
-      _singletons[T] = instance;
-      _factories.remove(T);
+      _instance._singletons[T] = instance;
+      _instance._factories.remove(T);
       return instance;
     };
   }
@@ -108,20 +109,21 @@ class FairyLocator {
   ///
   /// Example:
   /// ```dart
-  /// await Fairy.instance.registerSingletonAsync<DatabaseService>(
+  /// await FairyLocator.registerSingletonAsync<DatabaseService>(
   ///   () async => await DatabaseService.connect(),
   /// );
   /// // Now available synchronously
-  /// final db = Fairy.instance.get<DatabaseService>();
+  /// final db = FairyLocator.get<DatabaseService>();
   /// ```
-  Future<void> registerSingletonAsync<T extends Object>(
+  static Future<void> registerSingletonAsync<T extends Object>(
     Future<T> Function() factory,
   ) async {
-    if (_singletons.containsKey(T) || _factories.containsKey(T)) {
+    if (_instance._singletons.containsKey(T) ||
+        _instance._factories.containsKey(T)) {
       throw StateError('Type $T is already registered');
     }
     final instance = await factory();
-    _singletons[T] = instance;
+    _instance._singletons[T] = instance;
   }
 
   /// Registers a lazy singleton with async initialization.
@@ -142,32 +144,33 @@ class FairyLocator {
   /// Example:
   /// ```dart
   /// // Register lazy async (not recommended)
-  /// await Fairy.instance.registerLazySingletonAsync<ApiClient>(
+  /// await FairyLocator.registerLazySingletonAsync<ApiClient>(
   ///   () async => await ApiClient.connect(),
   /// );
   ///
   /// // Will throw! Instance not initialized
-  /// // final api = Fairy.instance.get<ApiClient>();
+  /// // final api = FairyLocator.get<ApiClient>();
   ///
   /// // Better: use eager async
-  /// await Fairy.instance.registerSingletonAsync<ApiClient>(
+  /// await FairyLocator.registerSingletonAsync<ApiClient>(
   ///   () async => await ApiClient.connect(),
   /// );
   /// ```
-  Future<void> registerLazySingletonAsync<T extends Object>(
+  static Future<void> registerLazySingletonAsync<T extends Object>(
     Future<T> Function() factory,
   ) async {
-    if (_singletons.containsKey(T) || _factories.containsKey(T)) {
+    if (_instance._singletons.containsKey(T) ||
+        _instance._factories.containsKey(T)) {
       throw StateError('Type $T is already registered');
     }
 
     // Store a sync factory that throws, requiring explicit async initialization
-    _factories[T] = () {
+    _instance._factories[T] = () {
       throw StateError(
         'Lazy async singleton of type $T has not been initialized yet.\n'
         'Lazy async singletons cannot be initialized on-demand because get<T>() is synchronous.\n'
         'Consider using registerSingletonAsync() for eager initialization instead:\n'
-        '  await Fairy.instance.registerSingletonAsync<$T>(() async => ...)',
+        '  await FairyLocator.registerSingletonAsync<$T>(() async => ...)',
       );
     };
   }
@@ -183,16 +186,17 @@ class FairyLocator {
   ///
   /// Example:
   /// ```dart
-  /// Fairy.instance.registerTransient<Logger>(() => Logger());
+  /// FairyLocator.registerTransient<Logger>(() => Logger());
   ///
-  /// final logger1 = Fairy.instance.get<Logger>(); // New instance
-  /// final logger2 = Fairy.instance.get<Logger>(); // Another new instance
+  /// final logger1 = FairyLocator.get<Logger>(); // New instance
+  /// final logger2 = FairyLocator.get<Logger>(); // Another new instance
   /// ```
-  void registerTransient<T extends Object>(T Function() factory) {
-    if (_singletons.containsKey(T) || _factories.containsKey(T)) {
+  static void registerTransient<T extends Object>(T Function() factory) {
+    if (_instance._singletons.containsKey(T) ||
+        _instance._factories.containsKey(T)) {
       throw StateError('Type $T is already registered');
     }
-    _factories[T] = factory;
+    _instance._factories[T] = factory;
   }
 
   /// Retrieves an instance of type [T].
@@ -202,12 +206,12 @@ class FairyLocator {
   ///
   /// Example:
   /// ```dart
-  /// final service = FairyLocator.instance.get<MyService>();
+  /// final service = FairyLocator.get<MyService>();
   /// ```
-  T get<T extends Object>() {
+  static T get<T extends Object>() {
     // Check singletons first
-    if (_singletons.containsKey(T)) {
-      final instance = _singletons[T]! as T;
+    if (_instance._singletons.containsKey(T)) {
+      final instance = _instance._singletons[T]! as T;
 
       if (instance is Disposable && instance.isDisposed) {
         throw StateError(
@@ -217,7 +221,7 @@ class FairyLocator {
           '2. App is shutting down\n'
           'Consider unregistering disposed ViewModels:\n'
           '  vm.dispose();\n'
-          '  FairyLocator.instance.unregister<$T>();',
+          '  FairyLocator.unregister<$T>();',
         );
       }
 
@@ -225,18 +229,18 @@ class FairyLocator {
     }
 
     // Check factories
-    if (_factories.containsKey(T)) {
-      final factory = _factories[T]! as T Function();
+    if (_instance._factories.containsKey(T)) {
+      final factory = _instance._factories[T]! as T Function();
       return factory();
     }
 
     throw StateError(
       'No registration found for type $T.\n'
       'Make sure to register it using:\n'
-      '  - Fairy.instance.registerSingleton<$T>(instance)\n'
-      '  - Fairy.instance.registerLazySingleton<$T>(() => ...)\n'
-      '  - await Fairy.instance.registerSingletonAsync<$T>(() async => ...)\n'
-      '  - Fairy.instance.registerTransient<$T>(() => ...)',
+      '  - FairyLocator.registerSingleton<$T>(instance)\n'
+      '  - FairyLocator.registerLazySingleton<$T>(() => ...)\n'
+      '  - await FairyLocator.registerSingletonAsync<$T>(() async => ...)\n'
+      '  - FairyLocator.registerTransient<$T>(() => ...)',
     );
   }
 
@@ -246,12 +250,13 @@ class FairyLocator {
   ///
   /// Example:
   /// ```dart
-  /// if (FairyLocator.instance.contains<MyService>()) {
+  /// if (FairyLocator.contains<MyService>()) {
   ///   // Service is registered
   /// }
   /// ```
-  bool contains<T extends Object>() =>
-      _singletons.containsKey(T) || _factories.containsKey(T);
+  static bool contains<T extends Object>() =>
+      _instance._singletons.containsKey(T) ||
+      _instance._factories.containsKey(T);
 
   /// Unregisters the type [T] from the locator.
   ///
@@ -261,26 +266,26 @@ class FairyLocator {
   ///
   /// Example:
   /// ```dart
-  /// final vm = FairyLocator.instance.get<MyViewModel>();
+  /// final vm = FairyLocator.get<MyViewModel>();
   /// vm.dispose();
-  /// FairyLocator.instance.unregister<MyViewModel>();
+  /// FairyLocator.unregister<MyViewModel>();
   /// ```
-  void unregister<T extends Object>() {
-    _singletons.remove(T);
-    _factories.remove(T);
+  static void unregister<T extends Object>() {
+    _instance._singletons.remove(T);
+    _instance._factories.remove(T);
   }
 
   /// Clears all registrations.
   ///
   /// **Warning:** This does NOT call `dispose()` on any instances.
   /// Use with caution, typically only for testing or app teardown.
-  void clear() {
-    _singletons.clear();
-    _factories.clear();
+  static void clear() {
+    _instance._singletons.clear();
+    _instance._factories.clear();
   }
 
   /// Resets the locator to its initial empty state.
   ///
   /// Equivalent to [clear]. Provided for API compatibility.
-  void reset() => clear();
+  static void reset() => clear();
 }

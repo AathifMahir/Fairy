@@ -26,8 +26,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<SimpleViewModel, String>(
-              selector: (vm) =>
-                  vm.message, // Raw String, not ObservableProperty
+              bind: (vm) => vm.message, // Raw String, not ObservableProperty
               builder: (context, value, update) {
                 capturedUpdate = update;
                 return Text(value);
@@ -50,7 +49,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<SimpleViewModel, String>(
-              selector: (vm) => vm.message,
+              bind: (vm) => vm.message,
               builder: (context, value, update) => Text(value),
             ),
           ),
@@ -75,7 +74,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<SimpleViewModel, String>(
-              selector: (vm) => vm.message,
+              bind: (vm) => vm.message,
               builder: (context, value, update) {
                 buildCount++;
                 return Text(value);

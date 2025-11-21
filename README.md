@@ -23,6 +23,8 @@ A lightweight MVVM framework for Flutter with strongly-typed reactive data bindi
 - [Best Practices](#best-practices)
 - [Performance](#performance)
 - [Testing](#testing)
+- [Documentation](#documentation)
+- [Maintenance & Release Cadence](#maintenance--release-cadence)
 
 ## Features
 
@@ -30,13 +32,13 @@ A lightweight MVVM framework for Flutter with strongly-typed reactive data bindi
 - 🎯 **Type-Safe** - Strongly-typed with compile-time safety
 - ✨ **No Code Generation** - Runtime-only, no build_runner
 - 🔄 **Auto UI Updates** - Data binding that just works
-- ⚡ **Command Pattern** - Actions with `canExecute` validation
+- ⚡ **Command Pattern** - Actions with `canExecute` validation and error handling
 - 🏗️ **Dependency Injection** - Global and scoped DI
 - 📦 **Lightweight** - Zero external dependencies
 
 ```yaml
 dependencies:
-  fairy: ^1.4.0
+  fairy: ^2.0.0
 ```
 
 ```dart
@@ -56,8 +58,8 @@ void main() => runApp(
 
 // 3. Bind UI
 Bind<CounterViewModel, int>(
-  selector: (vm) => vm.counter,
-  builder: (context, value, update) => Text('$value'),
+  bind: (vm) => vm.counter,
+  builder: (context, value, update) => Text('\$value'),
 )
 
 Command<CounterViewModel>(
@@ -81,14 +83,16 @@ Command<CounterViewModel>(
 
 ### Command Types
 
-| Type | Parameters | Async | Example |
-|------|-----------|-------|---------|
-| `RelayCommand` | ❌ | ❌ | `late final save = RelayCommand(_save);` |
-| `AsyncRelayCommand` | ❌ | ✅ | `late final fetch = AsyncRelayCommand(_fetch);` |
-| `RelayCommandWithParam<T>` | ✅ | ❌ | `late final delete = RelayCommandWithParam<String>(_delete);` |
-| `AsyncRelayCommandWithParam<T>` | ✅ | ✅ | `late final upload = AsyncRelayCommandWithParam<File>(_upload);` |
+| Type | Parameters | Async | Error Handling | Example |
+|------|-----------|-------|----------------|---------|
+| `RelayCommand` | ❌ | ❌ | ✅ | `late final save = RelayCommand(_save, onError: _handleError);` |
+| `AsyncRelayCommand` | ❌ | ✅ | ✅ | `late final fetch = AsyncRelayCommand(_fetch, onError: _handleError);` |
+| `RelayCommandWithParam<T>` | ✅ | ❌ | ✅ | `late final delete = RelayCommandWithParam<String>(_delete, onError: _handleError);` |
+| `AsyncRelayCommandWithParam<T>` | ✅ | ✅ | ✅ | `late final upload = AsyncRelayCommandWithParam<File>(_upload, onError: _handleError);` |
 
 **Async commands** automatically track `isRunning` and prevent concurrent execution.
+
+**Error handling** is optional via `onError` callback - store errors in ViewModel properties and display with `Bind`.
 
 ### Widget Types
 
@@ -107,16 +111,25 @@ Command<CounterViewModel>(
 class LoginViewModel extends ObservableObject {
   final email = ObservableProperty<String>('');
   final password = ObservableProperty<String>('');
+  final errorMessage = ObservableProperty<String?>(null);
   
   late final isValid = ComputedProperty<bool>(
     () => email.value.contains('@') && password.value.length >= 8,
     [email, password], this,
   );
   
-  late final loginCommand = AsyncRelayCommand(_login, 
-    canExecute: () => isValid.value);
+  late final loginCommand = AsyncRelayCommand(
+    _login,
+    canExecute: () => isValid.value,
+    onError: (error, stackTrace) {
+      errorMessage.value = 'Login failed: \$error';
+    },
+  );
   
-  Future<void> _login() async { /* ... */ }
+  Future<void> _login() async {
+    errorMessage.value = null; // Clear previous errors
+    await authService.login(email.value, password.value);
+  }
 }
 ```
 
@@ -134,18 +147,42 @@ late final deleteCommand = RelayCommandWithParam<String>(
 );
 ```
 
-### Loading States
+### Loading States with Error Handling
 
 ```dart
-late final fetchCommand = AsyncRelayCommand(_fetch);
+class MyViewModel extends ObservableObject {
+  final data = ObservableProperty<List<Item>>([]);
+  final error = ObservableProperty<String?>(null);
+  
+  late final fetchCommand = AsyncRelayCommand(
+    _fetch,
+    onError: (e, _) => error.value = e.toString(),
+  );
+  
+  Future<void> _fetch() async {
+    error.value = null;
+    data.value = await apiService.fetchData();
+  }
+}
 
-// In UI - isRunning automatically prevents double-taps
-Command<MyVM>(
-  command: (vm) => vm.fetchCommand,
-  builder: (context, execute, canExecute, isRunning) {
-    if (isRunning) return CircularProgressIndicator();
-    return ElevatedButton(onPressed: execute, child: Text('Fetch'));
-  },
+// UI - Show loading, error, or data
+Column(
+  children: [
+    Bind<MyViewModel, String?>(
+      bind: (vm) => vm.error,
+      builder: (context, error, _) {
+        if (error != null) return ErrorCard(error);
+        return SizedBox.shrink();
+      },
+    ),
+    Command<MyViewModel>(
+      command: (vm) => vm.fetchCommand,
+      builder: (context, execute, canExecute, isRunning) {
+        if (isRunning) return CircularProgressIndicator();
+        return ElevatedButton(onPressed: execute, child: Text('Fetch'));
+      },
+    ),
+  ],
 )
 ```
 
@@ -190,7 +227,7 @@ Command<MyViewModel>(
 **Single property (two-way):**
 ```dart
 Bind<UserViewModel, String>(
-  selector: (vm) => vm.name,  // Returns ObservableProperty - two-way binding
+  bind: (vm) => vm.name,  // Returns ObservableProperty - two-way binding
   builder: (context, value, update) => TextField(
     controller: TextEditingController(text: value),
     onChanged: update,  // update() available for two-way binding
@@ -201,7 +238,7 @@ Bind<UserViewModel, String>(
 **Single property (one-way):**
 ```dart
 Bind<UserViewModel, String>(
-  selector: (vm) => vm.name.value,  // Returns raw value - one-way binding
+  bind: (vm) => vm.name.value,  // Returns raw value - one-way binding
   builder: (context, value, update) => Text(value),  // No update needed
 )
 ```
@@ -267,8 +304,8 @@ final vm = Fairy.of<UserViewModel>(context);
 ```dart
 // Register services in main()
 void main() {
-  FairyLocator.instance.registerSingleton<ApiService>(ApiService());
-  FairyLocator.instance.registerLazySingleton<DbService>(() => DbService());
+  FairyLocator.registerSingleton<ApiService>(ApiService());
+  FairyLocator.registerLazySingleton<DbService>(() => DbService());
   runApp(MyApp());
 }
 
@@ -292,7 +329,7 @@ showDialog(
     context: context,
     child: AlertDialog(
       content: Bind<MyViewModel, String>(
-        selector: (vm) => vm.data,
+        bind: (vm) => vm.data,
         builder: (context, value, _) => Text(value),
       ),
     ),
@@ -422,8 +459,8 @@ dispose = viewModel.propertyChanged(() { print('changed'); });
 
 // ✅ BEST: Use Bind/Command widgets (auto-managed)
 Bind<MyViewModel, int>(
-  selector: (vm) => vm.counter,
-  builder: (context, value, _) => Text('$value'),
+  bind: (vm) => vm.counter,
+  builder: (context, value, _) => Text('\$value'),
 )
 ```
 
@@ -441,10 +478,10 @@ FairyScope(
 
 ### Choose Right Binding
 
-- **Single property (two-way):** `Bind<VM, T>` with `selector: (vm) => vm.prop` (returns ObservableProperty)
-- **Single property (one-way):** `Bind<VM, T>` with `selector: (vm) => vm.prop.value` (returns raw value)
+- **Single property (two-way):** `Bind<VM, T>` with `bind: (vm) => vm.prop` (returns ObservableProperty)
+- **Single property (one-way):** `Bind<VM, T>` with `bind: (vm) => vm.prop.value` (returns raw value)
 - **Multiple properties:** `Bind.viewModel<VM>` for auto-tracking
-- **Avoid:** Creating new instances in selectors (causes infinite rebuilds)
+- **Avoid:** Creating new instances in binds (causes infinite rebuilds)
 
 ## Performance
 
@@ -452,18 +489,18 @@ Fairy is designed for performance. Benchmark results comparing with popular stat
 
 | Category | Fairy | Provider | Riverpod |
 |----------|-------|----------|----------|
-| Widget Performance (1000 interactions) | 116.5% | 104.9% | **100%** 🥇 |
-| Memory Management (50 cycles) | 113.9% | 105.1% | **100%** 🥇 |
-| Selective Rebuild (explicit Bind) | **100%** 🥇 | 138.3% | 130.2% |
-| Auto-tracking Rebuild (Bind.viewModel) | **100%** 🥇 | 132.4% | 124.5% |
+| Widget Performance (1000 interactions) | 112.7% | 101.9% | **100%** 🥇 |
+| Memory Management (50 cycles) | 112.6% | 103.9% | **100%** 🥇 |
+| Selective Rebuild (explicit Bind) | **100%** 🥇 | 133.5% | 131.3% |
+| Auto-tracking Rebuild (Bind.viewModel) | **100%** 🥇 | 133.3% | 126.1% |
 
 ### Key Achievements
-- **🥇 Fastest Selective Rebuilds** - 30-38% faster with explicit binding
-- **🥇 Fastest Auto-tracking** - 24-32% faster while maintaining 100% rebuild efficiency
+- **🥇 Fastest Selective Rebuilds** - 31-34% faster with explicit binding
+- **🥇 Fastest Auto-tracking** - 26-33% faster while maintaining 100% rebuild efficiency
 - **Unique**: Only framework achieving 100% selective efficiency (500 rebuilds) vs 33% for Provider/Riverpod (1500 rebuilds)
-- **Memory**: **Intentional design decision** to use 14% more memory in exchange for 24-38% faster rebuilds (both auto-tracking and selective binding) plus superior developer experience with command auto-tracking
+- **Memory**: **Intentional design decision** to use 13% more memory in exchange for 26-34% faster rebuilds (both auto-tracking and selective binding) plus superior developer experience with command auto-tracking
 
-*Lower is better. Percentages relative to the fastest framework in each category. Benchmarked on v1.4.0.*
+*Lower is better. Percentages relative to the fastest framework in each category. Benchmarked on v2.0.0.*
 
 ## Example
 
@@ -476,7 +513,7 @@ See the [example](./src/example) directory for a complete counter app demonstrat
 
 ## Testing
 
-**565 tests passing** - covering observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, command auto-tracking, and overlays.
+**574 tests passing** - covering observable properties, commands, auto-disposal, dependency injection, widget binding, deep equality, command auto-tracking, error handling, and overlays.
 
 ```dart
 test('increment updates counter', () {
@@ -511,13 +548,13 @@ testWidgets('counter increments on tap', (tester) async {
 
 ### Binding Patterns
 ✅ **DO**: 
-- One-way (read-only): `selector: (vm) => vm.property.value`
-- Two-way (editable): `selector: (vm) => vm.property` (returns ObservableProperty)
-- Tuples (one-way): `selector: (vm) => (vm.a.value, vm.b.value)` ← All `.value`!
+- One-way (read-only): `bind: (vm) => vm.property.value`
+- Two-way (editable): `bind: (vm) => vm.property` (returns ObservableProperty)
+- Tuples (one-way): `bind: (vm) => (vm.a.value, vm.b.value)` ← All `.value`!
 
 ❌ **DON'T**: 
 - Mix in tuples: `(vm.a.value, vm.b)` ← TypeError!
-- Create new instances in selectors ← Infinite rebuilds!
+- Create new instances in binds ← Infinite rebuilds!
 
 ### Commands
 ✅ **DO**: Call `notifyCanExecuteChanged()` when conditions change, use `AsyncRelayCommand` for async  
@@ -536,6 +573,27 @@ testWidgets('counter increments on tap', (tester) async {
 | Command Pattern | **✅** | ❌ | ❌ | ❌ | ❌ |
 | Two-Way Binding | **✅** | ❌ | ❌ | ✅ | ❌ |
 | Auto-Disposal | **✅** | ⚠️ | ✅ | ✅ | ⚠️ |
+
+## Documentation
+
+For LLM-optimized documentation, see [llms.txt](https://github.com/AathifMahir/Fairy/blob/main/llms.txt) - comprehensive API reference for AI assistants.
+
+## Maintenance & Release Cadence
+
+Fairy follows a **non-breaking minor version** principle:
+
+- **Major versions** (v1.0, v2.0, v3.0): May include breaking changes with migration guides
+- **Minor versions** (v1.1, v1.2, v2.1, v2.2): New features and enhancements, **no breaking changes**
+- **Patch versions** (v1.1.1, v2.0.1): Bug fixes and documentation updates only
+
+**Examples:**
+- ✅ v1.1, v1.2, v1.3 → All backward compatible with v1.0
+- ✅ v2.1, v2.2, v2.3 → All backward compatible with v2.0
+- ⚠️ v2.0 → May have breaking changes from v1.x (see CHANGELOG for migration guide)
+
+**Upgrade confidence:** You can safely upgrade within the same major version without code changes.
+
+**Support policy:** Only the current and previous major versions receive updates. Once v3.0 is released, v1.x will no longer receive updates (v2.x and v3.x will be supported).
 
 ## License
 

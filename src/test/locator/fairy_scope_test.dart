@@ -342,7 +342,6 @@ void main() {
         await tester.pumpWidget(
           FairyScope(
             viewModel: (locator) => vm,
-            autoDispose: true,
             child: const SizedBox(),
           ),
         );
@@ -623,14 +622,14 @@ void main() {
   group('FairyScopeLocator', () {
     setUp(() {
       // Reset FairyLocator before each test
-      FairyLocator.instance.reset();
+      FairyLocator.reset();
     });
 
     group('dependency resolution from FairyLocator', () {
       testWidgets('should resolve service from FairyLocator', (tester) async {
         // Register service globally
         final service = TestService();
-        FairyLocator.instance.registerSingleton<TestService>(service);
+        FairyLocator.registerSingleton<TestService>(service);
 
         TestViewModel? vm;
 
@@ -658,8 +657,8 @@ void main() {
         final service1 = TestService();
         final service2 = AnotherService();
 
-        FairyLocator.instance.registerSingleton<TestService>(service1);
-        FairyLocator.instance.registerSingleton<AnotherService>(service2);
+        FairyLocator.registerSingleton<TestService>(service1);
+        FairyLocator.registerSingleton<AnotherService>(service2);
 
         await tester.pumpWidget(
           FairyScope(
@@ -865,7 +864,7 @@ void main() {
       testWidgets('should resolve from both parent scope and FairyLocator',
           (tester) async {
         final service = TestService();
-        FairyLocator.instance.registerSingleton<TestService>(service);
+        FairyLocator.registerSingleton<TestService>(service);
 
         final parentVm = TestViewModel();
 
@@ -895,7 +894,7 @@ void main() {
           (tester) async {
         // Register in FairyLocator
         final globalVm = TestViewModel();
-        FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+        FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
         // Register in parent scope (should shadow global)
         final scopedVm = TestViewModel();
@@ -1041,7 +1040,7 @@ void main() {
       testWidgets('should handle deep nesting with mixed dependencies',
           (tester) async {
         final service = TestService();
-        FairyLocator.instance.registerSingleton<TestService>(service);
+        FairyLocator.registerSingleton<TestService>(service);
 
         await tester.pumpWidget(
           FairyScope(

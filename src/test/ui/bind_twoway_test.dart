@@ -15,7 +15,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 expect(update, isNotNull); // Two-way binding
                 return Text(value);
@@ -39,7 +39,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 capturedUpdate = update;
                 return const SizedBox();
@@ -61,7 +61,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 return Text(value);
               },
@@ -89,7 +89,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 updateCallback = update;
                 return Text(value);
@@ -119,7 +119,7 @@ void main() {
             body: FairyScope(
               viewModel: (_) => vm,
               child: Bind<TestViewModel, String>(
-                selector: (vm) => vm.name,
+                bind: (vm) => vm.name,
                 builder: (context, value, update) {
                   return TextField(
                     key: const Key('textfield'),
@@ -150,7 +150,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<CounterViewModel, int>(
-              selector: (vm) => vm.count,
+              bind: (vm) => vm.count,
               builder: (context, value, update) {
                 return Column(
                   children: [
@@ -184,7 +184,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<NullableViewModel, String?>(
-              selector: (vm) => vm.optionalName,
+              bind: (vm) => vm.optionalName,
               builder: (context, value, update) {
                 return Column(
                   children: [
@@ -219,7 +219,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 return Text(value);
               },
@@ -243,7 +243,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 return Text(value);
               },
@@ -272,7 +272,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 return Text(value);
               },
@@ -307,13 +307,13 @@ void main() {
             child: Column(
               children: [
                 Bind<TestViewModel, String>(
-                  selector: (vm) => vm.name,
+                  bind: (vm) => vm.name,
                   builder: (context, value, update) {
                     return Text('Widget 1: $value');
                   },
                 ),
                 Bind<TestViewModel, String>(
-                  selector: (vm) => vm.name,
+                  bind: (vm) => vm.name,
                   builder: (context, value, update) {
                     return Text('Widget 2: $value');
                   },
@@ -343,7 +343,7 @@ void main() {
             body: FairyScope(
               viewModel: (_) => vm,
               child: Bind<BoolViewModel, bool>(
-                selector: (vm) => vm.isEnabled,
+                bind: (vm) => vm.isEnabled,
                 builder: (context, value, update) {
                   return Checkbox(
                     value: value,
@@ -373,7 +373,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<CustomObjectViewModel, User>(
-              selector: (vm) => vm.user,
+              bind: (vm) => vm.user,
               builder: (context, value, update) {
                 return Column(
                   children: [
@@ -399,7 +399,7 @@ void main() {
       expect(vm.user.value.name, equals('Bob'));
     });
 
-    testWidgets('should handle selector returning different property instance',
+    testWidgets('should handle bind returning different property instance',
         (tester) async {
       final vm = TestViewModel();
       var useFirstProperty = true;
@@ -413,8 +413,7 @@ void main() {
                 return Column(
                   children: [
                     Bind<TestViewModel, String>(
-                      selector: (vm) =>
-                          useFirstProperty ? vm.name : vm.description,
+                      bind: (vm) => useFirstProperty ? vm.name : vm.description,
                       builder: (context, value, update) {
                         return Text(value);
                       },
@@ -450,7 +449,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, String>(
-              selector: (vm) => vm.name,
+              bind: (vm) => vm.name,
               builder: (context, value, update) {
                 buildCount++;
                 return Text(value);

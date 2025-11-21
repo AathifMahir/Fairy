@@ -321,9 +321,9 @@ void main() {
       final vm = TestViewModel();
 
       // Register globally so FairyScope doesn't dispose it
-      FairyLocator.instance.registerSingleton<TestViewModel>(vm);
+      FairyLocator.registerSingleton<TestViewModel>(vm);
       addTearDown(() {
-        FairyLocator.instance.unregister<TestViewModel>();
+        FairyLocator.unregister<TestViewModel>();
         vm.dispose();
       });
 

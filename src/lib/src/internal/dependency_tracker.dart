@@ -115,14 +115,15 @@ class _TrackingSession {
 
 /// InheritedWidget propagating tracking session down the tree.
 /// Enables deferred callbacks (itemBuilder) to report accesses.
-/// Wraps _ContextSetter to capture BuildContext. Internal use only.
+/// Phase 2.2 optimization: Captures BuildContext directly in initState.
+/// Internal use only.
 class _TrackingContextWidget extends InheritedWidget {
   final _TrackingSession session;
 
-  _TrackingContextWidget({
+  const _TrackingContextWidget({
     required this.session,
-    required Widget child,
-  }) : super(child: _ContextSetter(child: child));
+    required super.child,
+  });
 
   /// Retrieves nearest tracking session from widget tree.
   /// Used by reportAccess() as fallback for deferred callbacks.
@@ -136,29 +137,29 @@ class _TrackingContextWidget extends InheritedWidget {
   bool updateShouldNotify(_TrackingContextWidget oldWidget) {
     return false; // Session identity never changes
   }
-}
-
-/// StatefulWidget setting BuildContext for lazy builder tracking.
-/// Ensures context is available for deferred callback session lookup.
-class _ContextSetter extends StatefulWidget {
-  final Widget child;
-
-  const _ContextSetter({required this.child});
 
   @override
-  State<_ContextSetter> createState() => _ContextSetterState();
+  InheritedElement createElement() {
+    return _TrackingContextElement(this);
+  }
 }
 
-class _ContextSetterState extends State<_ContextSetter> {
+/// Custom Element that captures BuildContext on mount.
+/// Phase 2.2 optimization: Eliminates _ContextSetter StatefulWidget overhead.
+class _TrackingContextElement extends InheritedElement {
+  _TrackingContextElement(_TrackingContextWidget super.widget);
+
   @override
-  Widget build(BuildContext context) {
-    DependencyTracker.setCurrentContext(context);
-    return widget.child;
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    // Capture context immediately after mounting
+    DependencyTracker.setCurrentContext(this);
   }
 
   @override
-  void dispose() {
+  void unmount() {
+    // Clear context before unmounting
     DependencyTracker.setCurrentContext(null);
-    super.dispose();
+    super.unmount();
   }
 }

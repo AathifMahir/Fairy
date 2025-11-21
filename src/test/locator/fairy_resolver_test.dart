@@ -9,12 +9,12 @@ import 'package:fairy/src/ui/fairy_bridge.dart';
 void main() {
   setUp(() {
     // Clear FairyLocator before each test
-    FairyLocator.instance.clear();
+    FairyLocator.clear();
   });
 
   tearDown(() {
     // Clean up after each test
-    FairyLocator.instance.clear();
+    FairyLocator.clear();
   });
 
   group('Fairy.of()', () {
@@ -42,7 +42,7 @@ void main() {
     testWidgets('should resolve ViewModel from FairyLocator if not in scope',
         (tester) async {
       final globalVm = GlobalViewModel();
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       GlobalViewModel? resolvedVm;
 
@@ -64,7 +64,7 @@ void main() {
       final scopeVm = TestViewModel();
       final globalVm = TestViewModel();
 
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedVm;
 
@@ -114,8 +114,7 @@ void main() {
               Fairy.of<TestViewModel>(context);
               fail('Should have thrown StateError');
             } catch (e) {
-              expect(e.toString(),
-                  contains('FairyLocator.instance.registerSingleton'));
+              expect(e.toString(), contains('FairyLocator.registerSingleton'));
               expect(e.toString(), contains('FairyScope'));
               expect(e.toString(), contains('Make sure to either'));
             }
@@ -195,7 +194,7 @@ void main() {
       final scopeVm = ScopedViewModel();
       final globalVm = GlobalViewModel();
 
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       ScopedViewModel? resolvedScoped;
       GlobalViewModel? resolvedGlobal;
@@ -244,7 +243,7 @@ void main() {
 
     testWidgets('should return ViewModel from FairyLocator', (tester) async {
       final globalVm = GlobalViewModel();
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       GlobalViewModel? resolvedVm;
 
@@ -281,7 +280,7 @@ void main() {
       final scopeVm = TestViewModel();
       final globalVm = TestViewModel();
 
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedVm;
 
@@ -328,7 +327,7 @@ void main() {
       final scopeVm = ScopedViewModel();
       final globalVm = GlobalViewModel();
 
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       ScopedViewModel? resolvedScoped;
       GlobalViewModel? resolvedGlobal;
@@ -360,7 +359,7 @@ void main() {
       final globalVm = TestViewModel();
 
       // Register in global first
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? firstResolve;
       TestViewModel? secondResolve;
@@ -397,7 +396,7 @@ void main() {
       final scopeVm = ScopedViewModel();
       final globalVm = ScopedViewModel();
 
-      FairyLocator.instance.registerSingleton<ScopedViewModel>(globalVm);
+      FairyLocator.registerSingleton<ScopedViewModel>(globalVm);
 
       ScopedViewModel? resolvedBefore;
       ScopedViewModel? resolvedAfter;
@@ -490,7 +489,7 @@ void main() {
 
     testWidgets('should work when no parent FairyScope exists', (tester) async {
       final globalVm = TestViewModel();
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedInOverlay;
 
@@ -517,7 +516,7 @@ void main() {
     testWidgets('should fallback to FairyLocator when no parent scope',
         (tester) async {
       final globalVm = GlobalViewModel();
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(globalVm);
+      FairyLocator.registerSingleton<GlobalViewModel>(globalVm);
 
       GlobalViewModel? resolvedInOverlay;
 
@@ -861,7 +860,7 @@ void main() {
       final scopeVm = TestViewModel();
       final globalVm = TestViewModel();
 
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedInOverlay;
 
@@ -949,9 +948,9 @@ void main() {
       final vm2 = ScopedViewModel();
       final vm3 = GlobalViewModel();
 
-      FairyLocator.instance.registerSingleton<TestViewModel>(vm1);
-      FairyLocator.instance.registerSingleton<ScopedViewModel>(vm2);
-      FairyLocator.instance.registerSingleton<GlobalViewModel>(vm3);
+      FairyLocator.registerSingleton<TestViewModel>(vm1);
+      FairyLocator.registerSingleton<ScopedViewModel>(vm2);
+      FairyLocator.registerSingleton<GlobalViewModel>(vm3);
 
       TestViewModel? resolved1;
       ScopedViewModel? resolved2;
@@ -996,7 +995,7 @@ void main() {
 
     testWidgets('should work when no FairyScope in tree', (tester) async {
       final globalVm = TestViewModel();
-      FairyLocator.instance.registerSingleton<TestViewModel>(globalVm);
+      FairyLocator.registerSingleton<TestViewModel>(globalVm);
 
       TestViewModel? resolvedVm;
 
