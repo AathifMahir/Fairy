@@ -21,6 +21,7 @@ A lightweight MVVM framework for Flutter with strongly-typed reactive data bindi
 - [Best Practices](#best-practices)
 - [Performance](#performance)
 - [Testing](#testing)
+- [Maintenance & Release Cadence](#maintenance--release-cadence)
 
 ## Features
 
@@ -775,6 +776,23 @@ testWidgets('counter increments on tap', (tester) async {
 | Command Pattern | **✅** | ❌ | ❌ | ❌ | ❌ |
 | Two-Way Binding | **✅** | ❌ | ❌ | ✅ | ❌ |
 | Auto-Disposal | **✅** | ⚠️ | ✅ | ✅ | ⚠️ |
+
+## Maintenance & Release Cadence
+
+Fairy follows a **non-breaking minor version** principle:
+
+- **Major versions** (v1.0, v2.0, v3.0): May include breaking changes with migration guides
+- **Minor versions** (v1.1, v1.2, v2.1, v2.2): New features and enhancements, **no breaking changes**
+- **Patch versions** (v1.1.1, v2.0.1): Bug fixes and documentation updates only
+
+**Examples:**
+- ✅ v1.1, v1.2, v1.3 → All backward compatible with v1.0
+- ✅ v2.1, v2.2, v2.3 → All backward compatible with v2.0
+- ⚠️ v2.0 → May have breaking changes from v1.x (see CHANGELOG for migration guide)
+
+**Upgrade confidence:** You can safely upgrade within the same major version without code changes.
+
+**Support policy:** Only the current and previous major versions receive updates. Once v3.0 is released, v1.x will no longer receive updates (v2.x and v3.x will be supported).
 
 ## License
 
