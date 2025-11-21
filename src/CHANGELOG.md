@@ -124,7 +124,10 @@ Bind<LoginViewModel, String?>(
 3. Test thoroughly
 4. Optionally add error handling where needed
 
-See [V2 Migration Guide](https://github.com/AathifMahir/fairy/blob/v2-dev/docs/v2_guide.md) for complete examples and patterns.
+
+### 📅 Release & Support
+
+**Introduced formal versioning policy:** Fairy now follows a non-breaking minor version principle with clear support cadence. See README for full details on version compatibility and support policy.
 
 ---
 
