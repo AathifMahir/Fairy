@@ -413,8 +413,7 @@ void main() {
                 return Column(
                   children: [
                     Bind<TestViewModel, String>(
-                      bind: (vm) =>
-                          useFirstProperty ? vm.name : vm.description,
+                      bind: (vm) => useFirstProperty ? vm.name : vm.description,
                       builder: (context, value, update) {
                         return Text(value);
                       },

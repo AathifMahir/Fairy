@@ -143,7 +143,8 @@ void main() {
       expect(find.text('B'), findsOneWidget);
     });
 
-    testWidgets('Empty ListView.builder should not cause issues', (tester) async {
+    testWidgets('Empty ListView.builder should not cause issues',
+        (tester) async {
       final vm = ListViewModel();
 
       await tester.pumpWidget(
@@ -274,8 +275,7 @@ void main() {
       expect(find.text('10'), findsOneWidget);
     });
 
-    testWidgets(
-        'Widget disposal during post-frame callback should not crash',
+    testWidgets('Widget disposal during post-frame callback should not crash',
         (tester) async {
       final vm = ListViewModel();
 
@@ -345,8 +345,7 @@ void main() {
       expect(find.text('G4'), findsOneWidget);
     });
 
-    testWidgets(
-        'ListView.separated should track separator builder correctly',
+    testWidgets('ListView.separated should track separator builder correctly',
         (tester) async {
       final vm = ListViewModel();
 
@@ -380,8 +379,7 @@ void main() {
       expect(find.byType(Divider), findsOneWidget);
     });
 
-    testWidgets(
-        'Stress test: multiple creates/disposals with optimization',
+    testWidgets('Stress test: multiple creates/disposals with optimization',
         (tester) async {
       final vm = SimpleViewModel();
 
@@ -419,8 +417,7 @@ void main() {
       expect(() => vm.counter.value = 100, returnsNormally);
     });
 
-    testWidgets(
-        'Nested Bind.viewModel with different lazy builder patterns',
+    testWidgets('Nested Bind.viewModel with different lazy builder patterns',
         (tester) async {
       final vm1 = SimpleViewModel();
       final vm2 = ListViewModel();

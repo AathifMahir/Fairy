@@ -195,7 +195,7 @@ class _BindViewModelState<TViewModel extends ObservableObject>
     if (session != null) {
       // Capture initial snapshot size to detect new accesses
       final initialAccessedCount = accessed.length;
-      
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
 
@@ -203,7 +203,7 @@ class _BindViewModelState<TViewModel extends ObservableObject>
         // The session's Set is mutable and shared, so we can check for growth
         final currentAccessed =
             (session as dynamic).getAccessedSnapshot() as Set<ObservableNode>;
-        
+
         // Only reconcile if new accesses were added after initial build
         if (currentAccessed.length > initialAccessedCount) {
           final newAccesses = currentAccessed.difference(_currentNodes);
@@ -225,7 +225,8 @@ class _BindViewModelState<TViewModel extends ObservableObject>
   /// for nodes that are no longer accessed.
   void _reconcileSubscriptions(Set<ObservableNode> accessed) {
     // Early exit if nothing changed
-    if (_currentNodes.containsAll(accessed) && accessed.containsAll(_currentNodes)) {
+    if (_currentNodes.containsAll(accessed) &&
+        accessed.containsAll(_currentNodes)) {
       return;
     }
 
@@ -366,7 +367,8 @@ class _BindViewModel2State<TViewModel1 extends ObservableObject,
   }
 
   void _reconcileSubscriptions(Set<ObservableNode> accessed) {
-    if (_currentNodes.containsAll(accessed) && accessed.containsAll(_currentNodes)) {
+    if (_currentNodes.containsAll(accessed) &&
+        accessed.containsAll(_currentNodes)) {
       return;
     }
 
@@ -507,7 +509,8 @@ class _BindViewModel3State<
   }
 
   void _reconcileSubscriptions(Set<ObservableNode> accessed) {
-    if (_currentNodes.containsAll(accessed) && accessed.containsAll(_currentNodes)) {
+    if (_currentNodes.containsAll(accessed) &&
+        accessed.containsAll(_currentNodes)) {
       return;
     }
 
@@ -656,7 +659,8 @@ class _BindViewModel4State<
   }
 
   void _reconcileSubscriptions(Set<ObservableNode> accessed) {
-    if (_currentNodes.containsAll(accessed) && accessed.containsAll(_currentNodes)) {
+    if (_currentNodes.containsAll(accessed) &&
+        accessed.containsAll(_currentNodes)) {
       return;
     }
 

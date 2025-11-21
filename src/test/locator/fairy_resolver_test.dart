@@ -114,8 +114,7 @@ void main() {
               Fairy.of<TestViewModel>(context);
               fail('Should have thrown StateError');
             } catch (e) {
-              expect(e.toString(),
-                  contains('FairyLocator.registerSingleton'));
+              expect(e.toString(), contains('FairyLocator.registerSingleton'));
               expect(e.toString(), contains('FairyScope'));
               expect(e.toString(), contains('Make sure to either'));
             }

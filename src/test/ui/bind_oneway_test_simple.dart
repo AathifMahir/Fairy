@@ -26,8 +26,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<SimpleViewModel, String>(
-              bind: (vm) =>
-                  vm.message, // Raw String, not ObservableProperty
+              bind: (vm) => vm.message, // Raw String, not ObservableProperty
               builder: (context, value, update) {
                 capturedUpdate = update;
                 return Text(value);

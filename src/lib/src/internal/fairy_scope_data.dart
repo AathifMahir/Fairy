@@ -21,7 +21,7 @@ class _VMEntry {
 class FairyScopeData {
   final Map<Type, _VMEntry> _registry = {};
   final Map<Type, ObservableObject Function()> _lazyFactories = {};
-  
+
   /// Exposed for backward compatibility - returns just the instances
   Map<Type, ObservableObject> get registry {
     return Map.fromEntries(
@@ -88,7 +88,8 @@ class FairyScopeData {
     if (_lazyFactories.containsKey(T)) {
       final factory = _lazyFactories[T]!;
       final instance = factory();
-      _registry[T] = _VMEntry(instance, true); // Lazy instances are always owned
+      _registry[T] =
+          _VMEntry(instance, true); // Lazy instances are always owned
       _lazyFactories.remove(T);
     }
 

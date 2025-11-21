@@ -105,8 +105,7 @@ void main() {
       expect(() => vm.items.value = ['a', 'b'], returnsNormally);
     });
 
-    testWidgets(
-        'bind change should clean up old listeners and create new ones',
+    testWidgets('bind change should clean up old listeners and create new ones',
         (tester) async {
       final vm = TestViewModel();
       var useCounter = true;
@@ -116,8 +115,7 @@ void main() {
           home: FairyScope(
             viewModel: (_) => vm,
             child: Bind<TestViewModel, dynamic>(
-              bind: (vm) =>
-                  useCounter ? vm.counter.value : vm.message.value,
+              bind: (vm) => useCounter ? vm.counter.value : vm.message.value,
               builder: (context, value, update) => Text('$value'),
             ),
           ),

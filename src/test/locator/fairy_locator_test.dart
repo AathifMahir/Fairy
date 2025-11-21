@@ -60,7 +60,8 @@ void main() {
         FairyLocator.registerSingleton<TestLogger>(logger);
 
         expect(identical(FairyLocator.get<TestService>(), service), isTrue);
-        expect(identical(FairyLocator.get<TestRepository>(), repository), isTrue);
+        expect(
+            identical(FairyLocator.get<TestRepository>(), repository), isTrue);
         expect(identical(FairyLocator.get<TestLogger>(), logger), isTrue);
       });
 
@@ -119,7 +120,8 @@ void main() {
         FairyLocator.registerTransient<TestService>(() => TestService());
 
         expect(
-          () => FairyLocator.registerTransient<TestService>(() => TestService()),
+          () =>
+              FairyLocator.registerTransient<TestService>(() => TestService()),
           throwsStateError,
         );
       });
@@ -128,7 +130,8 @@ void main() {
         FairyLocator.registerSingleton<TestService>(TestService());
 
         expect(
-          () => FairyLocator.registerTransient<TestService>(() => TestService()),
+          () =>
+              FairyLocator.registerTransient<TestService>(() => TestService()),
           throwsStateError,
         );
       });
@@ -177,7 +180,8 @@ void main() {
         FairyLocator.registerLazySingleton<TestService>(() => TestService());
 
         expect(
-          () => FairyLocator.registerLazySingleton<TestService>(() => TestService()),
+          () => FairyLocator.registerLazySingleton<TestService>(
+              () => TestService()),
           throwsStateError,
         );
       });
@@ -693,4 +697,3 @@ class AsyncService {
     return AsyncService();
   }
 }
-

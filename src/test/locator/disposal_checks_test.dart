@@ -217,8 +217,7 @@ void main() {
         scopeData.registerDynamic(vm, owned: true);
 
         // Both should be accessible
-        expect(
-            () => FairyLocator.get<_TestViewModel>(), returnsNormally);
+        expect(() => FairyLocator.get<_TestViewModel>(), returnsNormally);
         expect(() => scopeData.get<_TestViewModel>(), returnsNormally);
 
         // Dispose service
@@ -349,4 +348,3 @@ class _ThirdViewModelWithCallback extends ObservableObject {
     super.dispose();
   }
 }
-

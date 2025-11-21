@@ -1048,7 +1048,7 @@ void main() {
             child: FairyScope(
               viewModels: [
                 (locator) => AnotherViewModel(),
-               (locator) => ViewModelWithDependencies(
+                (locator) => ViewModelWithDependencies(
                       TestService(),
                       AnotherService(),
                     ),
