@@ -23,6 +23,7 @@ A lightweight MVVM framework for Flutter with strongly-typed reactive data bindi
 - [Best Practices](#best-practices)
 - [Performance](#performance)
 - [Testing](#testing)
+- [Documentation](#documentation)
 - [Maintenance & Release Cadence](#maintenance--release-cadence)
 
 ## Features
@@ -572,6 +573,10 @@ testWidgets('counter increments on tap', (tester) async {
 | Command Pattern | **✅** | ❌ | ❌ | ❌ | ❌ |
 | Two-Way Binding | **✅** | ❌ | ❌ | ✅ | ❌ |
 | Auto-Disposal | **✅** | ⚠️ | ✅ | ✅ | ⚠️ |
+
+## Documentation
+
+For LLM-optimized documentation, see [llms.txt](https://github.com/AathifMahir/Fairy/blob/main/llms.txt) - comprehensive API reference for AI assistants.
 
 ## Maintenance & Release Cadence
 
